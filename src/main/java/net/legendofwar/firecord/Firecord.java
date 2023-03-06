@@ -100,7 +100,7 @@ public class Firecord {
      * 
      * @param receiver The node that should receive this message. Cannot contain ":".
      * @param channel The channel on which we send this message. Cannot contain ":".
-     * @param message The message we send it on.
+     * @param message The message we send.
      */
     public static void publish(String receiver, String channel, String message) {
         JedisCommunication.publish(receiver, channel, message);
@@ -110,7 +110,7 @@ public class Firecord {
      * Broadcast a message to all other nodes.
      * 
      * @param channel The channel on which we send this message. Cannot contain ":".
-     * @param message The message we send it on.
+     * @param message The message we send.
      */
     public static void broadcast(String channel, String message) {
         JedisCommunication.broadcast(channel, message);
