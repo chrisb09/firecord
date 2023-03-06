@@ -26,4 +26,9 @@ public final class FirecordSpigot extends JavaPlugin implements Listener {
 
     }
 
+    @Override
+    public void onDisable() {
+        Firecord.disable();
+    }
+
 }

@@ -11,6 +11,10 @@ public class FirecordStandalone {
 
         Firecord.init(NodeType.STANDALONE);
 
+        //TODO: run main loop: http server
+
+        Firecord.disable();
+
     }
 
 }

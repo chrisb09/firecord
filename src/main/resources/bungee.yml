@@ -1,0 +1,4 @@
+name: Firecord
+version: '${project.version}'
+main: net.legendofwar.firecord.bungee.FirecordBungee
+author: tobi20 
