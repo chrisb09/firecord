@@ -192,12 +192,12 @@ public class JedisCommunication extends JedisPubSub {
 
     @Override
     public void onMessage(String redis_channel, String message) {
-        this.receive(message, redis_channel == "smsg:broadcast");
+        this.receive(message, redis_channel.equals("smsg:broadcast"));
     }
 
     @Override
     public void onPMessage(String pattern, String redis_channel, String message) {
-        this.receive(message, redis_channel == "smsg:broadcast");
+        this.receive(message, redis_channel.equals("smsg:broadcast"));
     }
 
     @Override
