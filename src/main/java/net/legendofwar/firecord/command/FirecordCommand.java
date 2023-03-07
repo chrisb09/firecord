@@ -2,9 +2,12 @@ package net.legendofwar.firecord.command;
 
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.dataentry.type.SInt;
 import redis.clients.jedis.Jedis;
 
 public class FirecordCommand {
+
+    static SInt test = null;
 
     public static boolean onCommand(Sender sender, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
@@ -21,6 +24,14 @@ public class FirecordCommand {
         } else if (args[0].equalsIgnoreCase("test")) {
             sender.sendMessage("§7send broadcast message to all other nodes that causes a entry in the log.");
             Firecord.broadcast("test", "Hello World");
+        } else if (args[0].equalsIgnoreCase("testint")) {
+            if (test == null) {
+                test = new SInt("testint", 0);
+            }
+            sender.sendMessage("§btestint: §e" + test.get());
+            sender.sendMessage("§testint++;");
+            test.add(1);
+            sender.sendMessage("§btestint: §e" + test.get());
         } else if (args[0].equalsIgnoreCase("redis")) {
             if (args.length == 1) {
                 sender.sendMessage("§3" + ClassicJedisPool.getPoolCurrentUsage());
