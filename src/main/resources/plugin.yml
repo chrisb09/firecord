@@ -6,3 +6,4 @@ authors: [ FreeSoccerHDX, tobi20, Moritzwied ]
 commands:
   firecord:
     description: Firecord utils
+    aliases: [fc, fcord]

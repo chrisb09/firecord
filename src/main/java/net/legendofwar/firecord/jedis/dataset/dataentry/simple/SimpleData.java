@@ -1,4 +1,4 @@
-package net.legendofwar.firecord.jedis.dataset.dataentry.type;
+package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -121,12 +121,22 @@ public abstract class SimpleData<T> implements Closeable {
 
                     // Manage unloadQueue
                     synchronized (unloadQueue) {
+                        List<SimpleData<?>> toRem = new ArrayList<SimpleData<?>>();
                         element = unloadQueue.peek();
                         if (element != null && element.timestamp_unload < ts) {
                             element = unloadQueue.poll();
+                            toRem.add(element);
                             element.valid = false;
                             element.value = null;
+                            System.out.println("Unloaded " + element.key);
                             element = unloadQueue.peek();
+                        }
+                        synchronized (updateQueue) {
+                            for (SimpleData<?> sd : toRem) {
+                                if (updateQueue.contains(sd)) {
+                                    updateQueue.remove(sd);
+                                }
+                            }
                         }
                     }
 
@@ -140,7 +150,9 @@ public abstract class SimpleData<T> implements Closeable {
                             element = updateQueue.peek();
                         }
                         for (SimpleData<?> sd : toGet) {
-                            sd.get(); // forces loading if value isn't valid
+                            // forces loading if value isn't valid, modify=false means we don't reset
+                            // unload cd
+                            sd.get(false);
                         }
                     }
 
@@ -166,7 +178,7 @@ public abstract class SimpleData<T> implements Closeable {
 	boolean valid = false;					        // determines if we hold a valid copy
     JedisLock lock;                                 // 
     String key;                                     //
-    Object value;                                   //
+    T value;                                        //
 	// @formatter:on
 
     SimpleData(String key, @NotNull T defaultValue, long cache_time, long aggregate_time) {
@@ -178,23 +190,6 @@ public abstract class SimpleData<T> implements Closeable {
         if (this.get() == null) {
             this.set(defaultValue);
         }
-    }
-
-    /**
-     * 
-     * @param key          the redis key this entry corresponds to
-     * @param defaultValue the value we want to set if value does not exist
-     * @param smallEntry   whether this entry's size is small - or not. determines
-     *                     if it is unloaded and if the value is sent with update
-     *                     notifications. only set to false for large values like
-     *                     inventories.
-     */
-    SimpleData(String key, @NotNull T defaultValue, boolean smallEntry) {
-        this(key, defaultValue, smallEntry ? 0 : 30 * 1000 * 1000 * 3000, smallEntry ? 0 : 10 * 1000 * 1000 * 3000);
-    }
-
-    SimpleData(String key, @NotNull T defaultValue) {
-        this(key, defaultValue, true);
     }
 
     public SimpleData<T> lock() {
@@ -224,11 +219,19 @@ public abstract class SimpleData<T> implements Closeable {
             if (this instanceof SmallData) {
                 // we are using the default charset, if for some reason this is run on different
                 // machines with different charsets this encoding would need to be changed.
-                String msg = Base64.getEncoder().encodeToString(this.key.getBytes()) + ":" + this.value.toString();
+                String msg = Base64.getEncoder().encodeToString(this.key.getBytes()) + ":" + this.toString();
                 JedisCommunication.broadcast("update_key_small", msg);
             } else {
                 JedisCommunication.broadcast("update_key_large", this.key);
             }
+        }
+    }
+
+    void _fromString(String value) {
+        if (value == null) {
+            this.value = null;
+        } else {
+            fromString(value);
         }
     }
 
@@ -237,25 +240,32 @@ public abstract class SimpleData<T> implements Closeable {
      * 
      * @param value
      */
-    abstract protected void fromString(String value);
+    abstract protected void fromString(@NotNull String value);
 
     public void set(T value) {
         this.value = value;
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.set(key, this.value.toString());
+            j.set(key, this.toString());
             this._update();
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public T get() {
+    private T get(boolean modify) {
         if (!valid) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.fromString(j.get(key));
+                this._fromString(j.get(key));
             }
-            this._update(false);
+            if (modify) {
+                this._update(false);
+            } else {
+                this.valid = true;
+            }
         }
-        return (T) this.value;
+        return this.value;
+    }
+
+    public T get() {
+        return get(true);
     }
 
 }

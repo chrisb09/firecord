@@ -1,17 +1,17 @@
-package net.legendofwar.firecord.jedis.dataset.dataentry.type;
+package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import redis.clients.jedis.Jedis;
 
-public class SInt extends NumericData<Integer> {
+public class RInt extends NumericData<Integer> {
 
-    public SInt(String key, @NotNull Integer defaultValue) {
-        super(key, defaultValue, true);
+    public RInt(String key, @NotNull Integer defaultValue) {
+        super(key, defaultValue);
     }
 
-    public SInt(String key) {
+    public RInt(String key) {
         this(key, 0);
     }
 
@@ -22,7 +22,7 @@ public class SInt extends NumericData<Integer> {
             this.value = (int) j.incrBy(key, value);
             this._update();
         }
-        return (Integer) this.value;
+        return this.value;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class SInt extends NumericData<Integer> {
             this.value = (int) j.incrBy(key, -value);
             this._update();
         }
-        return (Integer) this.value;
+        return this.value;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class SInt extends NumericData<Integer> {
                 this._update();
             }
         }
-        return (Integer) this.value;
+        return this.value;
     }
 
     @Override
@@ -56,12 +56,17 @@ public class SInt extends NumericData<Integer> {
                 this._update();
             }
         }
-        return (Integer) this.value;
+        return this.value;
     }
 
     @Override
     protected void fromString(String value) {
         this.value = Integer.parseInt(value);
+    }
+
+    @Override
+    public String toString() {
+        return this.value.toString();
     }
 
 }
