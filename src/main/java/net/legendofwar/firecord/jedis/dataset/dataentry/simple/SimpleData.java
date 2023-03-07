@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -41,11 +42,6 @@ public abstract class SimpleData<T> implements Closeable {
 
     // Map of all (once) loaded SimpleData entries
     static HashMap<String, SimpleData<?>> loaded = new HashMap<String, SimpleData<?>>();
-
-    // @formatter:off
-	public final static long DEFAULT_CACHE_TIME = 0l;				// 0 means permanent
-	public final static long DEFAUL_AGGREGATE_TIME = 10000000000l;  // 10s
-    // @formatter:on
 
     static {
 
@@ -82,7 +78,7 @@ public abstract class SimpleData<T> implements Closeable {
                             if (updateQueue.contains(entry)) {
                                 updateQueue.remove(entry);
                             }
-                            entry.timestamp_update = System.nanoTime() + entry.aggregate_time;
+                            entry.timestamp_update = System.nanoTime() + ThreadLocalRandom.current().nextLong(entry.aggregate_time);
                             updateQueue.add(entry);
                         }
                     }
@@ -181,14 +177,18 @@ public abstract class SimpleData<T> implements Closeable {
     T value;                                        //
 	// @formatter:on
 
+    public String getKey(){
+        return key;
+    }
+
     SimpleData(String key, @NotNull T defaultValue, long cache_time, long aggregate_time) {
         this.key = key;
         this.cache_time = cache_time;
         this.aggregate_time = aggregate_time;
         this.lock = new JedisLock(key + ":lock");
         loaded.put(key, this);
-        if (this.get() == null) {
-            this.set(defaultValue);
+        if (this._get(false) == null) {
+            this._set(defaultValue);
         }
     }
 
@@ -242,7 +242,11 @@ public abstract class SimpleData<T> implements Closeable {
      */
     abstract protected void fromString(@NotNull String value);
 
-    public void set(T value) {
+    /**
+     * Does not use a lock
+     * @param value
+     */
+    void _set(T value){
         this.value = value;
         try (Jedis j = ClassicJedisPool.getJedis()) {
             j.set(key, this.toString());
@@ -250,15 +254,28 @@ public abstract class SimpleData<T> implements Closeable {
         }
     }
 
+    public void set(T value) {
+        try (SimpleData<?> sd = this.lock()){
+            _set(value);
+        }
+    }
+
+    T _get(boolean modify){
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            this._fromString(j.get(key));
+        }
+        if (modify) {
+            this._update(false);
+        } else {
+            this.valid = true;
+        }
+        return this.value;
+    }
+
     private T get(boolean modify) {
         if (!valid) {
-            try (Jedis j = ClassicJedisPool.getJedis()) {
-                this._fromString(j.get(key));
-            }
-            if (modify) {
-                this._update(false);
-            } else {
-                this.valid = true;
+            try (SimpleData<?> sd = this.lock()){
+                return _get(modify);
             }
         }
         return this.value;
