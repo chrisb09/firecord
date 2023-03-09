@@ -2,10 +2,12 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+
 public abstract class NumericData<T> extends SmallData<T> {
 
-    NumericData(String key, @NotNull T defaultValue, SimpleDataType sdt) {
-        super(key, defaultValue, sdt);
+    NumericData(String key, @NotNull T defaultValue, DataType dt) {
+        super(key, defaultValue, dt);
     }
 
     public abstract T add(T value);

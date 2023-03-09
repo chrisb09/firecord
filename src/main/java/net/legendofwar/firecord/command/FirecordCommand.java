@@ -1,7 +1,10 @@
 package net.legendofwar.firecord.command;
 
+import java.util.Arrays;
+
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.tool.NodeType;
@@ -10,8 +13,13 @@ import redis.clients.jedis.Jedis;
 public class FirecordCommand {
 
     static RInteger test = null;
+    static RInteger test1 = null;
+    static RInteger test2 = null;
+    static RInteger test3 = null;
     static Object testis = null;
-    static RList<RInteger> testlist = null;
+    static RList<RInteger> testlist1 = null;
+    static RList<RInteger> testlist2 = null;
+    static RList<AbstractData<?>> testlist3 = null;
 
     public static boolean onCommand(Sender sender, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
@@ -37,16 +45,78 @@ public class FirecordCommand {
                 test = new RInteger("testint", 0);
             }
         } else if (args[0].equalsIgnoreCase("testlist")) {
-            if (testlist == null) {
-                testlist = new RList<RInteger>("testlist");
+            if (testlist1 == null) {
+                testlist1 = new RList<RInteger>("testlist");
             }
-            if (test == null) {
-                test = new RInteger("testint", 0);
+            if (testlist2 == null) {
+                testlist2 = new RList<RInteger>("testlist2");
             }
-            sender.sendMessage("§btestlist: §e" + testlist.size());
-            sender.sendMessage("§aadd Element");
-            testlist.add(test);
-            sender.sendMessage("§btestlist: §e" + testlist.size());
+            if (testlist3 == null) {
+                testlist3 = new RList<AbstractData<?>>("testlist3");
+            }
+            if (test1 == null) {
+                test1 = new RInteger("testint1", 1);
+            }
+            if (test2 == null) {
+                test2 = new RInteger("testint2", 2);
+            }
+            if (test3 == null) {
+                test3 = new RInteger("testint3", 3);
+            }
+            sender.sendMessage("§btestlist1: §e" + testlist1.size());
+            sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
+            sender.sendMessage("§a#1,#2,#3 clear");
+            testlist1.clear();
+            testlist2.clear();
+            testlist3.clear();
+            sender.sendMessage("§btestlist1: §e" + testlist1.size());
+            sender.sendMessage("§a#1 add Elements 1,2,3");
+            testlist1.add(test1);
+            testlist1.add(test2);
+            testlist1.add(test3);
+            sender.sendMessage("§btestlist1: §e" + testlist1.size());
+            sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
+            sender.sendMessage("§a#2 add Elements of list #1");
+            testlist2.addAll(testlist1);
+            sender.sendMessage("§a#2 add Elements of list #1 at position 1");
+            testlist2.addAll(1, testlist1);
+            sender.sendMessage("§a#2 add Elements of list #1 at position 3");
+            testlist2.addAll(1, testlist1);
+            sender.sendMessage("§btestlist2: §e" + testlist2.size());
+            sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            sender.sendMessage("§a#3 add Element 3");
+            testlist3.add(test3);
+            sender.sendMessage("§btestlist3: §e" + testlist3.size());
+            sender.sendMessage("§btestlist3: §e"+String.join(",", Arrays.toString(testlist3.toArray())));
+            sender.sendMessage("§a#1 remove all elements from found in list #3");
+            testlist1.removeAll(testlist3);
+            sender.sendMessage("§btestlist1: §e" + testlist1.size());
+            sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
+            sender.sendMessage("§a#2 remove element #4");
+            testlist2.remove(4);
+            sender.sendMessage("§btestlist2: §e" + testlist2.size());
+            sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            sender.sendMessage("§a#2 retain all elements found in list #3");
+            testlist2.retainAll(testlist3);
+            sender.sendMessage("§btestlist2: §e" + testlist2.size());
+            sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            sender.sendMessage("§b#3 set entry nr. 0 to element 1");
+            testlist3.set(0, test1);
+            sender.sendMessage("§btestlist3: §e" + testlist3.size());
+            sender.sendMessage("§btestlist3: §e"+String.join(",", Arrays.toString(testlist3.toArray())));
+            sender.sendMessage("");
+            try (Jedis j = ClassicJedisPool.getJedis()) {
+                sender.sendMessage("§bFinal values: ");
+                sender.sendMessage("§btestlist1:");
+                sender.sendMessage("§bCache: §a"+String.join(",", Arrays.toString(testlist1.toArray())));
+                sender.sendMessage("§bRedis: §c"+String.join(",", Arrays.toString(j.lrange(testlist1.getKey(), 0, -1).toArray())));
+                sender.sendMessage("§btestlist2:");
+                sender.sendMessage("§bCache: §a"+String.join(",", Arrays.toString(testlist2.toArray())));
+                sender.sendMessage("§bRedis: §c"+String.join(",", Arrays.toString(j.lrange(testlist2.getKey(), 0, -1).toArray())));
+                sender.sendMessage("§btestlist3:");
+                sender.sendMessage("§bCache: §a"+String.join(",", Arrays.toString(testlist3.toArray())));
+                sender.sendMessage("§bRedis: §c"+String.join(",", Arrays.toString(j.lrange(testlist3.getKey(), 0, -1).toArray())));
+            }
         } else if (args[0].equalsIgnoreCase("testint")) {
             if (test == null) {
                 test = new RInteger("testint", 0);

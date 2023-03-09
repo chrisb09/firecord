@@ -3,14 +3,11 @@ package net.legendofwar.firecord.jedis.dataset.dataentry;
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
-import net.legendofwar.firecord.jedis.dataset.dataentry.composite.CompositeDataType;
-import net.legendofwar.firecord.jedis.dataset.dataentry.simple.SimpleDataType;
 import redis.clients.jedis.Jedis;
 
 public abstract class AbstractData<T> implements Closeable {
@@ -36,31 +33,35 @@ public abstract class AbstractData<T> implements Closeable {
     }
 
     /**
-     * Creates the corresponding data structure for a key - if it exists that is. 
+     * Creates the corresponding data structure for a key - if it exists that is.
+     * If we already have loaded the corresponding datastructure return that
+     * instead.
+     * If you need a second instance for the same object for whatever terrible
+     * reason do call the constructor.
+     * 
      * @param key
      * @return
      */
     public static AbstractData<?> create(@NotNull String key) {
-        
+        // we don't need to recreate
+        synchronized (loaded) {
+            if (loaded.containsKey(key)) {
+                return loaded.get(key);
+            }
+        }
         String type = null;
-        try (Jedis j = ClassicJedisPool.getJedis()){
-            type = j.type(key);
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            type = j.get(key + ":type");
         }
         if (type != null) {
-            for (CompositeDataType cdt : CompositeDataType.values()){
-                if (cdt.getRedisName().equals(type)) {
-                    return callConstructor(key, cdt.getC());
-                }
+            DataType dt = null;
+            try {
+                dt = DataType.valueOf(type);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            if (type.equals("string")){
-                String simpleType;
-                try (Jedis j = ClassicJedisPool.getJedis()){
-                    simpleType = j.get(key+":type");
-                }
-                if (simpleType != null) {
-                    SimpleDataType sdt = SimpleDataType.valueOf(simpleType);
-                    return callConstructor(key, sdt.getC());
-                }
+            if (dt != null) {
+                return callConstructor(key, dt.getC());
             }
         }
         return null;
@@ -90,11 +91,14 @@ public abstract class AbstractData<T> implements Closeable {
         this.lock.unlock();
     }
 
-    public String getKey() {
-        return key;
+    protected void _setType(String key, Enum<?> dt) {
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            j.set(key + ":type", dt.toString());
+        }
     }
 
-    @NotNull
-    public abstract Map<String, String> serialize();
+    public final String getKey() {
+        return key;
+    }
 
 }

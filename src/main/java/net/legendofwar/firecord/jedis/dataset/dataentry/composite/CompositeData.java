@@ -7,33 +7,57 @@ import java.util.Iterator;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import redis.clients.jedis.Jedis;
 
-public abstract class CompositeData<T extends AbstractData<?>> extends AbstractData<T> implements Collection<T> {
+public abstract class CompositeData<T extends AbstractData<?>, E extends Collection<T>> extends AbstractData<T> implements Collection<T> {
 
     // Map of all (once) loaded Composite entries
-    static HashMap<String, CompositeData<?>> loaded = new HashMap<String, CompositeData<?>>();
+    static HashMap<String, CompositeData<?, ?>> loaded = new HashMap<String, CompositeData<?, ?>>();
 
-    final Collection<T> data;
+    final E data;
 
-    CompositeData(String key, Collection<T> data) {
+    CompositeData(String key, E data, DataType dt) {
         super(key);
-        this.data = data;
+        this.data = data; // should be empty at this point
+        this._load(); // loads data if it exists
         synchronized (loaded) {
             loaded.put(key, this);
+        }
+        if (this.isEmpty()) {
+            this._setType(key, dt);
+        }
+    }
+
+    /**
+     * Load the data from key
+     */
+    abstract void _load();
+
+    /**
+     * Store the data at key
+     */
+    abstract void _store();
+
+    /**
+     * Overwrites the data in this wrapper, example of a "complex" function
+     * @param data
+     */
+    void set(E data){
+        try (AbstractData<?> ad = lock()){
+            this.clear();
+            this.addAll(data);
         }
     }
 
     @Override
     public void clear() {
-        try (AbstractData<T> ad = lock()) {
-            try (Jedis j = ClassicJedisPool.getJedis()) {
-                j.del(key);
-            }
-            JedisCommunication.broadcast("RCollection_del", key);
-            synchronized (this.data) {
-                this.data.clear();
-            }
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            j.del(key);
+        }
+        JedisCommunication.broadcast("RCollection_del", key);
+        synchronized (this.data) {
+            this.data.clear();
         }
     }
 
@@ -80,7 +104,7 @@ public abstract class CompositeData<T extends AbstractData<?>> extends AbstractD
     }
 
     @Override
-    public <E> E[] toArray(E[] arg0) {
+    public <F> F[] toArray(F[] arg0) {
         synchronized (this.data) {
             return this.data.toArray(arg0);
         }

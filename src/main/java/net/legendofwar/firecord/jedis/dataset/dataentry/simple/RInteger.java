@@ -4,12 +4,13 @@ import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import redis.clients.jedis.Jedis;
 
 public class RInteger extends NumericData<Integer> {
 
     public RInteger(String key, @NotNull Integer defaultValue) {
-        super(key, defaultValue, SimpleDataType.INTEGER);
+        super(key, defaultValue, DataType.INTEGER);
     }
 
     public RInteger(String key) {

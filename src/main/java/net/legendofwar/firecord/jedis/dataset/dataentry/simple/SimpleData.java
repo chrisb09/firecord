@@ -6,7 +6,6 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -18,6 +17,7 @@ import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import redis.clients.jedis.Jedis;
 
 public abstract class SimpleData<T> extends AbstractData<T> {
@@ -174,18 +174,12 @@ public abstract class SimpleData<T> extends AbstractData<T> {
     T value;                          //
 	// @formatter:on
 
-    SimpleData(String key, @NotNull T defaultValue, SimpleDataType sdt) {
+    SimpleData(String key, @NotNull T defaultValue, DataType dt) {
         super(key);
         loaded.put(key, this);
         if (this._get(false) == null) {
             this._set(defaultValue);
-            this._setType(key, sdt);
-        }
-    }
-
-    private void _setType(String key, SimpleDataType sdt) {
-        try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.set(key + ":type", sdt.toString());
+            this._setType(key, dt);
         }
     }
 
@@ -287,14 +281,6 @@ public abstract class SimpleData<T> extends AbstractData<T> {
 
     public T get() {
         return get(true);
-    }
-
-    @Override
-    @NotNull
-    public Map<String, String> serialize() {
-        Map<String, String> map = new HashMap<String, String>(1);
-        map.put("value", value.toString());
-        return map;
     }
 
 }

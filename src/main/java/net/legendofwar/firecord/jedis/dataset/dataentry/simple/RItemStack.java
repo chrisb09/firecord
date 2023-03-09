@@ -10,10 +10,12 @@ import org.bukkit.util.io.BukkitObjectOutputStream;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+
 public class RItemStack extends LargeData<ItemStack> {
 
     public RItemStack(String key, @NotNull ItemStack defaultValue) {
-        super(key, defaultValue, SimpleDataType.ITEMSTACK);
+        super(key, defaultValue, DataType.ITEMSTACK);
     }
 
     @Override
