@@ -32,7 +32,6 @@ public class JedisCommunication extends JedisPubSub {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
                     System.out.println("subscribe to: "+String.join(", ", handler.channels));
                     j.subscribe(handler, handler.channels);
-                    System.out.println("After sub.");
                 }
             }
         });

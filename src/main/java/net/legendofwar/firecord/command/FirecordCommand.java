@@ -2,14 +2,16 @@ package net.legendofwar.firecord.command;
 
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
-import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInt;
+import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.tool.NodeType;
 import redis.clients.jedis.Jedis;
 
 public class FirecordCommand {
 
-    static RInt test = null;
+    static RInteger test = null;
     static Object testis = null;
+    static RList<RInteger> testlist = null;
 
     public static boolean onCommand(Sender sender, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
@@ -18,7 +20,8 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " test        §e broadcast test message");
             sender.sendMessage("§b" + label + " testint     §e small data sync example");
             sender.sendMessage("§b" + label + " loadis      §e large data sync example");
-            sender.sendMessage("§b" + label + " storeis      §e large data sync example");
+            sender.sendMessage("§b" + label + " storeis     §e large data sync example");
+            sender.sendMessage("§b" + label + " testlist    §e list test command");
             sender.sendMessage("§b" + label + " ping <node> §e broadcast test message");
             sender.sendMessage("§b" + label + " redis <key> §e get redis entry at key");
             sender.sendMessage("§b" + label + " help        §e show this help page");
@@ -29,9 +32,24 @@ public class FirecordCommand {
         } else if (args[0].equalsIgnoreCase("test")) {
             sender.sendMessage("§7send broadcast message to all other nodes that causes a entry in the log.");
             Firecord.broadcast("test", "Hello World");
+        } else if (args[0].equalsIgnoreCase("serialize")) {
+            if (test == null) {
+                test = new RInteger("testint", 0);
+            }
+        } else if (args[0].equalsIgnoreCase("testlist")) {
+            if (testlist == null) {
+                testlist = new RList<RInteger>("testlist");
+            }
+            if (test == null) {
+                test = new RInteger("testint", 0);
+            }
+            sender.sendMessage("§btestlist: §e" + testlist.size());
+            sender.sendMessage("§aadd Element");
+            testlist.add(test);
+            sender.sendMessage("§btestlist: §e" + testlist.size());
         } else if (args[0].equalsIgnoreCase("testint")) {
             if (test == null) {
-                test = new RInt("testint", 0);
+                test = new RInteger("testint", 0);
             }
             sender.sendMessage("§btestint: §e" + test.get());
             sender.sendMessage("§atestint++;");

@@ -1,12 +1,12 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -17,10 +17,10 @@ import org.jetbrains.annotations.NotNull;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
-import net.legendofwar.firecord.jedis.JedisLock;
+import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import redis.clients.jedis.Jedis;
 
-public abstract class SimpleData<T> implements Closeable {
+public abstract class SimpleData<T> extends AbstractData<T> {
 
     // Queue of entries which should be unloaded (in the future)
     static PriorityQueue<SimpleData<?>> unloadQueue = new PriorityQueue<SimpleData<?>>(new Comparator<SimpleData<?>>() {
@@ -73,12 +73,13 @@ public abstract class SimpleData<T> implements Closeable {
                     }
                 }
                 if (entry != null) {
-                    if (entry.aggregate_time != 0) {
+                    if (entry.getAggregateTime() != 0) {
                         synchronized (updateQueue) {
                             if (updateQueue.contains(entry)) {
                                 updateQueue.remove(entry);
                             }
-                            entry.timestamp_update = System.nanoTime() + ThreadLocalRandom.current().nextLong(entry.aggregate_time);
+                            // we use random values to spread out the loading of different nodes
+                            entry.timestamp_update = (int) ( (System.currentTimeMillis() + ThreadLocalRandom.current().nextInt(entry.getAggregateTime())) % Integer.MAX_VALUE);
                             updateQueue.add(entry);
                         }
                     }
@@ -97,8 +98,8 @@ public abstract class SimpleData<T> implements Closeable {
                     SimpleData<?> element = recentlyModified.poll();
                     while (element != null) {
                         synchronized (unloadQueue) {
-                            if (element.cache_time != 0) {
-                                element.timestamp_unload = System.nanoTime() + element.cache_time;
+                            if (element.getCacheTime() != 0) {
+                                element.timestamp_unload = (int) ( (System.currentTimeMillis() + element.getCacheTime()) % Integer.MAX_VALUE);
                                 if (unloadQueue.contains(element)) {
                                     unloadQueue.remove(element);
                                 }
@@ -147,13 +148,13 @@ public abstract class SimpleData<T> implements Closeable {
                         }
                         for (SimpleData<?> sd : toGet) {
                             // forces loading if value isn't valid, modify=false means we don't reset
-                            // unload cd
+                            // the unload timer
                             sd.get(false);
                         }
                     }
 
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         // don't care about interrupts
                     }
@@ -167,39 +168,25 @@ public abstract class SimpleData<T> implements Closeable {
     }
 
     // @formatter:off
-	long timestamp_unload = 0L;				        // timestamp in NS
-	long timestamp_update = 0L;						// timestamp in NS
-	long cache_time;					            // in NS
-	long aggregate_time; 						    // in NS
-	boolean valid = false;					        // determines if we hold a valid copy
-    JedisLock lock;                                 // 
-    String key;                                     //
-    T value;                                        //
+	int timestamp_unload = 0;		  // timestamp in ms
+	int timestamp_update = 0;       // timestamp in ms
+	boolean valid = false;            // determines if we hold a valid copy
+    T value;                          //
 	// @formatter:on
 
-    public String getKey(){
-        return key;
-    }
-
-    SimpleData(String key, @NotNull T defaultValue, long cache_time, long aggregate_time) {
-        this.key = key;
-        this.cache_time = cache_time;
-        this.aggregate_time = aggregate_time;
-        this.lock = new JedisLock(key + ":lock");
+    SimpleData(String key, @NotNull T defaultValue, SimpleDataType sdt) {
+        super(key);
         loaded.put(key, this);
         if (this._get(false) == null) {
             this._set(defaultValue);
+            this._setType(key, sdt);
         }
     }
 
-    public SimpleData<T> lock() {
-        this.lock.lock();
-        return this;
-    }
-
-    @Override
-    public void close() {
-        this.lock.unlock();
+    private void _setType(String key, SimpleDataType sdt) {
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            j.set(key + ":type", sdt.toString());
+        }
     }
 
     protected void _update() {
@@ -243,10 +230,27 @@ public abstract class SimpleData<T> implements Closeable {
     abstract protected void fromString(@NotNull String value);
 
     /**
+     * Determine the time we keep the value of this entry in memory, in ms
+     * 
+     * @return
+     */
+    abstract int getCacheTime();
+
+    /**
+     * Determine the max time we wait until loading a recently changed value to deal
+     * with rapidly changing entries efficiently, meaning not to load an entry 5
+     * times just because it got changed 5 times in 3s.
+     * 
+     * @return
+     */
+    abstract int getAggregateTime();
+
+    /**
      * Does not use a lock
+     * 
      * @param value
      */
-    void _set(T value){
+    void _set(T value) {
         this.value = value;
         try (Jedis j = ClassicJedisPool.getJedis()) {
             j.set(key, this.toString());
@@ -255,12 +259,12 @@ public abstract class SimpleData<T> implements Closeable {
     }
 
     public void set(T value) {
-        try (SimpleData<?> sd = this.lock()){
+        try (AbstractData<?> sd = this.lock()) {
             _set(value);
         }
     }
 
-    T _get(boolean modify){
+    T _get(boolean modify) {
         try (Jedis j = ClassicJedisPool.getJedis()) {
             this._fromString(j.get(key));
         }
@@ -274,7 +278,7 @@ public abstract class SimpleData<T> implements Closeable {
 
     private T get(boolean modify) {
         if (!valid) {
-            try (SimpleData<?> sd = this.lock()){
+            try (AbstractData<?> sd = this.lock()) {
                 return _get(modify);
             }
         }
@@ -283,6 +287,14 @@ public abstract class SimpleData<T> implements Closeable {
 
     public T get() {
         return get(true);
+    }
+
+    @Override
+    @NotNull
+    public Map<String, String> serialize() {
+        Map<String, String> map = new HashMap<String, String>(1);
+        map.put("value", value.toString());
+        return map;
     }
 
 }

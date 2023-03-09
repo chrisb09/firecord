@@ -4,8 +4,18 @@ import org.jetbrains.annotations.NotNull;
 
 public abstract class SmallData<T> extends SimpleData<T> {
 
-    SmallData(String key, @NotNull T defaultValue) {
-        super(key, defaultValue, 0l, 0l);
+    SmallData(String key, @NotNull T defaultValue, SimpleDataType sdt) {
+        super(key, defaultValue, sdt);
+    }
+
+    @Override
+    int getAggregateTime() {
+        return 0;
+    }
+
+    @Override
+    int getCacheTime() {
+        return 0;
     }
 
 }

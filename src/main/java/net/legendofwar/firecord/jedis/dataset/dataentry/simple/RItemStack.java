@@ -13,7 +13,7 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 public class RItemStack extends LargeData<ItemStack> {
 
     public RItemStack(String key, @NotNull ItemStack defaultValue) {
-        super(key, defaultValue);
+        super(key, defaultValue, SimpleDataType.ITEMSTACK);
     }
 
     @Override

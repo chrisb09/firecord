@@ -3,15 +3,16 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import redis.clients.jedis.Jedis;
 
-public class RInt extends NumericData<Integer> {
+public class RInteger extends NumericData<Integer> {
 
-    public RInt(String key, @NotNull Integer defaultValue) {
-        super(key, defaultValue);
+    public RInteger(String key, @NotNull Integer defaultValue) {
+        super(key, defaultValue, SimpleDataType.INTEGER);
     }
 
-    public RInt(String key) {
+    public RInteger(String key) {
         this(key, 0);
     }
 
@@ -37,7 +38,7 @@ public class RInt extends NumericData<Integer> {
 
     @Override
     public Integer mul(Integer value) {
-        try (SimpleData<Integer> l = lock()) {
+        try (AbstractData<Integer> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Integer.parseInt(j.get(key)) * value;
                 j.set(key, this.value.toString());
@@ -49,7 +50,7 @@ public class RInt extends NumericData<Integer> {
 
     @Override
     public Integer div(Integer value) {
-        try (SimpleData<Integer> l = lock()) {
+        try (AbstractData<Integer> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Integer.parseInt(j.get(key)) / value;
                 j.set(key, this.value.toString());

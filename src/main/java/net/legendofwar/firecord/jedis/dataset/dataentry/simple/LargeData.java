@@ -4,10 +4,20 @@ import org.jetbrains.annotations.NotNull;
 
 public abstract class LargeData<T> extends SimpleData<T> {
 
-    LargeData(String key, @NotNull T defaultValue) {
-        // Unload after 30s
+    LargeData(String key, @NotNull T defaultValue, SimpleDataType sdt) {
+        super(key, defaultValue, sdt);
+    }
+
+    @Override
+    int getAggregateTime() {
+        // Unload after 60s without use
+        return 60000;
+    }
+
+    @Override
+    int getCacheTime() {
         // Update this key at most 10s after a change somewhere else happened
-        super(key, defaultValue, 30l * 1000l * 1000l * 1000l, 10l * 1000l * 1000l * 1000l);
+        return 10000;
     }
     
 }
