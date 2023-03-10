@@ -1,32 +1,37 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry;
 
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByteArray;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 
 public enum DataType {
 
     // small
-    BOOLEAN(null),
+    BOOLEAN(RBoolean.class),
+    CHAR(null),
+    STRING(RString.class),
+    UUID(null),
     // numeric
     BYTE(null),
     SHORT(null),
     INTEGER(RInteger.class),
     LONG(null),
     FLOAT(null),
-    DOUBLE(null),
+    DOUBLE(RDouble.class),
 
-    CHAR(null),
-    STRING(null),
-    UUID(null),
     // mc
     LOCATION(null),
-    VECTOR(null),
+    VECTOR(RVector.class),
     
     //large
     ITEMSTACK(RItemStack.class),
     INVENTORY(null),
-    BYTEARRAY(null), // generalized QoL
+    BYTEARRAY(RByteArray.class), // generalized QoL
 
     // composite types
 
