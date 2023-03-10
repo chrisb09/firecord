@@ -29,11 +29,32 @@ abstract NumericData<T> extends SmallData {
     + {abstract} T div();
 }
 
+class RBoolean extends SmallData {
+    
+}
+
+class RString extends SmallData {
+    
+}
+
+class RVector extends SmallData {
+    
+}
+
 class RInteger extends NumericData {
 
 }
 
+class RDouble extends NumericData {
+
+}
+
+
 class RItemStack extends LargeData {
+    
+}
+
+class RByteArray extends LargeData {
     
 }
 
