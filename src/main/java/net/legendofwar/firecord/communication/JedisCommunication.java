@@ -62,6 +62,16 @@ public class JedisCommunication extends JedisPubSub {
             
         });
 
+        // test channel
+        subscribe("log", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                System.out.println("["+sender+"]: "+message);
+            }
+            
+        });
+
         // ping channel
         subscribe("ping", new MessageReceiver() {
 
