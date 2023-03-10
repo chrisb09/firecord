@@ -1,19 +1,46 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.composite;
 
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
 import net.legendofwar.firecord.communication.JedisCommunication;
+import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import redis.clients.jedis.Jedis;
 
-public abstract class CompositeData<T extends AbstractData<?>, E extends Collection<T>> extends AbstractData<T> implements Collection<T> {
+public abstract class CompositeData<T extends AbstractData<?>, E extends Collection<T>> extends AbstractData<T>
+        implements Collection<T> {
 
     // Map of all (once) loaded Composite entries
     static HashMap<String, CompositeData<?, ?>> loaded = new HashMap<String, CompositeData<?, ?>>();
+
+    static {
+
+        JedisCommunication.subscribe("RCollection_del", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                String key = new String(Base64.getDecoder().decode(message));
+                CompositeData<?, ?> l = null;
+                synchronized (loaded) {
+                    if (loaded.containsKey(key)) {
+                        l = loaded.get(key);
+                    }
+                }
+                if (l != null) {
+                    synchronized (l.data) {
+                        l.data.clear();
+                    }
+                }
+            }
+
+        });
+
+    }
 
     final E data;
 
@@ -41,10 +68,11 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
 
     /**
      * Overwrites the data in this wrapper, example of a "complex" function
+     * 
      * @param data
      */
-    void set(E data){
-        try (AbstractData<?> ad = lock()){
+    public void set(E data) {
+        try (AbstractData<?> ad = lock()) {
             this.clear();
             this.addAll(data);
         }
@@ -55,7 +83,7 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
         try (Jedis j = ClassicJedisPool.getJedis()) {
             j.del(key);
         }
-        JedisCommunication.broadcast("RCollection_del", key);
+        JedisCommunication.broadcast("RCollection_del", new String(Base64.getEncoder().encode(key.getBytes())));
         synchronized (this.data) {
             this.data.clear();
         }
