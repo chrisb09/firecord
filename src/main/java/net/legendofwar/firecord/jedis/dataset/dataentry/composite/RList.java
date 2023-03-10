@@ -1,6 +1,7 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.composite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
@@ -111,7 +112,7 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
                 String[] parts = message.split(":");
                 String key = new String(Base64.getDecoder().decode(parts[0]));
                 int index = Integer.parseInt(parts[1]);
-                String[] added_keys = new String[parts.length - 1];
+                String[] added_keys = new String[parts.length - 2];
                 for (int i = 0; i < added_keys.length; i++) {
                     added_keys[i] = new String(Base64.getDecoder().decode(parts[i + 2]));
                 }
@@ -122,13 +123,158 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
                     }
                 }
                 if (l != null) {
+                    int i = 0;
                     for (String added_key : added_keys) {
                         AbstractData<?> entry = AbstractData.create(added_key);
                         if (entry != null) {
                             synchronized (l.data) {
-                                l.data.add(index, entry);
+                                l.data.add(index + (i++), entry);
                             }
                         }
+                    }
+                }
+            }
+
+        });
+
+        JedisCommunication.subscribe("RList_remove", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                String[] parts = message.split(":");
+                String key = new String(Base64.getDecoder().decode(parts[0]));
+                String removed_key = new String(Base64.getDecoder().decode(parts[1]));
+                RList<AbstractData<?>> l = null;
+                synchronized (loaded) {
+                    if (loaded.containsKey(key)) {
+                        l = loaded.get(key);
+                    }
+                }
+                if (l != null) {
+                    l._removeKey(removed_key);
+                }
+            }
+
+        });
+
+        JedisCommunication.subscribe("RList_remove_index", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                String[] parts = message.split(":");
+                String key = new String(Base64.getDecoder().decode(parts[0]));
+                int index = Integer.parseInt(parts[1]);
+                RList<AbstractData<?>> l = null;
+                synchronized (loaded) {
+                    if (loaded.containsKey(key)) {
+                        l = loaded.get(key);
+                    }
+                }
+                if (l != null) {
+                    synchronized (l.data) {
+                        l.data.remove(index);
+                    }
+                }
+            }
+
+        });
+
+        JedisCommunication.subscribe("RList_remove_all", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                String[] parts = message.split(":");
+                String key = new String(Base64.getDecoder().decode(parts[0]));
+                String[] removed_keys = new String[parts.length - 1];
+                for (int i = 0; i < removed_keys.length; i++) {
+                    removed_keys[i] = new String(Base64.getDecoder().decode(parts[i + 1]));
+                }
+                RList<AbstractData<?>> l = null;
+                synchronized (loaded) {
+                    if (loaded.containsKey(key)) {
+                        l = loaded.get(key);
+                    }
+                }
+                if (l != null) {
+                    for (String removed_key : removed_keys) {
+                        l._removeKey(removed_key);
+                    }
+                }
+            }
+
+        });
+
+        JedisCommunication.subscribe("RList_retain_all", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                String[] parts = message.split(":");
+                String key = new String(Base64.getDecoder().decode(parts[0]));
+                String[] retained_keys = new String[parts.length - 1];
+                for (int i = 0; i < retained_keys.length; i++) {
+                    retained_keys[i] = new String(Base64.getDecoder().decode(parts[i + 1]));
+                }
+                RList<AbstractData<?>> l = null;
+                synchronized (loaded) {
+                    if (loaded.containsKey(key)) {
+                        l = loaded.get(key);
+                    }
+                }
+                if (l != null) {
+                    List<AbstractData<?>> toRetain = new ArrayList<AbstractData<?>>(retained_keys.length);
+                    for (String retained_key : retained_keys) {
+                        toRetain.add(AbstractData.create(retained_key));
+                    }
+                    synchronized (l.data) {
+                        l.data.retainAll(toRetain);
+                    }
+                }
+            }
+
+        });
+
+        JedisCommunication.subscribe("RList_set", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                String[] parts = message.split(":");
+                String key = new String(Base64.getDecoder().decode(parts[0]));
+                Integer index = Integer.parseInt(parts[1]);
+                String new_key = new String(Base64.getDecoder().decode(parts[2]));
+                RList<AbstractData<?>> l = null;
+                synchronized (loaded) {
+                    if (loaded.containsKey(key)) {
+                        l = loaded.get(key);
+                    }
+                }
+                if (l != null) {
+                    AbstractData<?> entry = AbstractData.create(new_key);
+                    if (entry != null) {
+                        synchronized (l.data) {
+                            l.data.set(index, entry);
+                        }
+                    }
+                }
+            }
+
+        });
+
+        JedisCommunication.subscribe("RList_log", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                String key = new String(Base64.getDecoder().decode(message));
+                RList<AbstractData<?>> l = null;
+                synchronized (loaded) {
+                    if (loaded.containsKey(key)) {
+                        l = loaded.get(key);
+                    }
+                }
+                if (l != null) {
+                    System.out.println(key + ":");
+                    System.out.println("  cache: " + String.join(",", Arrays.toString(l.toArray())));
+                    try (Jedis j = ClassicJedisPool.getJedis()) {
+                        System.out.println("  redis: " + j.lrange(key, 0, -1));
                     }
                 }
             }
@@ -156,7 +302,6 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
     void _load() {
         try (Jedis j = ClassicJedisPool.getJedis()) {
             List<String> keys = j.lrange(this.key, 0, -1);
-            System.out.println(this.data);
             synchronized (this.data) {
                 this.data.clear();
                 for (String k : keys) {
@@ -176,7 +321,7 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         try (AbstractData<T> ad = this.lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 j.del(this.key);
-                j.lpush(this.key, this.data.toArray(new String[0]));
+                j.rpush(this.key, this.data.toArray(new String[0]));
             }
         }
     }
@@ -229,7 +374,7 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
                 keys[index++] = entry.getKey();
             }
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                j.lpush(key, keys);
+                j.rpush(key, keys);
             }
 
             String p1 = new String(Base64.getEncoder().encode(this.key.getBytes()));
@@ -244,7 +389,9 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         }
     }
 
-    @SuppressWarnings("resource")
+    /**
+     * This function should always be used with a lock!
+     */
     public boolean addAll(int arg0, Collection<? extends T> arg1) {
 
         if (arg0 < 0 || arg0 > this.data.size()) {
@@ -254,23 +401,26 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
             return false;
         }
         synchronized (this.data) {
-            Iterator<? extends T> it = arg1.iterator();
+            String[] keys = new String[arg1.size()];
             String[] b64keys = new String[arg1.size()];
             int index = 0;
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                T current = it.next();
-                b64keys[index++] = new String(Base64.getEncoder().encode(current.getKey().getBytes()));
-                if (arg0 == this.data.size()) {
-                    j.rpush(this.key, current.getKey());
+                // get suffix
+                List<String> suffix = j.lrange(key, arg0, -1);
+                // remove suffix from list
+                if (arg0 == 0) {
+                    j.del(key);
                 } else {
-                    j.linsert(key, ListPosition.BEFORE, this.data.get(arg0).getKey(), current.getKey());
+                    j.ltrim(key, 0, arg0 - 1);
                 }
-                while (it.hasNext()) {
-                    T next = it.next();
-                    j.linsert(key, ListPosition.AFTER, current.getKey(), next.getKey());
-                    b64keys[index++] = new String(Base64.getEncoder().encode(next.getKey().getBytes()));
-                    current = next;
+                for (T entry : arg1) {
+                    keys[index] = entry.getKey();
+                    b64keys[index++] = new String(Base64.getEncoder().encode(entry.getKey().getBytes()));
                 }
+                // add new entries
+                j.rpush(key, keys);
+                // readd suffix
+                j.rpush(key, suffix.toArray(new String[0]));
             }
 
             String p1 = new String(Base64.getEncoder().encode(this.key.getBytes()));
@@ -322,6 +472,9 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         try (Jedis j = ClassicJedisPool.getJedis()) {
             j.lrem(key, 1, ((AbstractData<?>) arg0).getKey());
         }
+        String p1 = new String(Base64.getEncoder().encode(this.key.getBytes()));
+        String p2 = new String(Base64.getEncoder().encode(((T) (arg0)).getKey().getBytes()));
+        JedisCommunication.broadcast("RList_remove", p1 + ":" + p2);
         synchronized (this.data) {
             return this.data.remove(arg0);
         }
@@ -347,24 +500,21 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
             throw new IndexOutOfBoundsException(arg0);
         }
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            T element;
-            synchronized (this.data) {
-                element = this.data.get(arg0);
+            // get suffix
+            List<String> suffix = j.lrange(key, arg0 + 1, -1);
+            // remove suffix from list
+            if (arg0 == 0) {
+                j.del(key);
+            } else {
+                j.ltrim(key, 0, arg0 - 1);
             }
-            List<Integer> indices = this.indicesOf(element);
-            int count = indices.indexOf(arg0);
-            // this removes all first count+1 entries
-            j.lrem(key, count + 1, key);
-            // we now have to readd all first count entries
-            for (int i = 0; i < count; i++) {
-                int index = indices.get(i);
-                String pivot;
-                synchronized (this.data) {
-                    pivot = this.data.get(index + 1).getKey();
-                }
-                j.linsert(key, ListPosition.BEFORE, pivot, element.getKey());
+            if (suffix.size() > 0) {
+                // readd suffix
+                j.rpush(key, suffix.toArray(new String[0]));
             }
         }
+        String p1 = new String(Base64.getEncoder().encode(this.key.getBytes()));
+        JedisCommunication.broadcast("RList_remove_index", p1 + ":" + arg0);
         synchronized (this.data) {
             return this.data.remove(arg0);
         }
@@ -374,6 +524,9 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         if (arg0 == null) {
             throw new NullPointerException();
         }
+        if (arg0.size() == 0) {
+            return false;
+        }
         try (Jedis j = ClassicJedisPool.getJedis()) {
             synchronized (this.data) {
                 for (Object element : arg0) {
@@ -381,6 +534,14 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
                 }
             }
         }
+        String p1 = new String(Base64.getEncoder().encode(this.key.getBytes()));
+        String[] b64keys = new String[arg0.size()];
+        Iterator<?> it = arg0.iterator();
+        int index = 0;
+        while (it.hasNext()) {
+            b64keys[index++] = new String(Base64.getEncoder().encode(((T) (it.next())).getKey().getBytes()));
+        }
+        JedisCommunication.broadcast("RList_remove_all", p1 + ":" + String.join(":", b64keys));
         synchronized (this.data) {
             return this.data.removeAll(arg0);
         }
@@ -399,6 +560,14 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
                 }
             }
 
+            String p1 = new String(Base64.getEncoder().encode(this.key.getBytes()));
+            String[] b64keys = new String[arg0.size()];
+            Iterator<?> it = arg0.iterator();
+            int index = 0;
+            while (it.hasNext()) {
+                b64keys[index++] = new String(Base64.getEncoder().encode(((T) (it.next())).getKey().getBytes()));
+            }
+            JedisCommunication.broadcast("RList_retain_all", p1 + ":" + String.join(":", b64keys));
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 for (T element : toRem) {
                     j.lrem(key, 0, element.getKey());
@@ -420,6 +589,9 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         try (Jedis j = ClassicJedisPool.getJedis()) {
             j.lset(key, arg0, arg1.getKey());
         }
+        String p1 = new String(Base64.getEncoder().encode(this.key.getBytes()));
+        String p2 = new String(Base64.getEncoder().encode(arg1.getKey().getBytes()));
+        JedisCommunication.broadcast("RList_set", p1 + ":" + arg0 + ":" + p2);
         synchronized (this.data) {
             return this.data.set(arg0, arg1);
         }

@@ -78,6 +78,39 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
         }
     }
 
+    /**
+     * Removes the first matching entry from this composite type identfied by the
+     * key
+     * 
+     * @param key
+     * @return true if an element was removed
+     */
+    public boolean removeKey(String key) {
+        synchronized (AbstractData.loaded) {
+            if (AbstractData.loaded.containsKey(key)) {
+                AbstractData<?> entry = AbstractData.loaded.get(key);
+                return this.remove(entry);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Edit data directly, does not send notifications to other nodes
+     * 
+     * @param key
+     * @return
+     */
+    boolean _removeKey(String key) {
+        synchronized (AbstractData.loaded) {
+            if (AbstractData.loaded.containsKey(key)) {
+                AbstractData<?> entry = AbstractData.loaded.get(key);
+                return this.data.remove(entry);
+            }
+        }
+        return false;
+    }
+
     @Override
     public void clear() {
         try (Jedis j = ClassicJedisPool.getJedis()) {
