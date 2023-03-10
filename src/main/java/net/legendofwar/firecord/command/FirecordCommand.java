@@ -1,8 +1,10 @@
 package net.legendofwar.firecord.command;
 
 import java.util.Arrays;
+import java.util.Base64;
 
 import net.legendofwar.firecord.Firecord;
+import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
@@ -46,7 +48,7 @@ public class FirecordCommand {
             }
         } else if (args[0].equalsIgnoreCase("testlist")) {
             if (testlist1 == null) {
-                testlist1 = new RList<RInteger>("testlist");
+                testlist1 = new RList<RInteger>("testlist1");
             }
             if (testlist2 == null) {
                 testlist2 = new RList<RInteger>("testlist2");
@@ -55,16 +57,27 @@ public class FirecordCommand {
                 testlist3 = new RList<AbstractData<?>>("testlist3");
             }
             if (test1 == null) {
-                test1 = new RInteger("testint1", 1);
+                test1 = (RInteger) AbstractData.create("testint1");
+                if (test1 == null){
+                    test1 = new RInteger("testint1", 1);
+                }
             }
             if (test2 == null) {
-                test2 = new RInteger("testint2", 2);
+                test2 = (RInteger) AbstractData.create("testint2");
+                if (test2 == null){
+                    test2 = new RInteger("testint2", 2);
+                }
             }
             if (test3 == null) {
-                test3 = new RInteger("testint3", 3);
+                test3 = (RInteger) AbstractData.create("testint3");
+                if (test3 == null){
+                    test3 = new RInteger("testint3", 3);
+                }
             }
-            sender.sendMessage("§btestlist1: §e" + testlist1.size());
+            String logKey = new String(Base64.getEncoder().encode(testlist2.getKey().getBytes()));
             sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
+            sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            sender.sendMessage("§btestlist3: §e"+String.join(",", Arrays.toString(testlist3.toArray())));
             sender.sendMessage("§a#1,#2,#3 clear");
             testlist1.clear();
             testlist2.clear();
@@ -78,17 +91,26 @@ public class FirecordCommand {
             sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
             sender.sendMessage("§a#2 add Elements of list #1");
             testlist2.addAll(testlist1);
+            JedisCommunication.broadcast("log", "After first add: ");
+            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§a#2 add Elements of list #1 at position 1");
             testlist2.addAll(1, testlist1);
+            JedisCommunication.broadcast("log", "After second add: ");
+            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§a#2 add Elements of list #1 at position 3");
-            testlist2.addAll(1, testlist1);
+            testlist2.addAll(3, testlist1);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
             sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("log", "After adding: ");
+            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§a#3 add Element 3");
             testlist3.add(test3);
             sender.sendMessage("§btestlist3: §e" + testlist3.size());
             sender.sendMessage("§btestlist3: §e"+String.join(",", Arrays.toString(testlist3.toArray())));
-            sender.sendMessage("§a#1 remove all elements from found in list #3");
+            sender.sendMessage("§a#1 remove all elements found in list #3");
             testlist1.removeAll(testlist3);
             sender.sendMessage("§btestlist1: §e" + testlist1.size());
             sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
@@ -96,10 +118,16 @@ public class FirecordCommand {
             testlist2.remove(4);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
             sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("log", "After remove of element nr 4: ");
+            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§a#2 retain all elements found in list #3");
             testlist2.retainAll(testlist3);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
             sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("log", "After retaining all elements found in #3: ");
+            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§b#3 set entry nr. 0 to element 1");
             testlist3.set(0, test1);
             sender.sendMessage("§btestlist3: §e" + testlist3.size());
