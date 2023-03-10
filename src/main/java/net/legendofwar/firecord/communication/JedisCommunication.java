@@ -18,7 +18,7 @@ public class JedisCommunication extends JedisPubSub {
     private static JedisCommunication handler = null;
     private static final HashMap<String, MessageReceiver> receivers = new HashMap<String, MessageReceiver>();
     private static final HashSet<String> nodes = new HashSet<String>();
-    private static final JedisLock nodesLock = new JedisLock("nodes", 10000);
+    private static final JedisLock nodesLock = new JedisLock("nodes");
 
     private final String[] channels;
 

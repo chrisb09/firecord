@@ -11,38 +11,40 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class JedisLock implements Lock {
 
-    static long DEFAULT_TIMEOUT = 30000;
+    final static long DEFAULT_TIMEOUT = 20000; //20s
+    final static SetParams params;
 
-    String id;
-    String key;
-    SetParams params;
-
-    private final Lock slave_lock = new ReentrantLock();
-
-    public JedisLock(String id, long timeoutMilliseconds) {
-        this.id = id;
-        this.key = "redis_lock:"+id;
+    static {
         params = new SetParams();
-        params.px(timeoutMilliseconds);
+        params.px(DEFAULT_TIMEOUT);
         params.nx();
     }
 
+    final String id;
+
+    private final Lock slave_lock = new ReentrantLock();
+
     public JedisLock(String id) {
-        this(id, DEFAULT_TIMEOUT);
+        this.id = id;
+        
     }
 
-    public String getId() {
+    public final String getId() {
         return id;
+    }
+
+    public final String getKey() {
+        return "redis_lock:"+id;
     }
 
     @Override
     public void lock() {
         try(Jedis jedis = ClassicJedisPool.getJedis()) {
-            String result = jedis.set(key, "1", params);
+            String result = jedis.set(getKey(), "1", params);
             while (result == null) {
                 try {
                     Thread.sleep(1);
-                    result = jedis.set(key, "1", params);
+                    result = jedis.set(getKey(), "1", params);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -55,10 +57,10 @@ public class JedisLock implements Lock {
     @Override
     public void lockInterruptibly() throws InterruptedException {
         try(Jedis jedis = ClassicJedisPool.getJedis()) {
-            String result = jedis.set(key, "1", params);
+            String result = jedis.set(getKey(), "1", params);
             while (result == null) {
                 Thread.sleep(1);
-                result = jedis.set(key, "1", params);
+                result = jedis.set(getKey(), "1", params);
             }
         } catch (Exception e) {
             if(e instanceof InterruptedException iex) {
@@ -81,7 +83,7 @@ public class JedisLock implements Lock {
     @Override
     public boolean tryLock() {
         try(Jedis jedis = ClassicJedisPool.getJedis()) {
-            return jedis.set(key, "1", params) != null;
+            return jedis.set(getKey(), "1", params) != null;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -93,10 +95,10 @@ public class JedisLock implements Lock {
         try(Jedis jedis = ClassicJedisPool.getJedis()) {
             long now = System.nanoTime();
             long timeout = now + timeUnit.toNanos(lockTime);
-            String result = jedis.set(key, "1", params);
+            String result = jedis.set(getKey(), "1", params);
             while (result == null && timeout > System.nanoTime()) {
                 Thread.sleep(1);
-                result = jedis.set(key, "1", params);
+                result = jedis.set(getKey(), "1", params);
             }
             return result != null;
         } catch (Exception e) {
@@ -108,7 +110,7 @@ public class JedisLock implements Lock {
     @Override
     public void unlock() {
         try(Jedis jedis = ClassicJedisPool.getJedis()) {
-            jedis.del(key);
+            jedis.del(getKey());
         } catch (Exception e) {
             e.printStackTrace();
         }
