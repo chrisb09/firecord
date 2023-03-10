@@ -1,0 +1,76 @@
+@startuml DataType
+
+abstract AbstractData
+
+abstract AbstractData <T> {
+    + {static} AbstractData create()
+    + AbstractData lock()
+    + void close()
+    + String getKey()
+}
+
+abstract SmallData <T> extends SimpleData {
+
+}
+
+abstract LargeData <T> extends SimpleData {
+
+}
+
+abstract SimpleData<T> extends AbstractData {
+    + T get()
+    + void set()
+}
+
+abstract NumericData<T> extends SmallData {
+    + {abstract} T add();
+    + {abstract} T sub();
+    + {abstract} T mul();
+    + {abstract} T div();
+}
+
+class RInteger extends NumericData {
+
+}
+
+class RItemStack extends LargeData {
+    
+}
+
+
+abstract CompositeData <T extends AbstractData,E> extends AbstractData {
+    + void set()
+    + boolean removeKey()
+    + void clear()
+    + boolean contains()
+    + boolean containsAll()
+    + boolean isEmpty()
+    + Iterator<T> iterator()
+    + int size()
+    + Object[] toArray()
+    + F[] toArray()
+}
+
+class RList <T extends AbstractData> extends CompositeData {
+    + boolean add()
+    + void add()
+    + boolean addAll()
+    + T get()
+    + int indexOf()
+    + int lastIndexOf()
+    + ListIterator<T> listIterator()
+    + boolean remove()
+    + List<Integer> indicesOf()
+    + T remove()
+    + boolean removeAll()
+    + boolean retainAll()
+    + T set()
+    + List<T> subList()
+
+}
+
+CompositeData o-- AbstractData
+
+
+
+@enduml
