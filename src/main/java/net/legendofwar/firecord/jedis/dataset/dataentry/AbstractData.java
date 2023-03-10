@@ -15,7 +15,7 @@ public abstract class AbstractData<T> implements Closeable {
     private static AbstractData<?> callConstructor(@NotNull String key, @NotNull Class<?> c) {
 
         try {
-            return (AbstractData<?>) c.getDeclaredConstructor(String.class).newInstance(":D");
+            return (AbstractData<?>) c.getDeclaredConstructor(String.class).newInstance(key);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
