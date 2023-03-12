@@ -1,15 +1,12 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -45,23 +42,7 @@ public abstract class SimpleData<T> extends AbstractData<T> {
 
     static {
 
-        JedisCommunication.subscribe("update_key_small", new MessageReceiver() {
-
-            @Override
-            public void receive(String channel, String sender, boolean broadcast, String message) {
-                String[] parts = message.split(":");
-                String key = new String(Base64.getDecoder().decode(parts[0]));
-                String value = String.join(":", Arrays.copyOfRange(parts, 1, parts.length, parts.getClass()));
-                synchronized (loaded) {
-                    if (loaded.containsKey(key)) {
-                        ((SmallData<?>) loaded.get(key)).fromString(value);
-                    }
-                }
-            }
-
-        });
-
-        JedisCommunication.subscribe("update_key_large", new MessageReceiver() {
+        JedisCommunication.subscribe("del_key", new MessageReceiver() {
 
             @Override
             public void receive(String channel, String sender, boolean broadcast, String message) {
@@ -69,7 +50,8 @@ public abstract class SimpleData<T> extends AbstractData<T> {
                 synchronized (loaded) {
                     if (loaded.containsKey(message)) {
                         entry = loaded.get(message);
-                        entry.valid = false;
+                        entry.value = null;
+                        entry.valid = true;
                     }
                 }
                 if (entry != null) {
@@ -78,9 +60,13 @@ public abstract class SimpleData<T> extends AbstractData<T> {
                             if (updateQueue.contains(entry)) {
                                 updateQueue.remove(entry);
                             }
-                            // we use random values to spread out the loading of different nodes
-                            entry.timestamp_update = (int) ( (System.currentTimeMillis() + ThreadLocalRandom.current().nextInt(entry.getAggregateTime())) % Integer.MAX_VALUE);
-                            updateQueue.add(entry);
+                        }
+                    }
+                    if (entry.getCacheTime() != 0){
+                        synchronized (unloadQueue) {
+                            if (unloadQueue.contains(entry)){
+                                unloadQueue.remove(entry);
+                            }
                         }
                     }
                 }
@@ -178,7 +164,7 @@ public abstract class SimpleData<T> extends AbstractData<T> {
         super(key);
         loaded.put(key, this);
         if (this._get(false) == null) {
-            this._set(defaultValue);
+            this.set(defaultValue);
             this._setType(key, dt);
         }
     }
@@ -193,20 +179,7 @@ public abstract class SimpleData<T> extends AbstractData<T> {
      * 
      * @param broadcast whether or not to announce changes to other nodes
      */
-    protected void _update(boolean broadcast) {
-        this.valid = true;
-        recentlyModified.add(this);
-        if (broadcast) {
-            if (this instanceof SmallData) {
-                // we are using the default charset, if for some reason this is run on different
-                // machines with different charsets this encoding would need to be changed.
-                String msg = Base64.getEncoder().encodeToString(this.key.getBytes()) + ":" + this.toString();
-                JedisCommunication.broadcast("update_key_small", msg);
-            } else {
-                JedisCommunication.broadcast("update_key_large", this.key);
-            }
-        }
-    }
+    protected abstract void _update(boolean broadcast);
 
     void _fromString(String value) {
         if (value == null) {
@@ -243,24 +216,41 @@ public abstract class SimpleData<T> extends AbstractData<T> {
      * Does not use a lock
      * 
      * @param value
+     * @return true if change in database was successful
      */
-    void _set(T value) {
+    public boolean set(T value) {
         this.value = value;
+        boolean success = false;
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.set(key, this.toString());
+            if (value != null){
+                success = j.set(key, this.toString()).equals("OK");
+            } else {
+                success = j.del(key) == 1;
+            }
             this._update();
         }
+        return success;
     }
 
-    public void set(T value) {
-        try (AbstractData<?> sd = this.lock()) {
-            _set(value);
+    /**
+     * returns true if value was changed
+     * @param value
+     * @return
+     */
+    public boolean setIfNull(T value) {
+        if (get() == null){
+            return set(value);
         }
+        return false; 
     }
 
     T _get(boolean modify) {
+        String stringValue;
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            this._fromString(j.get(key));
+            stringValue = j.get(key);
+        }
+        if (stringValue != null) {
+            this._fromString(stringValue);
         }
         if (modify) {
             this._update(false);
@@ -272,9 +262,7 @@ public abstract class SimpleData<T> extends AbstractData<T> {
 
     private T get(boolean modify) {
         if (!valid) {
-            try (AbstractData<?> sd = this.lock()) {
-                return _get(modify);
-            }
+            return _get(modify);
         }
         return this.value;
     }
