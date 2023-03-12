@@ -3,6 +3,7 @@
 abstract AbstractData
 
 abstract AbstractData <T> {
+    + {static} HashMap<String, AbstractData> loaded
     + {static} AbstractData create()
     + AbstractData lock()
     + void close()
@@ -18,8 +19,14 @@ abstract LargeData <T> extends SimpleData {
 }
 
 abstract SimpleData<T> extends AbstractData {
+    + {static} HashMap<String, SimpleData> loaded
     + T get()
-    + void set()
+    + boolean set()
+    + boolean setIfNull()
+}
+
+class Invalid extends AbstractData {
+
 }
 
 abstract NumericData<T> extends SmallData {
@@ -27,6 +34,10 @@ abstract NumericData<T> extends SmallData {
     + {abstract} T sub();
     + {abstract} T mul();
     + {abstract} T div();
+}
+
+abstract IntegerData<T> extends NumericData {
+    + T incr();
 }
 
 class RBoolean extends SmallData {
@@ -41,7 +52,11 @@ class RVector extends SmallData {
     
 }
 
-class RInteger extends NumericData {
+class RWrapper extends SmallData {
+    + void setIfNull()
+}
+
+class RInteger extends IntegerData {
 
 }
 
@@ -60,10 +75,13 @@ class RByteArray extends LargeData {
 
 
 abstract CompositeData <T extends AbstractData,E> extends AbstractData {
+    + {static} HashMap<String, CompositeData<?,?>> loaded
     + void set()
     + boolean removeKey()
     + void clear()
     + boolean contains()
+    + boolean containsKey()
+    + boolean containsValue()
     + boolean containsAll()
     + boolean isEmpty()
     + Iterator<T> iterator()
@@ -91,6 +109,12 @@ class RList <T extends AbstractData> extends CompositeData {
 }
 
 CompositeData o-- AbstractData
+
+abstract AbstractObject extends AbstractData {
+
+}
+
+AbstractObject *-- AbstractData
 
 
 
