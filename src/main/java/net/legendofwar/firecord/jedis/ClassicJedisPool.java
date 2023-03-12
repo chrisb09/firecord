@@ -111,4 +111,14 @@ public class ClassicJedisPool {
         return log;
     }
 
+    /**
+     * Shortcut function to get a single value
+     * @return redis get at key result
+     */
+    public static String getValue(String key){
+        try (Jedis j = getJedis()){
+            return j.get(key);
+        }
+    }
+
 }
