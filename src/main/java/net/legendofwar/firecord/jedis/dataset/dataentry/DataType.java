@@ -2,6 +2,7 @@ package net.legendofwar.firecord.jedis.dataset.dataentry;
 
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.Invalid;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByteArray;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
@@ -32,7 +33,7 @@ public enum DataType {
     VECTOR(RVector.class, NodeType.SPIGOT),
 
     // replaces mc values on other nodes
-    INCOMPATIBLE(null),
+    INVALID(Invalid.class),
 
     // large
     ITEMSTACK(RItemStack.class, NodeType.SPIGOT),
@@ -77,5 +78,5 @@ public enum DataType {
     public final Class<?> getC() {
         return c;
     }
-    
+
 }
