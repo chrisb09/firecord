@@ -7,7 +7,10 @@ import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataPool;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.tool.NodeType;
 import redis.clients.jedis.Jedis;
@@ -19,6 +22,7 @@ public class FirecordCommand {
     static RInteger test2 = null;
     static RInteger test3 = null;
     static Object testis = null;
+    static TestObject testob = null;
     static RList<RInteger> testlist1 = null;
     static RList<RInteger> testlist2 = null;
     static RList<AbstractData<?>> testlist3 = null;
@@ -32,6 +36,8 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " loadis      §e large data sync example");
             sender.sendMessage("§b" + label + " storeis     §e large data sync example");
             sender.sendMessage("§b" + label + " testlist    §e list test command");
+            sender.sendMessage("§b" + label + " testanon    §e anonymous type test command");
+            sender.sendMessage("§b" + label + " testobject  §e test object command");
             sender.sendMessage("§b" + label + " ping <node> §e broadcast test message");
             sender.sendMessage("§b" + label + " redis <key> §e get redis entry at key");
             sender.sendMessage("§b" + label + " help        §e show this help page");
@@ -153,6 +159,21 @@ public class FirecordCommand {
             sender.sendMessage("§atestint++;");
             test.add(1);
             sender.sendMessage("§btestint: §e" + test.get());
+        }  else if (args[0].equalsIgnoreCase("testanon")) {
+            AbstractData<?> ad = DataPool.createAnonymous(DataType.DOUBLE);
+            sender.sendMessage("§btestanon: §e" + ad);
+        }  else if (args[0].equalsIgnoreCase("testobject")) {
+            if (testob == null) {
+                testob = new TestObject("testobject");
+            }
+            sender.sendMessage("§btestob: §e" + testob);
+            sender.sendMessage("§atestob.incrA();");
+            testob.incrA();
+            sender.sendMessage("§atestob.toggleE();");
+            testob.toggleE();
+            sender.sendMessage("§atestob.selectRandomTestlist();");
+            testob.selectRandomTestlist();
+            sender.sendMessage("§btestob: §e" + testob);
         }  else if (args[0].equalsIgnoreCase("loadis")) {
             if (Firecord.getNodeType() == NodeType.SPIGOT){
                 if (args.length==1) {
