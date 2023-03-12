@@ -7,7 +7,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import redis.clients.jedis.Jedis;
 
-public class RInteger extends NumericData<Integer> {
+public class RInteger extends IntegerData<Integer> {
 
     public RInteger(String key, @NotNull Integer defaultValue) {
         super(key, defaultValue, DataType.INTEGER);
@@ -15,26 +15,6 @@ public class RInteger extends NumericData<Integer> {
 
     public RInteger(String key) {
         this(key, 0);
-    }
-
-    @Override
-    public Integer add(Integer value) {
-        // single redis commands are atomic, therefore we don't need a lock
-        try (Jedis j = ClassicJedisPool.getJedis()) {
-            this.value = (int) j.incrBy(key, value);
-            this._update();
-        }
-        return this.value;
-    }
-
-    @Override
-    public Integer sub(Integer value) {
-        // single redis commands are atomic, therefore we don't need a lock
-        try (Jedis j = ClassicJedisPool.getJedis()) {
-            this.value = (int) j.incrBy(key, -value);
-            this._update();
-        }
-        return this.value;
     }
 
     @Override
