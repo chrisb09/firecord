@@ -14,6 +14,8 @@ import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.SimpleData;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.args.ListPosition;
 
@@ -601,6 +603,40 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         synchronized (this.data) {
             return this.data.subList(fromIndex, toIndex);
         }
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        synchronized (this.data){
+            for (T entry : this.data){
+                if (entry instanceof SimpleData){
+                    SimpleData<Object> e = (SimpleData<Object>) entry;
+                    if (e.get().equals(value)){
+                        return true;
+                    }
+                } else if (entry instanceof CompositeData){
+                    CompositeData<AbstractData<?>, ?> e = (CompositeData<AbstractData<?>, ?>) entry;
+                    if (e.data.equals(value)){
+                        return true;
+                    }
+                } else if (entry instanceof AbstractObject){
+                    return entry.equals(value);
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean containsKey(String key){
+        synchronized (this.data){
+            for (T entry : this.data){
+                if (entry.getKey().equals(key)){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }

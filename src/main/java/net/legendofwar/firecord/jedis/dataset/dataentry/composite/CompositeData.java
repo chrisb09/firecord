@@ -130,6 +130,17 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
     }
 
     @Override
+    public int hashCode() {
+        synchronized (this.data){
+            return this.data.hashCode();
+        }
+    }
+
+    public abstract boolean containsKey(String key);
+
+    public abstract boolean containsValue(Object value);
+
+    @Override
     public boolean containsAll(Collection<?> arg0) {
         synchronized (this.data) {
             return this.data.containsAll(arg0);
