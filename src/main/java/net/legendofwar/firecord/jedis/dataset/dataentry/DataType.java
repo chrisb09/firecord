@@ -79,4 +79,13 @@ public enum DataType {
         return c;
     }
 
+    public static DataType getByC(Class<?> c) {
+        for (DataType dt : DataType.values()) {
+            if (dt.getC() != null && dt.getC().equals(c)) {
+                return dt;
+            }
+        }
+        return null;
+    }
+
 }
