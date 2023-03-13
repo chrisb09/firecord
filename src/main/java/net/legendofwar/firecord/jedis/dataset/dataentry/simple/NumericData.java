@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 
-public abstract class NumericData<T> extends SmallData<T> {
+public abstract class NumericData<T extends Number> extends SmallData<T> {
 
     NumericData(String key, @NotNull T defaultValue, DataType dt) {
         super(key, defaultValue, dt);

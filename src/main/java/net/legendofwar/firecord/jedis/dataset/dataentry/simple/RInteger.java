@@ -17,6 +17,35 @@ public class RInteger extends IntegerData<Integer> {
         this(key, 0);
     }
 
+    public Integer incr(Integer value) {
+        // single redis commands are atomic, therefore we don't need a lock
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            this.value = (Integer) (int) j.incr(key);
+            this._update();
+        }
+        return this.value;
+    }
+
+    @Override
+    public Integer add(Integer value) {
+        // single redis commands are atomic, therefore we don't need a lock
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            this.value = (Integer) (int) j.incrBy(key, value);
+            this._update();
+        }
+        return this.value;
+    }
+
+    @Override
+    public Integer sub(Integer value) {
+        // single redis commands are atomic, therefore we don't need a lock
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            this.value = (Integer) (int) j.incrBy(key, -value);
+            this._update();
+        }
+        return this.value;
+    }
+
     @Override
     public Integer mul(Integer value) {
         try (AbstractData<Integer> l = lock()) {
