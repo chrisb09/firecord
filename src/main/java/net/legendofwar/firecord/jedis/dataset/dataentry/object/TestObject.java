@@ -6,6 +6,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
 
 import java.lang.Math;
@@ -24,6 +25,8 @@ public class TestObject extends AbstractObject {
     // they're also different on different nodes running at the same time
     RDouble g = (RDouble) DataPool.createAnonymous(DataType.DOUBLE, (Double) 3.141);
 
+    RVector h;
+
     public TestObject(String key) {
         super(key);
         b.setIfNull("Hello World");
@@ -33,7 +36,7 @@ public class TestObject extends AbstractObject {
 
     @Override
     public String toString() {
-        return a + ":" + b + ":" + c + ":" + d + ":" + e + ":" + f + ":" + g;
+        return a + ":" + b + ":" + c + ":" + d + ":" + e + ":" + f + ":" + g + ":" + h;
     }
 
     public void incrA() {
