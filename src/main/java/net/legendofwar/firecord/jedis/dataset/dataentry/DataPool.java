@@ -44,6 +44,7 @@ public class DataPool<T extends AbstractData<?>> {
 
     public DataPool(String key) {
         this.key = key;
+        long threadStart = System.currentTimeMillis();
         this.thread = new Thread(new Runnable() {
 
             @Override
@@ -64,10 +65,13 @@ public class DataPool<T extends AbstractData<?>> {
                         }
                     }
 
-                    if (lastChecked + 10000 < System.currentTimeMillis()) {
-                        long ts = System.currentTimeMillis() - 30000;
+                    long now = System.currentTimeMillis();
+                    // don't run gc for the first 60 minutes to allow restarting all nodes
+                    // then check if anyone has checked in the last 30s
+                    if (threadStart + 3600000l < now && lastChecked + 30000l < now) {
+                        long ts = now - 3600000l;
                         try (Jedis j = ClassicJedisPool.getJedis()) {
-                            j.set(key + ":updated", System.currentTimeMillis() + "");
+                            j.set(key + ":updated", now + "");
                             for (String s : j.smembers(key)) {
                                 String v = j.get(s + ":updated");
                                 if (v == null || Long.parseLong(v) < ts) {
@@ -76,10 +80,13 @@ public class DataPool<T extends AbstractData<?>> {
                                 }
                             }
                         }
+                        try (Jedis j = ClassicJedisPool.getJedis()) {
+                            j.set(key + ":updated", now + "");
+                        }
                     }
 
                     try {
-                        Thread.sleep(5000l + (long) (Math.random() * 10000));
+                        Thread.sleep(5000l + (long) (Math.random() * 20000));
                     } catch (InterruptedException e) {
                         // does not matter
                     }
@@ -95,6 +102,9 @@ public class DataPool<T extends AbstractData<?>> {
     private T _create(DataType dt, Object defaultValue) {
         String k = key + ":" + getNewId();
         T ad;
+        if (!dt.canBeLoaded()) {
+            return null;
+        }
         if (defaultValue == null) {
             ad = (T) AbstractData.callConstructor(k, dt.getC());
         } else {
