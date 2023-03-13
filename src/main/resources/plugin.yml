@@ -2,6 +2,7 @@ name: Firecord
 version: '${project.version}'
 main: net.legendofwar.firecord.spigot.FirecordSpigot
 api-version: 1.19
+load: STARTUP
 authors: [ FreeSoccerHDX, tobi20, Moritzwied ]
 commands:
   firecord:
