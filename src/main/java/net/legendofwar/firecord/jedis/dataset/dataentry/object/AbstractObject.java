@@ -8,6 +8,7 @@ import java.util.Set;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.Invalid;
 import redis.clients.jedis.Jedis;
 
 public abstract class AbstractObject extends AbstractData<Object> {
@@ -66,9 +67,12 @@ public abstract class AbstractObject extends AbstractData<Object> {
                             }
                             AbstractData<?> entry = AbstractData.create(entryKey);
                             if (entry == null) {
-                                entry = AbstractData.callConstructor(entryKey, field.getType());
+                                DataType dt = DataType.getByC(field.getType());
+                                if (dt != null && dt.canBeLoaded()) {
+                                    entry = AbstractData.callConstructor(entryKey, field.getType());
+                                }
                             }
-                            if (entry != null) {
+                            if (entry != null && !(entry instanceof Invalid)) {
                                 try {
                                     field.set(this, entry);
                                 } catch (IllegalArgumentException e) {
