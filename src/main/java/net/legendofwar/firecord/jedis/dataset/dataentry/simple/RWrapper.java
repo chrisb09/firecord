@@ -45,6 +45,7 @@ public class RWrapper extends SmallData<AbstractData<?>> {
 
     public void set(String key) {
         fromString(key);
+        this.set(this.value);
     }
 
     public void setIfNull(String key) {
