@@ -11,6 +11,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RFloat;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RJson;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RLong;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RShort;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
@@ -46,6 +47,7 @@ public enum DataType {
     INVENTORY(null, NodeType.SPIGOT),
 
     BYTEARRAY(RByteArray.class), // generalized QoL
+    JSON(RJson.class),
 
     // composite types
 
