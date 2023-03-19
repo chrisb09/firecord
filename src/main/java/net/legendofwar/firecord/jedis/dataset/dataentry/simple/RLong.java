@@ -1,47 +1,46 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-import org.jetbrains.annotations.NotNull;
-
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import org.jetbrains.annotations.NotNull;
 import redis.clients.jedis.Jedis;
 
-public class RInteger extends IntegerData<Integer> {
+public class RLong extends IntegerData<Long> {
 
-    public RInteger(String key, @NotNull Integer defaultValue) {
-        super(key, defaultValue, DataType.INTEGER);
+    public RLong(String key, @NotNull Long defaultValue) {
+        super(key, defaultValue, DataType.LONG);
     }
 
-    public RInteger(String key) {
-        this(key, 0);
+    public RLong(String key) {
+        this(key, 0L);
     }
 
     @Override
-    public Integer add(Integer value) {
+    public Long add(Long value) {
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            this.value = (Integer) (int) j.incrBy(key, value);
+            this.value = j.incrBy(key, value);
             this._update();
         }
         return this.value;
     }
 
     @Override
-    public Integer sub(Integer value) {
+    public Long sub(Long value) {
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            this.value = (Integer) (int) j.incrBy(key, -value);
+            this.value = j.incrBy(key, -value);
             this._update();
         }
         return this.value;
     }
 
     @Override
-    public Integer mul(Integer value) {
-        try (AbstractData<Integer> l = lock()) {
+    public Long mul(Long value) {
+        try (AbstractData<Long> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.value = Integer.parseInt(j.get(key)) * value;
+                this.value = Long.parseLong(j.get(key)) * value;
                 j.set(key, this.value.toString());
                 this._update();
             }
@@ -50,10 +49,10 @@ public class RInteger extends IntegerData<Integer> {
     }
 
     @Override
-    public Integer div(Integer value) {
-        try (AbstractData<Integer> l = lock()) {
+    public Long div(Long value) {
+        try (AbstractData<Long> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.value = Integer.parseInt(j.get(key)) / value;
+                this.value = Long.parseLong(j.get(key)) / value;
                 j.set(key, this.value.toString());
                 this._update();
             }
@@ -63,7 +62,7 @@ public class RInteger extends IntegerData<Integer> {
 
     @Override
     protected void fromString(String value) {
-        this.value = Integer.parseInt(value);
+        this.value = Long.parseLong(value);
     }
 
     @Override

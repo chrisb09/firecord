@@ -22,7 +22,7 @@ public class RItemStack extends LargeData<ItemStack> {
     protected void fromString(@NotNull String value) {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decode(value));
         try {
-            BukkitObjectInputStream inputData = new BukkitObjectInputStream(inputStream); ;
+            BukkitObjectInputStream inputData = new BukkitObjectInputStream(inputStream);
             ItemStack itemStack = null;
             Object input = inputData.readObject();
             if (input != null) {

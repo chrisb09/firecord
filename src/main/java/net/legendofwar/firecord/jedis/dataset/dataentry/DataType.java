@@ -4,11 +4,17 @@ import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.Invalid;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByte;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByteArray;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RChar;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RFloat;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RLong;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RShort;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RUUID;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
 import net.legendofwar.firecord.tool.NodeType;
@@ -17,15 +23,15 @@ public enum DataType {
 
     // small
     BOOLEAN(RBoolean.class),
-    CHAR(null),
+    CHAR(RChar.class),
     STRING(RString.class),
-    UUID(null),
+    UUID(RUUID.class),
     // numeric
-    BYTE(null),
-    SHORT(null),
+    BYTE(RByte.class),
+    SHORT(RShort.class),
     INTEGER(RInteger.class),
-    LONG(null),
-    FLOAT(null),
+    LONG(RLong.class),
+    FLOAT(RFloat.class),
     DOUBLE(RDouble.class),
 
     // mc

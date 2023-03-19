@@ -13,7 +13,7 @@ public class FirecordBungee extends Plugin {
     @Override
     public void onEnable() {
 
-        getLogger().info("Firecord - Spigot-Start registred.");
+        getLogger().info("Firecord - Bungeecord-Start registred.");
 
         String[] pathSplit = getDataFolder().getAbsolutePath().split("/");
         String serverName = pathSplit[pathSplit.length - 3];

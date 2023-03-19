@@ -9,6 +9,6 @@ public abstract class IntegerData<T extends Number> extends NumericData<T> {
         super(key, defaultValue, dt);
     }
 
-    public abstract T incr(T value);
+    //public abstract T incr(T value);
 
 }
