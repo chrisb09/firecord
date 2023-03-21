@@ -44,6 +44,10 @@ class RBoolean extends SmallData {
     
 }
 
+class RChar extends NumericData {
+    
+}
+
 class RString extends SmallData {
     
 }
@@ -56,8 +60,24 @@ class RWrapper extends SmallData {
     + void setIfNull()
 }
 
+class RByte extends NumericData {
+    
+}
+
+class RShort extends NumericData {
+    
+}
+
 class RInteger extends IntegerData {
 
+}
+
+class RLong extends NumericData {
+    
+}
+
+class RFloat extends NumericData {
+    
 }
 
 class RDouble extends NumericData {
@@ -71,6 +91,23 @@ class RItemStack extends LargeData {
 
 class RByteArray extends LargeData {
     
+}
+
+class RJson extends LargeData {
+    + boolean hasKey()
+    + String getAsString()
+    + String getAsInt()
+    + String getAsLong()
+    + String getAsDouble()
+    + String getAsBoolean()
+    + String getAsEnum()
+    + String getAsNumber()
+    + void putString()
+    + void putInt()
+    + void putLong()
+    + void putDouble()
+    + void putBoolean()
+    + void putEnum()
 }
 
 
