@@ -3,7 +3,6 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
 
 public class RChar extends SmallData<Character> {
 
