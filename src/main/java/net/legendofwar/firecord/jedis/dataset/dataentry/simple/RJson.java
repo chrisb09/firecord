@@ -11,12 +11,6 @@ public class RJson extends LargeData<JSONObject> {
     }
 
     @Override
-    public JSONObject get() {
-        // return a copy of the JSONObject returned by super.get()
-        return new JSONObject(super.get().toString());
-    }
-
-    @Override
     protected void fromString(@NotNull String value) {
         this.value = new JSONObject(value);
     }
@@ -65,28 +59,11 @@ public class RJson extends LargeData<JSONObject> {
         return this.value.getBoolean(key);
     }
 
-    /*
-    public Location getAsLocation(String key, Location defaultValue) {
-        if (!hasKey(key)) {
-            return defaultValue;
-        }
-        return Location.deserialize(this.value.getJSONObject(key).toMap());
-    }
-
-    public ItemStack getAsItemStack(String key, ItemStack defaultValue) {
-        if(!hasKey(key)) {
-            return defaultValue;
-        }
-        String itemStackString = this.value.getString(key);
-        return Minilib.getMethods().itemStackFromString(itemStackString);
-    }*/
-
     public <E extends Enum<E>> Enum<E> getAsEnum(String key, Class<E> enumClass, Enum<E> defaultValue) {
         if (!hasKey(key)) {
             return defaultValue;
         }
         return E.valueOf(enumClass, this.value.getString(key));
-        //return this.value.getEnum(enumClass, key);
     }
 
     public Number getAsNumber(String key, Number defaultValue) {
@@ -97,43 +74,27 @@ public class RJson extends LargeData<JSONObject> {
     }
 
     public void putString(String key, String value) {
-        this.value.put(key, value);
-        _update();
+        set(get().put(key, value));
     }
 
     public void putInt(String key, int value) {
-        this.value.put(key, value);
-        _update();
+        set(get().put(key, value));
     }
 
     public void putLong(String key, long value) {
-        this.value.put(key, value);
-        _update();
+        set(get().put(key, value));
     }
 
     public void putDouble(String key, double value) {
-        this.value.put(key, value);
-        _update();
+        set(get().put(key, value));
     }
 
     public void putBoolean(String key, boolean value) {
-        this.value.put(key, value);
-        _update();
+        set(get().put(key, value));
     }
-
-    /*
-    public void putLocation(String key, Location value) {
-        this.value.put(key, value.serialize());
-    }
-
-    public void putItemStack(String key, ItemStack value) {
-        this.value.put(key, Minilib.getMethods().itemStackToString(value));
-    }*/
 
     public void putEnum(String key, Enum<?> value) {
-        this.value.put(key, value.name());
-        _update();
+        set(get().put(key, value.name()));
     }
-
 
 }
