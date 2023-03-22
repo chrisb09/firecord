@@ -27,6 +27,8 @@ public class TestObject extends AbstractObject {
 
     RVector h;
 
+    REnum<DataType> i;
+
     public TestObject(String key) {
         super(key);
         b.setIfNull("Hello World");
@@ -36,7 +38,7 @@ public class TestObject extends AbstractObject {
 
     @Override
     public String toString() {
-        return a + ":" + b + ":" + c + ":" + d + ":" + e + ":" + f + ":" + g + ":" + h;
+        return a + ":" + b + ":" + c + ":" + d + ":" + e + ":" + f + ":" + g + ":" + h + ":" + i;
     }
 
     public void incrA() {
@@ -51,6 +53,10 @@ public class TestObject extends AbstractObject {
         int x = (1 + ((int) (Math.random() * 3)));
         System.out.println("Select testlist" + x);
         d.set("testlist" + x);
+    }
+
+    public void selectRandomDatatype() {
+        i.set(DataType.values()[(int) (Math.random()*DataType.values().length)]);
     }
 
 }

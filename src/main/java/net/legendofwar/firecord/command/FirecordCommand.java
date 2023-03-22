@@ -10,6 +10,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.tool.NodeType;
@@ -23,6 +24,7 @@ public class FirecordCommand {
     static RInteger test3 = null;
     static Object testis = null;
     static TestObject testob = null;
+    static REnum<DataType> testenum = null;
     static RList<RInteger> testlist1 = null;
     static RList<RInteger> testlist2 = null;
     static RList<AbstractData<?>> testlist3 = null;
@@ -38,6 +40,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testlist    §e list test command");
             sender.sendMessage("§b" + label + " testanon    §e anonymous type test command");
             sender.sendMessage("§b" + label + " testobject  §e test object command");
+            sender.sendMessage("§b" + label + " testenum    §e construct an enum");
             sender.sendMessage("§b" + label + " ping <node> §e broadcast test message");
             sender.sendMessage("§b" + label + " redis <key> §e get redis entry at key");
             sender.sendMessage("§b" + label + " help        §e show this help page");
@@ -173,7 +176,18 @@ public class FirecordCommand {
             testob.toggleE();
             sender.sendMessage("§atestob.selectRandomTestlist();");
             testob.selectRandomTestlist();
+            sender.sendMessage("§atestob.selectRandomDatatype();");
+            testob.selectRandomDatatype();
             sender.sendMessage("§btestob: §e" + testob);
+        } else if (args[0].equalsIgnoreCase("testenum")) {
+            if (testenum == null) {
+                testenum = new REnum<DataType>("testenum", DataType.STRING);
+            }
+            sender.sendMessage("§btestenum.toString(): §e" + testenum.toString());
+            DataType newValue = DataType.values()[(int) (Math.random()*DataType.values().length)];
+            sender.sendMessage("§atestenum rand. new Value: "+newValue.name());
+            testenum.set(newValue);
+            sender.sendMessage("§btestenum: §e" + testenum);
         }  else if (args[0].equalsIgnoreCase("loadis")) {
             if (Firecord.getNodeType() == NodeType.SPIGOT){
                 if (args.length==1) {
