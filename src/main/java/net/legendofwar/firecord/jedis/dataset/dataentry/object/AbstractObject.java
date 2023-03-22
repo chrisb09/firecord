@@ -71,6 +71,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                 if (dt != null && dt.canBeLoaded()) {
                                     entry = AbstractData.callConstructor(entryKey, field.getType());
                                 }
+                                if (dt == null) {
+                                    if (AbstractObject.class.isAssignableFrom(field.getType())){
+                                        entry = AbstractData.callConstructor(entryKey, field.getType());
+                                    }
+                                }
                             }
                             if (entry != null && !(entry instanceof Invalid)) {
                                 try {
