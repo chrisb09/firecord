@@ -16,7 +16,6 @@ public class RByte extends IntegerData<Byte> {
         this(key, (byte) 0);
     }
 
-
     @Override
     public Byte add(Byte value) {
         // single redis commands are atomic, therefore we don't need a lock

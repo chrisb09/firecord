@@ -3,7 +3,6 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import org.jetbrains.annotations.NotNull;
 
-
 public class RChar extends SmallData<Character> {
 
     public RChar(String key, @NotNull Character defaultValue) {
@@ -21,7 +20,7 @@ public class RChar extends SmallData<Character> {
 
     @Override
     public String toString() {
-        return ""+this.value;
+        return "" + this.value;
     }
 
 }

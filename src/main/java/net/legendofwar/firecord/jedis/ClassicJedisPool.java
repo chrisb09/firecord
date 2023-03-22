@@ -17,9 +17,8 @@ public class ClassicJedisPool {
     private static JedisPool pool = null;
     static HashMap<Jedis, String> last_requested_by = new HashMap<Jedis, String>();
 
-    @SuppressWarnings("all")
     public static CustomJedisPoolConfig<Jedis> buildPoolConfig() {
-        return new CustomJedisPoolConfig();
+        return new CustomJedisPoolConfig<Jedis>();
     }
 
     public static void destroy() {
