@@ -14,8 +14,31 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 
 public class RItemStack extends LargeData<ItemStack> {
 
+    private final int cacheTime;
+    private final int aggregateTime;
+
+    public RItemStack(String key, @NotNull ItemStack defaultValue, int cacheTime, int aggregateTime) {
+        super(key, defaultValue, DataType.ITEMSTACK);
+        this.cacheTime = cacheTime;
+        this.aggregateTime = aggregateTime;
+    }
+
     public RItemStack(String key, @NotNull ItemStack defaultValue) {
         super(key, defaultValue, DataType.ITEMSTACK);
+        this.cacheTime = 10000;
+        this.aggregateTime = 60000;
+    }
+
+    @Override
+    int getAggregateTime() {
+        // Unload after 60s without use
+        return aggregateTime;
+    }
+
+    @Override
+    int getCacheTime() {
+        // Update this key at most 10s after a change somewhere else happened
+        return cacheTime;
     }
 
     @Override
