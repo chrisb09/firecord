@@ -2,18 +2,14 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
-import org.jetbrains.annotations.NotNull;
 import redis.clients.jedis.Jedis;
 
-public class RLong extends IntegerData<Long> {
+public final class RLong extends NumericData<Long> {
 
-    public RLong(String key, @NotNull Long defaultValue) {
-        super(key, defaultValue, DataType.LONG);
-    }
+    final static Long DEFAULT_VALUE = 0l;
 
     public RLong(String key) {
-        this(key, 0L);
+        super(key);
     }
 
     @Override

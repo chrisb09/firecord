@@ -4,9 +4,10 @@ import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 
-public class RWrapper extends SmallData<AbstractData<?>> {
+public final class RWrapper extends SmallData<AbstractData<?>> {
+
+    final static Object DEFAULT_VALUE = null;
 
     final static AbstractData<?> NULL_ENTRY = new RString("null");
 
@@ -19,7 +20,8 @@ public class RWrapper extends SmallData<AbstractData<?>> {
      */
 
     public RWrapper(String key, @NotNull String objectKey) {
-        super(key, AbstractData.create(objectKey), DataType.WRAPPER);
+        super(key);
+        this.set(AbstractData.create(objectKey));
     }
 
     public RWrapper(String key) {
@@ -48,7 +50,7 @@ public class RWrapper extends SmallData<AbstractData<?>> {
         this.set(this.value);
     }
 
-    public void setIfNull(String key) {
+    public void setIfEmpty(String key) {
         if (this.value == null) {
             set(key);
         }

@@ -1,17 +1,11 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-import org.jetbrains.annotations.NotNull;
+public final class RBoolean extends SmallData<Boolean> {
 
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
-
-public class RBoolean extends SmallData<Boolean> {
-
-    public RBoolean(String key, @NotNull Boolean defaultValue) {
-        super(key, defaultValue, DataType.BOOLEAN);
-    }
+    final static Boolean DEFAULT_VALUE = false;
 
     public RBoolean(String key) {
-        this(key, false);
+        super(key);
     }
 
     @Override

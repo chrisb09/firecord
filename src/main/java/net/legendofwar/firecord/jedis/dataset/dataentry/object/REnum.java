@@ -5,7 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
 
 @SuppressWarnings("unchecked")
-public class REnum<T extends Enum<T>> extends AbstractObject {
+public final class REnum<T extends Enum<T>> extends SimpleAbstractObject<T> {
+
+    final static Enum<?> DEFAULT_VALUE = null;
 
     Class<T> c;
     RString className;
@@ -15,7 +17,7 @@ public class REnum<T extends Enum<T>> extends AbstractObject {
         super(key);
         c = (Class<T>) defaultValue.getClass();
         className.set(defaultValue.getClass().getName());
-        value.setIfNull(defaultValue.name());
+        value.setIfEmpty(defaultValue.name());
         if (value.get().length() == 0) {
             value.set(defaultValue.name());
         }
@@ -41,6 +43,7 @@ public class REnum<T extends Enum<T>> extends AbstractObject {
 
     void setC(Class<T> c) {
         this.c = c;
+        this.className.set(c.getName());
     }
 
     @Override
@@ -52,8 +55,16 @@ public class REnum<T extends Enum<T>> extends AbstractObject {
         return Enum.valueOf(c, this.value.get());
     }
 
-    public void set(T value) {
-        this.value.set(value.name());
+    public boolean set(T value) {
+        return this.value.set(value.name());
+    }
+
+    @Override
+    public boolean setIfEmpty(T defaultValue) {
+        if (this.value.get() == null) {
+            return this.set(defaultValue);
+        }
+        return false;
     }
 
 }

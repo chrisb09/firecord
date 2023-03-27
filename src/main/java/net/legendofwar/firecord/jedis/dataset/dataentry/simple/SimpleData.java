@@ -15,9 +15,10 @@ import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
 import redis.clients.jedis.Jedis;
 
-public abstract class SimpleData<T> extends AbstractData<T> {
+public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInterface<T> {
 
     // Queue of entries which should be unloaded (in the future)
     static PriorityQueue<SimpleData<?>> unloadQueue = new PriorityQueue<SimpleData<?>>(new Comparator<SimpleData<?>>() {
@@ -62,9 +63,9 @@ public abstract class SimpleData<T> extends AbstractData<T> {
                             }
                         }
                     }
-                    if (entry.getCacheTime() != 0){
+                    if (entry.getCacheTime() != 0) {
                         synchronized (unloadQueue) {
-                            if (unloadQueue.contains(entry)){
+                            if (unloadQueue.contains(entry)) {
                                 unloadQueue.remove(entry);
                             }
                         }
@@ -85,7 +86,8 @@ public abstract class SimpleData<T> extends AbstractData<T> {
                     while (element != null) {
                         synchronized (unloadQueue) {
                             if (element.getCacheTime() != 0) {
-                                element.timestamp_unload = (int) ( (System.currentTimeMillis() + element.getCacheTime()) % Integer.MAX_VALUE);
+                                element.timestamp_unload = (int) ((System.currentTimeMillis() + element.getCacheTime())
+                                        % Integer.MAX_VALUE);
                                 if (unloadQueue.contains(element)) {
                                     unloadQueue.remove(element);
                                 }
@@ -100,7 +102,7 @@ public abstract class SimpleData<T> extends AbstractData<T> {
                         element = recentlyModified.poll();
                     }
 
-                    long ts = System.nanoTime();
+                    long ts = System.currentTimeMillis();
 
                     // Manage unloadQueue
                     synchronized (unloadQueue) {
@@ -160,13 +162,28 @@ public abstract class SimpleData<T> extends AbstractData<T> {
     T value;                          //
 	// @formatter:on
 
-    SimpleData(String key, @NotNull T defaultValue, DataType dt) {
+    @SuppressWarnings("unchecked")
+    SimpleData(String key) {
         super(key);
-        loaded.put(key, this);
-        if (this._get(false) == null) {
-            this.set(defaultValue);
-            this._setType(key, dt);
+        DataType dt = DataType.getByC(this.getClass());
+        T defaultValue = (T) dt.getDefaultValue();
+        if (key != null) {
+            // make sure the object is NOT a temporary placeholder
+            loaded.put(key, this);
+            if (this._get(false) == null) {
+                this._setType(key, dt);
+                this.set(defaultValue);
+            }
+        } else {
+            this.value = defaultValue;
+            valid = true;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public final T getDefaultValue() {
+        DataType dt = DataType.getByC(this.getClass());
+        return (T) dt.getDefaultValue();
     }
 
     protected void _update() {
@@ -222,7 +239,7 @@ public abstract class SimpleData<T> extends AbstractData<T> {
         this.value = value;
         boolean success = false;
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            if (value != null){
+            if (value != null) {
                 success = j.set(key, this.toString()).equals("OK");
             } else {
                 success = j.del(key) == 1;
@@ -233,15 +250,18 @@ public abstract class SimpleData<T> extends AbstractData<T> {
     }
 
     /**
-     * returns true if value was changed
+     * checks whether the existing value is null OR equals to the default value
+     * 
      * @param value
-     * @return
+     * @return true if value was changed
      */
-    public boolean setIfNull(T value) {
-        if (get() == null){
+    public boolean setIfEmpty(T value) {
+        T v = get();
+        T defaultValue = getDefaultValue();
+        if (v == null || (defaultValue != null && defaultValue.equals(v))) {
             return set(value);
         }
-        return false; 
+        return false;
     }
 
     T _get(boolean modify) {

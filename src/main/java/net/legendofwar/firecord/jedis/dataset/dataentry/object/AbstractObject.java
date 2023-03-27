@@ -9,32 +9,53 @@ import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.Invalid;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import redis.clients.jedis.Jedis;
 
 public abstract class AbstractObject extends AbstractData<Object> {
 
-    public static HashMap<String, AbstractObject> loaded = new HashMap<String, AbstractObject>();
+    public static final HashMap<String, AbstractObject> loaded = new HashMap<String, AbstractObject>();
 
-    @SuppressWarnings("resource")
+    private static final HashMap<AbstractData<?>, AbstractObject> tempEntryParent = new HashMap<>();
+
+    public static AbstractData<?> replaceTemp(AbstractData<?> entry){
+        AbstractObject object = tempEntryParent.get(entry);
+        // get field of containing object
+        // get intended entry via object.key+::+fieldName
+        // set entry to field
+        // return intended entry
+        return null;
+    }
+
+    protected RInteger RInteger(Integer defaultValue) {
+        RInteger temp = new RInteger(null);
+        temp.setIfEmpty(defaultValue);
+        synchronized (tempEntryParent) {
+            tempEntryParent.put(temp, this);
+        }
+        return temp;
+    }
+
     protected AbstractObject(String key) {
         super(key);
-        AbstractObject object = this;
-        System.out.println(object.getClass().getName());
-        Set<String> existing = null;
-        try (AbstractData<?> ad = this.lock()) {
-            try (Jedis j = ClassicJedisPool.getJedis()) {
-                existing = j.smembers(key);
+        if (key != null) {
+            // make sure the object is NOT a temporary placeholde
+            Set<String> existing = null;
+            try (AbstractData<?> ad = this.lock()) {
+                try (Jedis j = ClassicJedisPool.getJedis()) {
+                    existing = j.smembers(key);
+                }
             }
-        }
-        loadObject(object.getClass(), existing);
-        if (existing.isEmpty()) {
-            _setType(key, DataType.OBJECT);
-            try (Jedis j = ClassicJedisPool.getJedis()) {
-                j.set(key + ":class", object.getClass().getName());
+            loadObject(this.getClass(), existing);
+            if (existing.isEmpty()) {
+                _setType(key, DataType.OBJECT);
+                try (Jedis j = ClassicJedisPool.getJedis()) {
+                    j.set(key + ":class", this.getClass().getName());
+                }
             }
-        }
-        synchronized (loaded) {
-            loaded.put(key, this);
+            synchronized (loaded) {
+                loaded.put(key, this);
+            }
         }
     }
 

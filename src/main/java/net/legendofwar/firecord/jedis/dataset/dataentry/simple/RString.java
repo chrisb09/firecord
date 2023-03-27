@@ -1,17 +1,11 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-import org.jetbrains.annotations.NotNull;
-
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
-
 public class RString extends SmallData<String> {
 
-    public RString(String key, @NotNull String defaultValue) {
-        super(key, defaultValue, DataType.STRING);
-    }
+    final static String DEFAULT_VALUE = "";
 
     public RString(String key) {
-        this(key, "");
+        super(key);
     }
 
     @Override

@@ -1,18 +1,13 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.UUID;
 
-public class RUUID extends SmallData<UUID> {
+public final class RUUID extends SmallData<UUID> {
 
-    public RUUID(String key, @NotNull UUID defaultValue) {
-        super(key, defaultValue, DataType.UUID);
-    }
+    final static UUID DEFAULT_VALUE = new UUID(0, 0);
 
     public RUUID(String key) {
-        this(key, UUID.randomUUID());
+        super(key);
     }
 
     @Override
@@ -22,7 +17,7 @@ public class RUUID extends SmallData<UUID> {
 
     @Override
     public String toString() {
-        return ""+this.value;
+        return "" + this.value;
     }
 
 }

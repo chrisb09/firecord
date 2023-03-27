@@ -2,18 +2,14 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
-import org.jetbrains.annotations.NotNull;
 import redis.clients.jedis.Jedis;
 
-public class RByte extends IntegerData<Byte> {
+public final class RByte extends NumericData<Byte> {
 
-    public RByte(String key, @NotNull Byte defaultValue) {
-        super(key, defaultValue, DataType.BYTE);
-    }
+    final static Byte DEFAULT_VALUE = 0;
 
     public RByte(String key) {
-        this(key, (byte) 0);
+        super(key);
     }
 
     @Override

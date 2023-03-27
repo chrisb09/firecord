@@ -5,6 +5,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
@@ -13,11 +14,14 @@ import java.lang.Math;
 
 public class TestObject extends AbstractObject {
 
-    private RInteger a;
-    RString b;
-    public final RBoolean c = null;
+    private RInteger testint = new RInteger("testint");
+    public Integer ti = 7;
+
+    private RInteger a; // = RInteger(25);
+    RString b; // = null;
+    public RBoolean c; // = null;
     RWrapper d;
-    final RBoolean e = new RBoolean("exampleboolean", true);
+    final RBoolean e = new RBoolean("exampleboolean");
 
     static RDouble f;
 
@@ -29,16 +33,24 @@ public class TestObject extends AbstractObject {
 
     REnum<DataType> i;
 
+    RItemStack j;
+
     public TestObject(String key) {
         super(key);
-        b.setIfNull("Hello World");
-        d.setIfNull("testlist1");
-        f.setIfNull(23.4);
+        b.setIfEmpty("Hello World");
+        d.setIfEmpty("testlist1");
+        f.setIfEmpty(23.4);
     }
 
     @Override
     public String toString() {
-        return a + ":" + b + ":" + c + ":" + d + ":" + e + ":" + f + ":" + g + ":" + h + ":" + i;
+        System.out.println(b);
+        return a + ":" + b + ":" + c + ":" + d + ":" + e + ":" + f + ":" + g + ":" + h + ":" + i + ":"
+                + ((j != null) ? j.toString() : "null");
+    }
+
+    public RInteger getTestInt() {
+        return testint;
     }
 
     public void incrA() {
@@ -56,7 +68,7 @@ public class TestObject extends AbstractObject {
     }
 
     public void selectRandomDatatype() {
-        i.set(DataType.values()[(int) (Math.random()*DataType.values().length)]);
+        i.set(DataType.values()[(int) (Math.random() * DataType.values().length)]);
     }
 
 }

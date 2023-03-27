@@ -1,5 +1,9 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.Invalid;
@@ -18,6 +22,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RUUID;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.SimpleData;
 import net.legendofwar.firecord.tool.NodeType;
 
 public enum DataType {
@@ -39,7 +44,8 @@ public enum DataType {
     LOCATION(null, NodeType.SPIGOT),
     VECTOR(RVector.class, NodeType.SPIGOT),
 
-    // replaces mc values on other nodes
+    // replaces mc values on other nodes,
+    // although sometimes null is used too
     INVALID(Invalid.class),
 
     // large
@@ -70,6 +76,9 @@ public enum DataType {
     // type
     final NodeType exclusive;
 
+    boolean initialized = false;
+    Object defaultValue;
+
     private DataType(Class<?> c) {
         this(c, null);
     }
@@ -85,6 +94,35 @@ public enum DataType {
 
     public final Class<?> getC() {
         return c;
+    }
+
+    public Object getDefaultValue() {
+        if (!initialized) {
+            this.initialized = true;
+            if (canBeLoaded()) {
+                Object dv = null;
+                try {
+                    if (c != null && SimpleData.class.isAssignableFrom(c)) {
+                        Field f = c.getDeclaredField("DEFAULT_VALUE");
+                        f.setAccessible(true);
+                        dv = f.get(null); // static field access
+                    }
+                } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
+                    e.printStackTrace();
+                    System.out.println(this.name());
+                    System.out.println("Declared Fields:");
+                    Arrays.asList(c.getDeclaredFields()).forEach(f -> System.out
+                            .print(f.getName() + (Modifier.isStatic(f.getModifiers()) ? "[static]" : "") + ", "));
+                    System.out.println();
+                    dv = null;
+                }
+                this.defaultValue = dv;
+            } else {
+                
+                this.defaultValue = null;
+            }
+        }
+        return this.defaultValue;
     }
 
     public static DataType getByC(Class<?> c) {

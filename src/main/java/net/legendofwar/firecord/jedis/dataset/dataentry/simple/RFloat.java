@@ -2,18 +2,14 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
-import org.jetbrains.annotations.NotNull;
 import redis.clients.jedis.Jedis;
 
-public class RFloat extends NumericData<Float> {
+public final class RFloat extends NumericData<Float> {
 
-    public RFloat(String key, @NotNull Float defaultValue) {
-        super(key, defaultValue, DataType.FLOAT);
-    }
+    final static Float DEFAULT_VALUE = 0.0f;
 
     public RFloat(String key) {
-        this(key, 0f);
+        super(key);
     }
 
     @Override

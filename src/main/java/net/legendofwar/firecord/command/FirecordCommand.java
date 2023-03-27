@@ -53,7 +53,8 @@ public class FirecordCommand {
             Firecord.broadcast("test", "Hello World");
         } else if (args[0].equalsIgnoreCase("serialize")) {
             if (test == null) {
-                test = new RInteger("testint", 0);
+                test = new RInteger("testint");
+                test.setIfEmpty(0);
             }
         } else if (args[0].equalsIgnoreCase("testlist")) {
             if (testlist1 == null) {
@@ -68,19 +69,22 @@ public class FirecordCommand {
             if (test1 == null) {
                 test1 = (RInteger) AbstractData.create("testint1");
                 if (test1 == null){
-                    test1 = new RInteger("testint1", 1);
+                    test1 = new RInteger("testint1");
+                    test1.setIfEmpty(1);
                 }
             }
             if (test2 == null) {
                 test2 = (RInteger) AbstractData.create("testint2");
                 if (test2 == null){
-                    test2 = new RInteger("testint2", 2);
+                    test2 = new RInteger("testint2");
+                    test2.setIfEmpty(2);
                 }
             }
             if (test3 == null) {
                 test3 = (RInteger) AbstractData.create("testint3");
                 if (test3 == null){
-                    test3 = new RInteger("testint3", 3);
+                    test3 = new RInteger("testint3");
+                    test3.setIfEmpty(3);
                 }
             }
             String logKey = new String(Base64.getEncoder().encode(testlist2.getKey().getBytes()));
@@ -156,7 +160,7 @@ public class FirecordCommand {
             }
         } else if (args[0].equalsIgnoreCase("testint")) {
             if (test == null) {
-                test = new RInteger("testint", 0);
+                test = new RInteger("testint");
             }
             sender.sendMessage("§btestint: §e" + test.get());
             sender.sendMessage("§atestint++;");
@@ -196,7 +200,7 @@ public class FirecordCommand {
                     org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(args[1]);
                     if (p != null) {
                         if (testis == null) {
-                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis", new org.bukkit.inventory.ItemStack(org.bukkit.Material.APPLE) );   
+                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis");   
                         }
                         p.getInventory().setItemInMainHand(((net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack) testis).get());
                     }else{
@@ -214,7 +218,7 @@ public class FirecordCommand {
                     org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(args[1]);
                     if (p != null) {
                         if (testis == null) {
-                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis", new org.bukkit.inventory.ItemStack(org.bukkit.Material.APPLE) );   
+                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis");   
                         }
                         ((net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack) (testis)).set(p.getInventory().getItemInMainHand());
                     }else{

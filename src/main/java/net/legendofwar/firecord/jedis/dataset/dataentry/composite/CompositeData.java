@@ -47,12 +47,15 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
     CompositeData(String key, E data, DataType dt) {
         super(key);
         this.data = data; // should be empty at this point
-        this._load(); // loads data if it exists
-        synchronized (loaded) {
-            loaded.put(key, this);
-        }
-        if (this.isEmpty()) {
-            this._setType(key, dt);
+        if (key != null) {
+            // make sure the object is NOT a temporary placeholde
+            this._load(); // loads data if it exists
+            synchronized (loaded) {
+                loaded.put(key, this);
+            }
+            if (this.isEmpty()) {
+                this._setType(key, dt);
+            }
         }
     }
 

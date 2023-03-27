@@ -105,10 +105,12 @@ public class DataPool<T extends AbstractData<?>> {
         if (!dt.canBeLoaded()) {
             return null;
         }
-        if (defaultValue == null) {
             ad = (T) AbstractData.callConstructor(k, dt.getC());
-        } else {
-            ad = (T) AbstractData.callConstructor(k, dt.getC(), defaultValue);
+        
+        if (defaultValue != null) {
+            if (ad instanceof SimpleInterface) {
+                ((SimpleInterface<Object>) (ad)).set(defaultValue);
+            }
         }
         synchronized (curated) {
             curated.put(k, ad);

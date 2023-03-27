@@ -36,33 +36,6 @@ public abstract class AbstractData<T> implements Closeable {
     }
 
     /**
-     * This calls the constructor that provides a default value
-     * @param key
-     * @param c
-     * @param defaultValue
-     * @return
-     */
-    public static AbstractData<?> callConstructor(@NotNull String key, @NotNull Class<?> c, Object defaultValue) {
-
-        try {
-            return (AbstractData<?>) c.getDeclaredConstructor(String.class, defaultValue.getClass()).newInstance(key, defaultValue);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
      * Creates the corresponding data structure for a key - if it exists that is.
      * If we already have loaded the corresponding datastructure return that
      * instead.
@@ -134,9 +107,14 @@ public abstract class AbstractData<T> implements Closeable {
 
     protected AbstractData(String key) {
         this.key = key;
-        this.lock = new JedisLock(key + ":lock");
-        synchronized (loaded) {
-            loaded.put(key, this);
+        if (key != null) {
+            // make sure the object is NOT a temporary placeholde
+            this.lock = new JedisLock(key + ":lock");
+            synchronized (loaded) {
+                loaded.put(key, this);
+            }
+        } else {
+            lock = null;
         }
     }
 
@@ -158,6 +136,15 @@ public abstract class AbstractData<T> implements Closeable {
 
     public final String getKey() {
         return key;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected AbstractData<T> replaceIfTemp() {
+        if (this.key == null) {
+            return (AbstractData<T>) AbstractObject.replaceTemp(this);
+        } else {
+            return this;
+        }
     }
 
 }

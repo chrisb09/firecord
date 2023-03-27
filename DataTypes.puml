@@ -22,7 +22,7 @@ abstract SimpleData<T> extends AbstractData {
     + {static} HashMap<String, SimpleData> loaded
     + T get()
     + boolean set()
-    + boolean setIfNull()
+    + boolean setIfEmpty()
 }
 
 class Invalid extends AbstractData {
@@ -34,10 +34,6 @@ abstract NumericData<T> extends SmallData {
     + {abstract} T sub();
     + {abstract} T mul();
     + {abstract} T div();
-}
-
-abstract IntegerData<T> extends NumericData {
-    + T incr();
 }
 
 class RBoolean extends SmallData {
@@ -57,7 +53,8 @@ class RVector extends SmallData {
 }
 
 class RWrapper extends SmallData {
-    + void setIfNull()
+    + void setIfEmpty()
+    + T getDefaultValue()
 }
 
 class RByte extends NumericData {
@@ -68,7 +65,7 @@ class RShort extends NumericData {
     
 }
 
-class RInteger extends IntegerData {
+class RInteger extends NumericData {
 
 }
 

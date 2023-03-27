@@ -4,41 +4,20 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 
-public class RItemStack extends LargeData<ItemStack> {
+public final class RItemStack extends DynamicLargeData<ItemStack> {
 
-    private final int cacheTime;
-    private final int aggregateTime;
+    final static ItemStack DEFAULT_VALUE = new ItemStack(Material.AIR, 1);
 
-    public RItemStack(String key, @NotNull ItemStack defaultValue, int cacheTime, int aggregateTime) {
-        super(key, defaultValue, DataType.ITEMSTACK);
-        this.cacheTime = cacheTime;
-        this.aggregateTime = aggregateTime;
-    }
-
-    public RItemStack(String key, @NotNull ItemStack defaultValue) {
-        super(key, defaultValue, DataType.ITEMSTACK);
-        this.cacheTime = 10000;
-        this.aggregateTime = 60000;
-    }
-
-    @Override
-    int getAggregateTime() {
-        // Unload after 60s without use
-        return aggregateTime;
-    }
-
-    @Override
-    int getCacheTime() {
-        // Update this key at most 10s after a change somewhere else happened
-        return cacheTime;
+    public RItemStack(String key) {
+        super(key);
     }
 
     @Override
@@ -60,7 +39,7 @@ public class RItemStack extends LargeData<ItemStack> {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
@@ -73,5 +52,5 @@ public class RItemStack extends LargeData<ItemStack> {
 
         return new String(Base64Coder.encode(outputStream.toByteArray()));
     }
-    
+
 }

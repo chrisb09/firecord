@@ -2,11 +2,8 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.jetbrains.annotations.NotNull;
-
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.MessageReceiver;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 
 public abstract class LargeData<T> extends SimpleData<T> {
 
@@ -41,20 +38,25 @@ public abstract class LargeData<T> extends SimpleData<T> {
 
     }
 
-    LargeData(String key, @NotNull T defaultValue, DataType dt) {
-        super(key, defaultValue, dt);
+    LargeData(String key) {
+        super(key);
     }
 
     @Override
     int getAggregateTime() {
-        // Unload after 60s without use
-        return 60000;
+        // Update this key at most 10s after a change somewhere else happened
+        // A higher value can save bandwith by skipping frequents changes
+        // at the cost of a larger chance of a cache miss caused by outdated data
+        return 10000;
     }
 
     @Override
     int getCacheTime() {
-        // Update this key at most 10s after a change somewhere else happened
-        return 10000;
+        // Unload after 60s without use
+        // A higher value means we store the data for longer periods of time in
+        // memory, reducing the chance of cache misses at the cost of a higher
+        // memory usage
+        return 60000;
     }
     
 

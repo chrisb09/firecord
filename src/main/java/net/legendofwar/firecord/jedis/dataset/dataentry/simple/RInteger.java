@@ -1,20 +1,15 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-import org.jetbrains.annotations.NotNull;
-
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import redis.clients.jedis.Jedis;
 
-public class RInteger extends IntegerData<Integer> {
+public class RInteger extends NumericData<Integer> {
 
-    public RInteger(String key, @NotNull Integer defaultValue) {
-        super(key, defaultValue, DataType.INTEGER);
-    }
+    final static Integer DEFAULT_VALUE = 0;
 
     public RInteger(String key) {
-        this(key, 0);
+        super(key);
     }
 
     @Override

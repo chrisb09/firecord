@@ -1,13 +1,14 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 public class RJson extends LargeData<JSONObject> {
 
-    public RJson(String key, JSONObject defaultValue) {
-        super(key, defaultValue, DataType.JSON);
+    final static JSONObject DEFAULT_VALUE = new JSONObject();
+
+    public RJson(String key) {
+        super(key);
     }
 
     @Override
