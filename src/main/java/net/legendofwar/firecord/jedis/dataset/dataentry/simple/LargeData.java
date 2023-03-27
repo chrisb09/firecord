@@ -12,12 +12,16 @@ public abstract class LargeData<T> extends SimpleData<T> {
         JedisCommunication.subscribe("update_key_large", new MessageReceiver() {
 
             @Override
+            @SuppressWarnings("unchecked")
             public void receive(String channel, String sender, boolean broadcast, String message) {
-                SimpleData<?> entry = null;
+                SimpleData<Object> entry = null;
                 synchronized (loaded) {
                     if (loaded.containsKey(message)) {
-                        entry = loaded.get(message);
+                        entry = (SimpleData<Object>) loaded.get(message);
                         entry.valid = false;
+                        if (entry.listener != null){
+                            entry.listener.accept(entry);
+                        }
                     }
                 }
                 if (entry != null) {

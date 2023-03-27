@@ -13,13 +13,18 @@ public abstract class SmallData<T> extends SimpleData<T> {
         JedisCommunication.subscribe("update_key_small", new MessageReceiver() {
 
             @Override
+            @SuppressWarnings("unchecked")
             public void receive(String channel, String sender, boolean broadcast, String message) {
                 String[] parts = message.split(":");
                 String key = new String(Base64.getDecoder().decode(parts[0]));
                 String value = String.join(":", Arrays.copyOfRange(parts, 1, parts.length, parts.getClass()));
                 synchronized (loaded) {
                     if (loaded.containsKey(key)) {
-                        ((SmallData<?>) loaded.get(key)).fromString(value);
+                        SmallData<Object> sd = ((SmallData<Object>) loaded.get(key));
+                        sd.fromString(value);
+                        if (sd.listener != null){
+                            sd.listener.accept(sd);
+                        }
                     }
                 }
             }

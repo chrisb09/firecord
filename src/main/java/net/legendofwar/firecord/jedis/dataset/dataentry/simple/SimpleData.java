@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -156,10 +157,13 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
     }
 
     // @formatter:off
-	int timestamp_unload = 0;		  // timestamp in ms
+
+    int timestamp_unload = 0;       // timestamp in ms
 	int timestamp_update = 0;       // timestamp in ms
-	boolean valid = false;            // determines if we hold a valid copy
-    T value;                          //
+	boolean valid = false;          // determines if we hold a valid copy
+    T value;                        //
+    Consumer<SimpleInterface<T>> listener = null;
+
 	// @formatter:on
 
     @SuppressWarnings("unchecked")
@@ -247,6 +251,10 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
             this._update();
         }
         return success;
+    }
+
+    public void listen(Consumer<SimpleInterface<T>> listener){
+        this.listener = listener;
     }
 
     /**
