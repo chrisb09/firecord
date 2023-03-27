@@ -30,7 +30,7 @@ public class JedisCommunication extends JedisPubSub {
 
             public void run() {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                    System.out.println("subscribe to: "+String.join(", ", handler.channels));
+                    System.out.println("subscribe to: " + String.join(", ", handler.channels));
                     j.subscribe(handler, handler.channels);
                 }
             }
@@ -57,9 +57,9 @@ public class JedisCommunication extends JedisPubSub {
 
             @Override
             public void receive(String channel, String sender, boolean broadcast, String message) {
-                System.out.println("Receive test message from "+sender+"(broadcast="+broadcast+"): "+message);
+                System.out.println("Receive test message from " + sender + "(broadcast=" + broadcast + "): " + message);
             }
-            
+
         });
 
         // test channel
@@ -67,9 +67,9 @@ public class JedisCommunication extends JedisPubSub {
 
             @Override
             public void receive(String channel, String sender, boolean broadcast, String message) {
-                System.out.println("["+sender+"]: "+message);
+                System.out.println("[" + sender + "]: " + message);
             }
-            
+
         });
 
         // ping channel
@@ -78,10 +78,11 @@ public class JedisCommunication extends JedisPubSub {
             @Override
             public void receive(String channel, String sender, boolean broadcast, String message) {
                 long delta = System.nanoTime() - Long.parseLong(message);
-                System.out.println("Received ping from "+sender+"(broadcast="+broadcast+"): "+Units.getTimeDelta(delta));
+                System.out.println(
+                        "Received ping from " + sender + "(broadcast=" + broadcast + "): " + Units.getTimeDelta(delta));
                 publish(sender, "pong", message);
             }
-            
+
         });
 
         // ping channel
@@ -90,9 +91,10 @@ public class JedisCommunication extends JedisPubSub {
             @Override
             public void receive(String channel, String sender, boolean broadcast, String message) {
                 long delta = System.nanoTime() - Long.parseLong(message);
-                System.out.println("Received pong from "+sender+"(broadcast="+broadcast+"): rtt="+Units.getTimeDelta(delta));
+                System.out.println("Received pong from " + sender + "(broadcast=" + broadcast + "): rtt="
+                        + Units.getTimeDelta(delta));
             }
-            
+
         });
     }
 
@@ -104,7 +106,7 @@ public class JedisCommunication extends JedisPubSub {
 
     private static void updateNodes() {
         synchronized (nodes) {
-            try (Jedis j = ClassicJedisPool.getJedis()) { 
+            try (Jedis j = ClassicJedisPool.getJedis()) {
                 nodesLock.lock();
                 try {
                     nodes.clear();
@@ -180,7 +182,10 @@ public class JedisCommunication extends JedisPubSub {
                 nodes.add(sender);
             }
         }
-        String rest = parts[2];
+        String rest = "";
+        if (parts.length >= 3) {
+            rest = parts[2];
+        }
         for (int i = 3; i < parts.length; i++) {
             rest += ":" + parts[i];
         }
@@ -191,7 +196,7 @@ public class JedisCommunication extends JedisPubSub {
             } else {
                 System.out.println("Received message in channel currently not handled by any listener.");
                 System.out.println("Message channel: '" + channel + "'");
-                System.out.println("Currently registred channels: "+String.join(", ", receivers.keySet()));
+                System.out.println("Currently registred channels: " + String.join(", ", receivers.keySet()));
             }
         }
         if (recv != null) {
@@ -201,7 +206,13 @@ public class JedisCommunication extends JedisPubSub {
 
     @Override
     public void onMessage(String redis_channel, String message) {
-        this.receive(message, redis_channel.equals("smsg:broadcast"));
+        try {
+            this.receive(message, redis_channel.equals("smsg:broadcast"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error in message on redis_channel " + redis_channel);
+            System.out.println("Message: " + message);
+        }
     }
 
     @Override
