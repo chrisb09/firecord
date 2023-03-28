@@ -58,7 +58,7 @@ public abstract class SmallData<T> extends SimpleData<T> {
                 String msg = Base64.getEncoder().encodeToString(this.key.getBytes()) + ":" + this.toString();
                 JedisCommunication.broadcast("update_key_small", msg);
             } else {
-                JedisCommunication.broadcast("del_key", this.key);
+                JedisCommunication.broadcast("del_key_value", this.key);
             }
         }
     }

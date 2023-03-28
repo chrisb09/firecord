@@ -72,7 +72,7 @@ public abstract class LargeData<T> extends SimpleData<T> {
             if (this.value != null) {
                 JedisCommunication.broadcast("update_key_large", this.key);
             } else {
-                JedisCommunication.broadcast("del_key", this.key);
+                JedisCommunication.broadcast("del_key_value", this.key);
             }
         }
     }

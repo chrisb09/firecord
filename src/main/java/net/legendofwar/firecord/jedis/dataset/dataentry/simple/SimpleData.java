@@ -44,7 +44,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 
     static {
 
-        JedisCommunication.subscribe("del_key", new MessageReceiver() {
+        JedisCommunication.subscribe("del_key_value", new MessageReceiver() {
 
             @Override
             public void receive(String channel, String sender, boolean broadcast, String message) {
