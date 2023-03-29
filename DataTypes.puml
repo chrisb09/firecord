@@ -2,6 +2,12 @@
 
 abstract AbstractData
 
+interface SimpleInterface<T> {
+    + T get()
+    + boolean set()
+    + boolean setIfEmpty()
+}
+
 abstract AbstractData <T> {
     + {static} HashMap<String, AbstractData> loaded
     + {static} AbstractData create()
@@ -18,11 +24,8 @@ abstract LargeData <T> extends SimpleData {
 
 }
 
-abstract SimpleData<T> extends AbstractData {
+abstract SimpleData<T> extends AbstractData implements SimpleInterface {
     + {static} HashMap<String, SimpleData> loaded
-    + T get()
-    + boolean set()
-    + boolean setIfEmpty()
 }
 
 class Invalid extends AbstractData {
@@ -40,7 +43,7 @@ class RBoolean extends SmallData {
     
 }
 
-class RChar extends NumericData {
+class RChar extends SmallData {
     
 }
 
@@ -52,7 +55,7 @@ class RVector extends SmallData {
     
 }
 
-class RWrapper extends SmallData {
+class RWrapper<T> extends SmallData {
     + void setIfEmpty()
     + T getDefaultValue()
 }
@@ -149,6 +152,25 @@ abstract AbstractObject extends AbstractData {
 }
 
 AbstractObject *-- AbstractData
+
+abstract SimpleAbstractObject extends AbstractObject implements SimpleInterface {
+
+}
+
+class REnum extends SimpleAbstractObject {
+
+}
+
+REnum *-- RString
+
+
+class DataGenerator<T extends AbstractData> {
+    + {static} AbstractData<?> createAnonymous()
+    + {static} void delete()
+    + T create()
+}
+
+DataGenerator - AbstractData
 
 
 
