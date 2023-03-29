@@ -7,6 +7,8 @@ import java.util.HashMap;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.Firecord;
+import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
@@ -14,6 +16,25 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.simple.Invalid;
 import redis.clients.jedis.Jedis;
 
 public abstract class AbstractData<T> implements Closeable {
+
+    static {
+
+        Firecord.subscribe("del_key", new MessageReceiver() {
+
+            @Override
+            public void receive(String channel, String sender, boolean broadcast, String message) {
+                AbstractData<?> ad = null;
+                synchronized (loaded) {
+                    if (loaded.containsKey(message)){
+                        ad = loaded.get(message);
+                    }
+                }
+                DataGenerator.delete(ad, false);
+            }
+            
+        });
+
+    }
 
     public static AbstractData<?> callConstructor(@NotNull String key, @NotNull Class<?> c) {
 

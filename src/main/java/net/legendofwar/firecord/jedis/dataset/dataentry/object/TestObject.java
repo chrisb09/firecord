@@ -1,6 +1,6 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.object;
 
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataPool;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
@@ -27,7 +27,7 @@ public class TestObject extends AbstractObject {
 
     // This creates a new RDouble every time the class is initialized, meaning
     // they're also different on different nodes running at the same time
-    RDouble g = (RDouble) DataPool.createAnonymous(DataType.DOUBLE, (Double) 3.141);
+    RDouble g = (RDouble) DataGenerator.createAnonymous(DataType.DOUBLE, (Double) 3.141);
 
     RVector h;
 
