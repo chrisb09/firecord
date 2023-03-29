@@ -7,7 +7,7 @@ import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataPool;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
@@ -167,7 +167,7 @@ public class FirecordCommand {
             test.add(1);
             sender.sendMessage("§btestint: §e" + test.get());
         }  else if (args[0].equalsIgnoreCase("testanon")) {
-            AbstractData<?> ad = DataPool.createAnonymous(DataType.DOUBLE);
+            AbstractData<?> ad = DataGenerator.createAnonymous(DataType.DOUBLE);
             sender.sendMessage("§btestanon: §e" + ad);
         }  else if (args[0].equalsIgnoreCase("testobject")) {
             if (testob == null) {
