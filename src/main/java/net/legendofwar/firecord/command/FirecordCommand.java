@@ -13,10 +13,13 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RLong;
 import net.legendofwar.firecord.tool.NodeType;
 import redis.clients.jedis.Jedis;
 
 public class FirecordCommand {
+
+    static DataGenerator<RLong> dg = new DataGenerator<>("longdata", RLong.class);
 
     static RInteger test = null;
     static RInteger test1 = null;
@@ -68,29 +71,29 @@ public class FirecordCommand {
             }
             if (test1 == null) {
                 test1 = (RInteger) AbstractData.create("testint1");
-                if (test1 == null){
+                if (test1 == null) {
                     test1 = new RInteger("testint1");
                     test1.setIfEmpty(1);
                 }
             }
             if (test2 == null) {
                 test2 = (RInteger) AbstractData.create("testint2");
-                if (test2 == null){
+                if (test2 == null) {
                     test2 = new RInteger("testint2");
                     test2.setIfEmpty(2);
                 }
             }
             if (test3 == null) {
                 test3 = (RInteger) AbstractData.create("testint3");
-                if (test3 == null){
+                if (test3 == null) {
                     test3 = new RInteger("testint3");
                     test3.setIfEmpty(3);
                 }
             }
             String logKey = new String(Base64.getEncoder().encode(testlist2.getKey().getBytes()));
-            sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
-            sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
-            sender.sendMessage("§btestlist3: §e"+String.join(",", Arrays.toString(testlist3.toArray())));
+            sender.sendMessage("§btestlist1: §e" + String.join(",", Arrays.toString(testlist1.toArray())));
+            sender.sendMessage("§btestlist2: §e" + String.join(",", Arrays.toString(testlist2.toArray())));
+            sender.sendMessage("§btestlist3: §e" + String.join(",", Arrays.toString(testlist3.toArray())));
             sender.sendMessage("§a#1,#2,#3 clear");
             testlist1.clear();
             testlist2.clear();
@@ -101,62 +104,65 @@ public class FirecordCommand {
             testlist1.add(test2);
             testlist1.add(test3);
             sender.sendMessage("§btestlist1: §e" + testlist1.size());
-            sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
+            sender.sendMessage("§btestlist1: §e" + String.join(",", Arrays.toString(testlist1.toArray())));
             sender.sendMessage("§a#2 add Elements of list #1");
             testlist2.addAll(testlist1);
             JedisCommunication.broadcast("log", "After first add: ");
-            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
             JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§a#2 add Elements of list #1 at position 1");
             testlist2.addAll(1, testlist1);
             JedisCommunication.broadcast("log", "After second add: ");
-            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
             JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§a#2 add Elements of list #1 at position 3");
             testlist2.addAll(3, testlist1);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
-            sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            sender.sendMessage("§btestlist2: §e" + String.join(",", Arrays.toString(testlist2.toArray())));
             JedisCommunication.broadcast("log", "After adding: ");
-            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
             JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§a#3 add Element 3");
             testlist3.add(test3);
             sender.sendMessage("§btestlist3: §e" + testlist3.size());
-            sender.sendMessage("§btestlist3: §e"+String.join(",", Arrays.toString(testlist3.toArray())));
+            sender.sendMessage("§btestlist3: §e" + String.join(",", Arrays.toString(testlist3.toArray())));
             sender.sendMessage("§a#1 remove all elements found in list #3");
             testlist1.removeAll(testlist3);
             sender.sendMessage("§btestlist1: §e" + testlist1.size());
-            sender.sendMessage("§btestlist1: §e"+String.join(",", Arrays.toString(testlist1.toArray())));
+            sender.sendMessage("§btestlist1: §e" + String.join(",", Arrays.toString(testlist1.toArray())));
             sender.sendMessage("§a#2 remove element #4");
             testlist2.remove(4);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
-            sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            sender.sendMessage("§btestlist2: §e" + String.join(",", Arrays.toString(testlist2.toArray())));
             JedisCommunication.broadcast("log", "After remove of element nr 4: ");
-            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
             JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§a#2 retain all elements found in list #3");
             testlist2.retainAll(testlist3);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
-            sender.sendMessage("§btestlist2: §e"+String.join(",", Arrays.toString(testlist2.toArray())));
+            sender.sendMessage("§btestlist2: §e" + String.join(",", Arrays.toString(testlist2.toArray())));
             JedisCommunication.broadcast("log", "After retaining all elements found in #3: ");
-            JedisCommunication.broadcast("log", "#2 "+String.join(",", Arrays.toString(testlist2.toArray())));
+            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
             JedisCommunication.broadcast("RList_log", logKey);
             sender.sendMessage("§b#3 set entry nr. 0 to element 1");
             testlist3.set(0, test1);
             sender.sendMessage("§btestlist3: §e" + testlist3.size());
-            sender.sendMessage("§btestlist3: §e"+String.join(",", Arrays.toString(testlist3.toArray())));
+            sender.sendMessage("§btestlist3: §e" + String.join(",", Arrays.toString(testlist3.toArray())));
             sender.sendMessage("");
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 sender.sendMessage("§bFinal values: ");
                 sender.sendMessage("§btestlist1:");
-                sender.sendMessage("§bCache: §a"+String.join(",", Arrays.toString(testlist1.toArray())));
-                sender.sendMessage("§bRedis: §c"+String.join(",", Arrays.toString(j.lrange(testlist1.getKey(), 0, -1).toArray())));
+                sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist1.toArray())));
+                sender.sendMessage("§bRedis: §c"
+                        + String.join(",", Arrays.toString(j.lrange(testlist1.getKey(), 0, -1).toArray())));
                 sender.sendMessage("§btestlist2:");
-                sender.sendMessage("§bCache: §a"+String.join(",", Arrays.toString(testlist2.toArray())));
-                sender.sendMessage("§bRedis: §c"+String.join(",", Arrays.toString(j.lrange(testlist2.getKey(), 0, -1).toArray())));
+                sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist2.toArray())));
+                sender.sendMessage("§bRedis: §c"
+                        + String.join(",", Arrays.toString(j.lrange(testlist2.getKey(), 0, -1).toArray())));
                 sender.sendMessage("§btestlist3:");
-                sender.sendMessage("§bCache: §a"+String.join(",", Arrays.toString(testlist3.toArray())));
-                sender.sendMessage("§bRedis: §c"+String.join(",", Arrays.toString(j.lrange(testlist3.getKey(), 0, -1).toArray())));
+                sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist3.toArray())));
+                sender.sendMessage("§bRedis: §c"
+                        + String.join(",", Arrays.toString(j.lrange(testlist3.getKey(), 0, -1).toArray())));
             }
         } else if (args[0].equalsIgnoreCase("testint")) {
             if (test == null) {
@@ -166,10 +172,10 @@ public class FirecordCommand {
             sender.sendMessage("§atestint++;");
             test.add(1);
             sender.sendMessage("§btestint: §e" + test.get());
-        }  else if (args[0].equalsIgnoreCase("testanon")) {
-            AbstractData<?> ad = DataGenerator.createAnonymous(DataType.DOUBLE);
-            sender.sendMessage("§btestanon: §e" + ad);
-        }  else if (args[0].equalsIgnoreCase("testobject")) {
+        } else if (args[0].equalsIgnoreCase("testanon")) {
+            RLong ad = dg.create(7l);
+            sender.sendMessage("§btestanon: §e" + ad.getKey() + "=§a" + ad);
+        } else if (args[0].equalsIgnoreCase("testobject")) {
             if (testob == null) {
                 testob = new TestObject("testobject");
             }
@@ -188,41 +194,43 @@ public class FirecordCommand {
                 testenum = new REnum<DataType>("testenum", DataType.STRING);
             }
             sender.sendMessage("§btestenum.toString(): §e" + testenum.toString());
-            DataType newValue = DataType.values()[(int) (Math.random()*DataType.values().length)];
-            sender.sendMessage("§atestenum rand. new Value: "+newValue.name());
+            DataType newValue = DataType.values()[(int) (Math.random() * DataType.values().length)];
+            sender.sendMessage("§atestenum rand. new Value: " + newValue.name());
             testenum.set(newValue);
             sender.sendMessage("§btestenum: §e" + testenum);
-        }  else if (args[0].equalsIgnoreCase("loadis")) {
-            if (Firecord.getNodeType() == NodeType.SPIGOT){
-                if (args.length==1) {
-                    sender.sendMessage("§c"+label+" loadis <player>");
+        } else if (args[0].equalsIgnoreCase("loadis")) {
+            if (Firecord.getNodeType() == NodeType.SPIGOT) {
+                if (args.length == 1) {
+                    sender.sendMessage("§c" + label + " loadis <player>");
                 } else {
                     org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(args[1]);
                     if (p != null) {
                         if (testis == null) {
-                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis");   
+                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis");
                         }
-                        p.getInventory().setItemInMainHand(((net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack) testis).get());
-                    }else{
-                        sender.sendMessage("§cCould not find player '§e"+args[1]+"§c'");   
+                        p.getInventory().setItemInMainHand(
+                                ((net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack) testis).get());
+                    } else {
+                        sender.sendMessage("§cCould not find player '§e" + args[1] + "§c'");
                     }
                 }
             } else {
                 sender.sendMessage("§cThis command is for spigot only.");
             }
-        }   else if (args[0].equalsIgnoreCase("storeis")) {
-            if (Firecord.getNodeType() == NodeType.SPIGOT){
-                if (args.length==1) {
-                    sender.sendMessage("§c"+label+" storeis <player>");
+        } else if (args[0].equalsIgnoreCase("storeis")) {
+            if (Firecord.getNodeType() == NodeType.SPIGOT) {
+                if (args.length == 1) {
+                    sender.sendMessage("§c" + label + " storeis <player>");
                 } else {
                     org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(args[1]);
                     if (p != null) {
                         if (testis == null) {
-                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis");   
+                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis");
                         }
-                        ((net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack) (testis)).set(p.getInventory().getItemInMainHand());
-                    }else{
-                        sender.sendMessage("§cCould not find player '§e"+args[1]+"§c'");   
+                        ((net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack) (testis))
+                                .set(p.getInventory().getItemInMainHand());
+                    } else {
+                        sender.sendMessage("§cCould not find player '§e" + args[1] + "§c'");
                     }
                 }
             } else {

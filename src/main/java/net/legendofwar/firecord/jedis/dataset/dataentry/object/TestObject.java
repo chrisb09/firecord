@@ -14,6 +14,8 @@ import java.lang.Math;
 
 public class TestObject extends AbstractObject {
 
+    static DataGenerator<RDouble> dg = new DataGenerator<>("doublepool", RDouble.class);
+
     private RInteger testint = new RInteger("testint");
     public Integer ti = 7;
 
@@ -27,7 +29,7 @@ public class TestObject extends AbstractObject {
 
     // This creates a new RDouble every time the class is initialized, meaning
     // they're also different on different nodes running at the same time
-    RDouble g = (RDouble) DataGenerator.createAnonymous(DataType.DOUBLE, (Double) 3.141);
+    RDouble g = dg.create(3.141);
 
     RVector h;
 
