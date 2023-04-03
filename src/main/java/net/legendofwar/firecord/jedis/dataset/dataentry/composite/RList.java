@@ -467,7 +467,7 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         if (arg0 == null) {
             throw new NullPointerException();
         }
-        if (arg0 instanceof AbstractData) {
+        if (!(arg0 instanceof AbstractData)) {
             throw new ClassCastException(
                     arg0.getClass().getName() + " is not an instance of " + AbstractData.class.getName());
         }
