@@ -9,7 +9,11 @@ public final class RShort extends NumericData<Short> {
     final static Short DEFAULT_VALUE = 0;
 
     public RShort(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RShort(String key, Short defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

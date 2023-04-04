@@ -9,7 +9,11 @@ public class RInteger extends NumericData<Integer> {
     final static Integer DEFAULT_VALUE = 0;
 
     public RInteger(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RInteger(String key, Integer defaultValue){
+        super(key, defaultValue);
     }
 
     @Override

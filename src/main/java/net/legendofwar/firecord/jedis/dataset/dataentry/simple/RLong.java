@@ -9,7 +9,11 @@ public final class RLong extends NumericData<Long> {
     final static Long DEFAULT_VALUE = 0l;
 
     public RLong(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RLong(String key, Long defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

@@ -9,7 +9,11 @@ public final class RByte extends NumericData<Byte> {
     final static Byte DEFAULT_VALUE = 0;
 
     public RByte(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RByte(String key, Byte defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

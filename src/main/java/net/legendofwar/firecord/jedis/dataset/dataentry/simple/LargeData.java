@@ -19,7 +19,7 @@ public abstract class LargeData<T> extends SimpleData<T> {
                     if (loaded.containsKey(message)) {
                         entry = (SimpleData<Object>) loaded.get(message);
                         entry.valid = false;
-                        if (entry.listener != null){
+                        if (entry.listener != null) {
                             entry.listener.accept(entry);
                         }
                     }
@@ -31,7 +31,9 @@ public abstract class LargeData<T> extends SimpleData<T> {
                                 updateQueue.remove(entry);
                             }
                             // we use random values to spread out the loading of different nodes
-                            entry.timestamp_update = (int) ( (System.currentTimeMillis() + ThreadLocalRandom.current().nextInt(entry.getAggregateTime())) % Integer.MAX_VALUE);
+                            entry.timestamp_update = (int) ((System.currentTimeMillis()
+                                    + ThreadLocalRandom.current().nextInt(entry.getAggregateTime()))
+                                    % Integer.MAX_VALUE);
                             updateQueue.add(entry);
                         }
                     }
@@ -42,8 +44,8 @@ public abstract class LargeData<T> extends SimpleData<T> {
 
     }
 
-    LargeData(String key) {
-        super(key);
+    LargeData(String key, T defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override
@@ -62,7 +64,6 @@ public abstract class LargeData<T> extends SimpleData<T> {
         // memory usage
         return 60000;
     }
-    
 
     @Override
     protected void _update(boolean broadcast) {

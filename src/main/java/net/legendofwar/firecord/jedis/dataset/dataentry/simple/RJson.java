@@ -8,7 +8,11 @@ public class RJson extends LargeData<JSONObject> {
     final static JSONObject DEFAULT_VALUE = new JSONObject();
 
     public RJson(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RJson(String key, JSONObject defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

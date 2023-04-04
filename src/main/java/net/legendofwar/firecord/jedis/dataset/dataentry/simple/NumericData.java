@@ -2,8 +2,8 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 public abstract class NumericData<T extends Number> extends SmallData<T> {
 
-    NumericData(String key) {
-        super(key);
+    NumericData(String key, T defaultValue) {
+        super(key, defaultValue);
     }
 
     public abstract T add(T value);

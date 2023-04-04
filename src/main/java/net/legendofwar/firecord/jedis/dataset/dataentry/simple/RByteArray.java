@@ -2,13 +2,16 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import org.jetbrains.annotations.NotNull;
 
-
 public final class RByteArray extends LargeData<byte[]> {
 
     final static byte[] DEFAULT_VALUE = new byte[0];
 
     public RByteArray(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RByteArray(String key, byte[] defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override
@@ -17,8 +20,8 @@ public final class RByteArray extends LargeData<byte[]> {
     }
 
     @Override
-    public String toString(){
-       return new String(this.value);
+    public String toString() {
+        return new String(this.value);
     }
-    
+
 }

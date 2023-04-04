@@ -11,8 +11,8 @@ public abstract class DynamicLargeData<T> extends LargeData<T> {
      * and data size we use it as a proxy for data size
      */
 
-    DynamicLargeData(String key) {
-        super(key);
+    DynamicLargeData(String key, T defaultValue) {
+        super(key, defaultValue);
     }
 
     private int getDataSizeEstimate() {

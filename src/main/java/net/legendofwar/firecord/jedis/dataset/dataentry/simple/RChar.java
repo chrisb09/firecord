@@ -5,7 +5,11 @@ public final class RChar extends SmallData<Character> {
     final static Character DEFAULT_VALUE = ' ';
 
     public RChar(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RChar(String key, Character defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

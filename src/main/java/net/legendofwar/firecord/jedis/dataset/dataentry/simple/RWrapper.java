@@ -11,21 +11,20 @@ public final class RWrapper extends SmallData<AbstractData<?>> {
 
     final static AbstractData<?> NULL_ENTRY = new RString("null");
 
-    /**
-     * If the wrapper entry does not exist, the default value cannot act as a
-     * substitute!
-     * 
-     * @param key
-     * @param objectKey
+    /*
+     * object or the corresponding objeyKey cannot be null !
      */
-
-    public RWrapper(String key, @NotNull String objectKey) {
-        super(key);
-        this.set(AbstractData.create(objectKey));
-    }
 
     public RWrapper(String key) {
         this(key, ClassicJedisPool.getValue(key));
+    }
+
+    public RWrapper(String key, @NotNull String objectKey) {
+        this(key, AbstractData.create(objectKey));
+    }
+
+    public RWrapper(String key, @NotNull AbstractData<?> object) {
+        super(key, object);
     }
 
     @Override

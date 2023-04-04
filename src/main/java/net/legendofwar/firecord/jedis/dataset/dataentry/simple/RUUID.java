@@ -7,7 +7,11 @@ public final class RUUID extends SmallData<UUID> {
     final static UUID DEFAULT_VALUE = new UUID(0, 0);
 
     public RUUID(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RUUID(String key, UUID defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

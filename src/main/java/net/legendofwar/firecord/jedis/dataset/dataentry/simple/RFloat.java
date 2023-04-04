@@ -9,7 +9,11 @@ public final class RFloat extends NumericData<Float> {
     final static Float DEFAULT_VALUE = 0.0f;
 
     public RFloat(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RFloat(String key, Float defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

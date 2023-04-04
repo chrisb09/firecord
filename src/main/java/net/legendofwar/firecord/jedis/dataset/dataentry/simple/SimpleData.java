@@ -161,33 +161,38 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
     int timestamp_unload = 0;       // timestamp in ms
 	int timestamp_update = 0;       // timestamp in ms
 	boolean valid = false;          // determines if we hold a valid copy
-    T value;                        //
+    T value;                        // 
+    T defaultValue;
     Consumer<SimpleInterface<T>> listener = null;
 
 	// @formatter:on
 
     @SuppressWarnings("unchecked")
-    SimpleData(String key) {
+    SimpleData(String key, T defaultValue) {
         super(key);
         DataType dt = DataType.getByC(this.getClass());
-        T defaultValue = (T) dt.getDefaultValue();
+        T dv;
+        if (defaultValue == null) {
+            dv = (T) dt.getDefaultValue();
+        } else {
+            dv = defaultValue;
+        }
+        this.defaultValue = dv;
         if (key != null) {
             // make sure the object is NOT a temporary placeholder
             loaded.put(key, this);
             if (this._get(false) == null) {
                 this._setType(key, dt);
-                this.set(defaultValue);
+                this.set(dv);
             }
         } else {
-            this.value = defaultValue;
+            this.value = dv;
             valid = true;
         }
     }
 
-    @SuppressWarnings("unchecked")
     public final T getDefaultValue() {
-        DataType dt = DataType.getByC(this.getClass());
-        return (T) dt.getDefaultValue();
+        return this.defaultValue;
     }
 
     protected void _update() {
@@ -253,7 +258,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         return success;
     }
 
-    public void listen(Consumer<SimpleInterface<T>> listener){
+    public void listen(Consumer<SimpleInterface<T>> listener) {
         this.listener = listener;
     }
 

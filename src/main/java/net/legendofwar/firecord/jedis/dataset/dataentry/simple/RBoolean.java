@@ -5,7 +5,11 @@ public final class RBoolean extends SmallData<Boolean> {
     final static Boolean DEFAULT_VALUE = false;
 
     public RBoolean(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RBoolean(String key, Boolean defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

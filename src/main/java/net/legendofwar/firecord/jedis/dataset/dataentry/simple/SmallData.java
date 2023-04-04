@@ -8,7 +8,7 @@ import net.legendofwar.firecord.communication.MessageReceiver;
 
 public abstract class SmallData<T> extends SimpleData<T> {
 
-    static{
+    static {
 
         JedisCommunication.subscribe("update_key_small", new MessageReceiver() {
 
@@ -22,7 +22,7 @@ public abstract class SmallData<T> extends SimpleData<T> {
                     if (loaded.containsKey(key)) {
                         SmallData<Object> sd = ((SmallData<Object>) loaded.get(key));
                         sd.fromString(value);
-                        if (sd.listener != null){
+                        if (sd.listener != null) {
                             sd.listener.accept(sd);
                         }
                     }
@@ -33,8 +33,8 @@ public abstract class SmallData<T> extends SimpleData<T> {
 
     }
 
-    protected SmallData(String key) {
-        super(key);
+    protected SmallData(String key, T defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

@@ -11,13 +11,16 @@ import org.bukkit.util.io.BukkitObjectOutputStream;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-
 public final class RItemStack extends DynamicLargeData<ItemStack> {
 
     final static ItemStack DEFAULT_VALUE = new ItemStack(Material.AIR, 1);
 
     public RItemStack(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RItemStack(String key, ItemStack defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

@@ -7,7 +7,11 @@ public final class RVector extends SmallData<Vector> {
     final static Vector DEFAULT_VALUE = new Vector();
 
     public RVector(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RVector(String key, Vector defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

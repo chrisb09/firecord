@@ -5,7 +5,11 @@ public class RString extends SmallData<String> {
     final static String DEFAULT_VALUE = "";
 
     public RString(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RString(String key, String defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override

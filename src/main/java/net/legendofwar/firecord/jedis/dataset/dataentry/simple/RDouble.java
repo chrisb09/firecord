@@ -9,7 +9,11 @@ public final class RDouble extends NumericData<Double> {
     final static Double DEFAULT_VALUE = 0.0;
 
     public RDouble(String key) {
-        super(key);
+        this(key, null);
+    }
+
+    public RDouble(String key, Double defaultValue) {
+        super(key, defaultValue);
     }
 
     @Override
