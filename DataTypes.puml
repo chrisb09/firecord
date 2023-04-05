@@ -43,7 +43,7 @@ class RBoolean extends SmallData {
     
 }
 
-class RChar extends SmallData {
+class RCharacter extends SmallData {
     
 }
 
@@ -148,7 +148,21 @@ class RList <T extends AbstractData> extends CompositeData {
 CompositeData o-- AbstractData
 
 abstract AbstractObject extends AbstractData {
-
+    # RByte RByte()
+    # RShort RShort()
+    # RInteger RInteger()
+    # RLong RLong()
+    # RFloat RFloat()
+    # RDouble RDouble()
+    # RBoolean RBoolean()
+    # RByteArray RByteArray()
+    # RCharacter RCharacter()
+    # RRItemStack() RItemStack()
+    # RJson RJson()
+    # RString RString()
+    # RUUID RUUID()
+    # RWrapper RWrapper()
+    # REnum REnum()
 }
 
 AbstractObject *-- AbstractData
