@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+import org.jetbrains.annotations.NotNull;
+
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
@@ -285,18 +287,18 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
 
     }
 
-    private RList(String key, ArrayList<T> data) {
+    private RList(@NotNull String key, ArrayList<T> data) {
         super(key, data, DataType.LIST);
         synchronized (loaded) {
             loaded.put(key, (RList<AbstractData<?>>) this);
         }
     }
 
-    public RList(String key, int initialCapacity) {
+    public RList(@NotNull String key, int initialCapacity) {
         this(key, new ArrayList<T>(initialCapacity));
     }
 
-    public RList(String key) {
+    public RList(@NotNull String key) {
         this(key, new ArrayList<T>());
     }
 

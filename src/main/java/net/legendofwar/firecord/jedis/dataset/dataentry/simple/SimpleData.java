@@ -17,6 +17,7 @@ import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 
 public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInterface<T> {
@@ -168,7 +169,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 	// @formatter:on
 
     @SuppressWarnings("unchecked")
-    SimpleData(String key, T defaultValue) {
+    SimpleData(@NotNull String key, T defaultValue) {
         super(key);
         DataType dt = DataType.getByC(this.getClass());
         T dv;
@@ -186,6 +187,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
                 this.set(dv);
             }
         } else {
+            // entry is a temporary placeholder
             this.value = dv;
             valid = true;
         }
@@ -245,6 +247,10 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
      * @return true if change in database was successful
      */
     public boolean set(T value) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            return AbstractObject.replaceTemp(this).set(value);
+        }
         this.value = value;
         boolean success = false;
         try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -269,6 +275,10 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
      * @return true if value was changed
      */
     public boolean setIfEmpty(T value) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            return AbstractObject.replaceTemp(this).setIfEmpty(value);
+        }
         T v = get();
         T defaultValue = getDefaultValue();
         if (v == null || (defaultValue != null && defaultValue.equals(v))) {
@@ -277,7 +287,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         return false;
     }
 
-    T _get(boolean modify) {
+    private T _get(boolean modify) {
         String stringValue;
         try (Jedis j = ClassicJedisPool.getJedis()) {
             stringValue = j.get(key);
@@ -294,6 +304,10 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
     }
 
     private T get(boolean modify) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            return AbstractObject.replaceTemp(this).get();
+        }
         if (!valid) {
             return _get(modify);
         }
@@ -302,6 +316,10 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 
     public T get() {
         return get(true);
+    }
+
+    public static <F> F getValue(SimpleData<F> object){
+        return object.value;
     }
 
 }

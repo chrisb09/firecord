@@ -1,23 +1,30 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import org.jetbrains.annotations.NotNull;
+
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 
 public final class RFloat extends NumericData<Float> {
 
     final static Float DEFAULT_VALUE = 0.0f;
 
-    public RFloat(String key) {
+    public RFloat(@NotNull String key) {
         this(key, null);
     }
 
-    public RFloat(String key, Float defaultValue) {
+    public RFloat(@NotNull String key, Float defaultValue) {
         super(key, defaultValue);
     }
 
     @Override
     public Float add(Float value) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            return AbstractObject.replaceTemp(this).add(value);
+        }
         try (AbstractData<Float> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Float.parseFloat(j.get(key)) + value;
@@ -30,6 +37,10 @@ public final class RFloat extends NumericData<Float> {
 
     @Override
     public Float sub(Float value) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            return AbstractObject.replaceTemp(this).sub(value);
+        }
         try (AbstractData<Float> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Float.parseFloat(j.get(key)) - value;
@@ -42,6 +53,10 @@ public final class RFloat extends NumericData<Float> {
 
     @Override
     public Float mul(Float value) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            return AbstractObject.replaceTemp(this).mul(value);
+        }
         try (AbstractData<Float> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Float.parseFloat(j.get(key)) * value;
@@ -54,6 +69,10 @@ public final class RFloat extends NumericData<Float> {
 
     @Override
     public Float div(Float value) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            return AbstractObject.replaceTemp(this).div(value);
+        }
         try (AbstractData<Float> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Float.parseFloat(j.get(key)) / value;

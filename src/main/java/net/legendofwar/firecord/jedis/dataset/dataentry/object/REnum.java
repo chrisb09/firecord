@@ -16,7 +16,7 @@ public final class REnum<T extends Enum<T>> extends SimpleAbstractObject<T> {
     RString className;
     RString value;
 
-    public REnum(String key, @NotNull T defaultValue) {
+    public REnum(@NotNull String key, @NotNull T defaultValue) {
         super(key);
         c = (Class<T>) defaultValue.getClass();
         className.set(defaultValue.getClass().getName());
@@ -73,6 +73,17 @@ public final class REnum<T extends Enum<T>> extends SimpleAbstractObject<T> {
     @Override
     public void listen(Consumer<SimpleInterface<T>> listener) {
         this.value.listen(value -> listener.accept(this));
+    }
+
+    // should NOT care about being a temp value
+    @Override
+    public T getTempValue() {
+        if (this.key != null) {
+            throw new UnsupportedOperationException(
+                    "This method is only supposed to be used for temporary entries (key=null) internally." +
+                            "Please use the normal .get() method for regular entries.");
+        }
+        return Enum.valueOf(c, this.value.get());
     }
 
 }

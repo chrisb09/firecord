@@ -1,16 +1,17 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 public final class RVector extends SmallData<Vector> {
 
     final static Vector DEFAULT_VALUE = new Vector();
 
-    public RVector(String key) {
+    public RVector(@NotNull String key) {
         this(key, null);
     }
 
-    public RVector(String key, Vector defaultValue) {
+    public RVector(@NotNull String key, Vector defaultValue) {
         super(key, defaultValue);
     }
 

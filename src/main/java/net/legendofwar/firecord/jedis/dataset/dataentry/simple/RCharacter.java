@@ -1,14 +1,16 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-public final class RChar extends SmallData<Character> {
+import org.jetbrains.annotations.NotNull;
+
+public final class RCharacter extends SmallData<Character> {
 
     final static Character DEFAULT_VALUE = ' ';
 
-    public RChar(String key) {
+    public RCharacter(@NotNull String key) {
         this(key, null);
     }
 
-    public RChar(String key, Character defaultValue) {
+    public RCharacter(@NotNull String key, Character defaultValue) {
         super(key, defaultValue);
     }
 

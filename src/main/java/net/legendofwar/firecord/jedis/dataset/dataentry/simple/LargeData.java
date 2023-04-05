@@ -2,6 +2,8 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.jetbrains.annotations.NotNull;
+
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.MessageReceiver;
 
@@ -44,7 +46,7 @@ public abstract class LargeData<T> extends SimpleData<T> {
 
     }
 
-    LargeData(String key, T defaultValue) {
+    LargeData(@NotNull String key, T defaultValue) {
         super(key, defaultValue);
     }
 

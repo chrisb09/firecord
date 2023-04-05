@@ -6,11 +6,10 @@ import java.util.Arrays;
 
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
-import net.legendofwar.firecord.jedis.dataset.dataentry.simple.Invalid;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByte;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByteArray;
-import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RChar;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RCharacter;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RFloat;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
@@ -29,7 +28,7 @@ public enum DataType {
 
     // small
     BOOLEAN(RBoolean.class),
-    CHAR(RChar.class),
+    CHARACTER(RCharacter.class),
     STRING(RString.class),
     UUID(RUUID.class),
     // numeric

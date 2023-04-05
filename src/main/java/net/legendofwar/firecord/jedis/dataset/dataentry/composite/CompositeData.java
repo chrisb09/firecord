@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.jetbrains.annotations.NotNull;
+
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
@@ -44,7 +46,7 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
 
     final E data;
 
-    CompositeData(String key, E data, DataType dt) {
+    CompositeData(@NotNull String key, E data, DataType dt) {
         super(key);
         this.data = data; // should be empty at this point
         if (key != null) {

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 
 public final class RWrapper extends SmallData<AbstractData<?>> {
 
@@ -15,15 +16,15 @@ public final class RWrapper extends SmallData<AbstractData<?>> {
      * object or the corresponding objeyKey cannot be null !
      */
 
-    public RWrapper(String key) {
+    public RWrapper(@NotNull String key) {
         this(key, ClassicJedisPool.getValue(key));
     }
 
-    public RWrapper(String key, @NotNull String objectKey) {
+    public RWrapper(@NotNull String key, @NotNull String objectKey) {
         this(key, AbstractData.create(objectKey));
     }
 
-    public RWrapper(String key, @NotNull AbstractData<?> object) {
+    public RWrapper(@NotNull String key, @NotNull AbstractData<?> object) {
         super(key, object);
     }
 
@@ -45,11 +46,21 @@ public final class RWrapper extends SmallData<AbstractData<?>> {
     }
 
     public void set(String key) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            AbstractObject.replaceTemp(this).set(key);
+            return;
+        }
         fromString(key);
         this.set(this.value);
     }
 
     public void setIfEmpty(String key) {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            AbstractObject.replaceTemp(this).setIfEmpty(key);
+            return;
+        }
         if (this.value == null) {
             set(key);
         }

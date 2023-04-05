@@ -12,7 +12,6 @@ import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
-import net.legendofwar.firecord.jedis.dataset.dataentry.simple.Invalid;
 import redis.clients.jedis.Jedis;
 
 public abstract class AbstractData<T> implements Closeable {
@@ -40,6 +39,26 @@ public abstract class AbstractData<T> implements Closeable {
 
         try {
             return (AbstractData<?>) c.getDeclaredConstructor(String.class).newInstance(key);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static AbstractData<?> callConstructor(@NotNull String key, @NotNull Class<?> c, Object defaultValue) {
+
+        try {
+            return (AbstractData<?>) c.getDeclaredConstructor(String.class, defaultValue.getClass()).newInstance(key, defaultValue);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
@@ -126,7 +145,7 @@ public abstract class AbstractData<T> implements Closeable {
 
     public static HashMap<String, AbstractData<?>> loaded = new HashMap<String, AbstractData<?>>();
 
-    protected AbstractData(String key) {
+    protected AbstractData(@NotNull String key) {
         this.key = key;
         if (key != null) {
             // make sure the object is NOT a temporary placeholde
@@ -140,12 +159,21 @@ public abstract class AbstractData<T> implements Closeable {
     }
 
     public AbstractData<T> lock() {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            return AbstractObject.replaceTemp(this).lock();
+        }
         this.lock.lock();
         return this;
     }
 
     @Override
     public void close() {
+        if (this.key == null) {
+            // only abstract objects should create temporary entries
+            AbstractObject.replaceTemp(this).close();
+            return;
+        }
         this.lock.unlock();
     }
 
@@ -157,15 +185,6 @@ public abstract class AbstractData<T> implements Closeable {
 
     public final String getKey() {
         return key;
-    }
-
-    @SuppressWarnings("unchecked")
-    protected AbstractData<T> replaceIfTemp() {
-        if (this.key == null) {
-            return (AbstractData<T>) AbstractObject.replaceTemp(this);
-        } else {
-            return this;
-        }
     }
 
 }

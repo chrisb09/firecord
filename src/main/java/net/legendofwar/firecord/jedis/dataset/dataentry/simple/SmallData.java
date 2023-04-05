@@ -3,6 +3,8 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import java.util.Arrays;
 import java.util.Base64;
 
+import org.jetbrains.annotations.NotNull;
+
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.MessageReceiver;
 
@@ -33,7 +35,7 @@ public abstract class SmallData<T> extends SimpleData<T> {
 
     }
 
-    protected SmallData(String key, T defaultValue) {
+    protected SmallData(@NotNull String key, T defaultValue) {
         super(key, defaultValue);
     }
 

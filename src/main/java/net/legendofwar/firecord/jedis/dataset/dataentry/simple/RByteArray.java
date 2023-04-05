@@ -6,11 +6,11 @@ public final class RByteArray extends LargeData<byte[]> {
 
     final static byte[] DEFAULT_VALUE = new byte[0];
 
-    public RByteArray(String key) {
+    public RByteArray(@NotNull String key) {
         this(key, null);
     }
 
-    public RByteArray(String key, byte[] defaultValue) {
+    public RByteArray(@NotNull String key, byte[] defaultValue) {
         super(key, defaultValue);
     }
 
