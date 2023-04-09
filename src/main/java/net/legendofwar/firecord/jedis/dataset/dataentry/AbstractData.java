@@ -12,6 +12,8 @@ import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
+import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
+import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
 
 public abstract class AbstractData<T> implements Closeable {
@@ -35,10 +37,10 @@ public abstract class AbstractData<T> implements Closeable {
 
     }
 
-    public static AbstractData<?> callConstructor(@NotNull String key, @NotNull Class<?> c) {
+    public static AbstractData<?> callConstructor(@NotNull byte[] key, @NotNull Class<?> c) {
 
         try {
-            return (AbstractData<?>) c.getDeclaredConstructor(String.class).newInstance(key);
+            return (AbstractData<?>) c.getDeclaredConstructor(byte[].class).newInstance(key);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
@@ -55,10 +57,10 @@ public abstract class AbstractData<T> implements Closeable {
         return null;
     }
 
-    public static AbstractData<?> callConstructor(@NotNull String key, @NotNull Class<?> c, Object defaultValue) {
+    public static AbstractData<?> callConstructor(@NotNull byte[] key, @NotNull Class<?> c, Object defaultValue) {
 
         try {
-            return (AbstractData<?>) c.getDeclaredConstructor(String.class, defaultValue.getClass()).newInstance(key, defaultValue);
+            return (AbstractData<?>) c.getDeclaredConstructor(byte[].class, defaultValue.getClass()).newInstance(key, defaultValue);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
@@ -85,7 +87,7 @@ public abstract class AbstractData<T> implements Closeable {
      * @param key
      * @return
      */
-    public static AbstractData<?> create(@NotNull String key) {
+    public static AbstractData<?> create(@NotNull byte[] key) {
 
         // since reflection is used the @NotNull annotation does not guarantee null safety
         if (key == null){
@@ -100,7 +102,10 @@ public abstract class AbstractData<T> implements Closeable {
         }
         String type = null;
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            type = j.get(key + ":type");
+            byte[] t = j.get(KeyGenerator.join(key, DataKeySuffix.TYPE.getData()));
+            if (t != null){
+                type = new String(t);
+            }
         }
         if (type != null) {
             DataType dt = null;
@@ -117,9 +122,13 @@ public abstract class AbstractData<T> implements Closeable {
                         return new Invalid(key);
                     }
                 } else {
-                    String className;
+                    String className = null;
+                    byte[] cN;
                     try (Jedis j = ClassicJedisPool.getJedis()) {
-                        className = j.get(key + ":class");
+                        cN = j.get(KeyGenerator.join(key, DataKeySuffix.CLASS.getData()));
+                    }
+                    if (cN != null) {
+                        className = new String(cN);
                     }
                     Class<?> c = null;
                     if (className != null) {
@@ -140,16 +149,16 @@ public abstract class AbstractData<T> implements Closeable {
 
     }
 
-    protected final String key;
+    protected final byte[] key;
     protected final JedisLock lock;
 
-    public static HashMap<String, AbstractData<?>> loaded = new HashMap<String, AbstractData<?>>();
+    public static HashMap<byte[], AbstractData<?>> loaded = new HashMap<byte[], AbstractData<?>>();
 
-    protected AbstractData(@NotNull String key) {
+    protected AbstractData(@NotNull byte[] key) {
         this.key = key;
         if (key != null) {
             // make sure the object is NOT a temporary placeholde
-            this.lock = new JedisLock(key + ":lock");
+            this.lock = new JedisLock(KeyGenerator.getLockKey(key));
             synchronized (loaded) {
                 loaded.put(key, this);
             }
@@ -177,13 +186,13 @@ public abstract class AbstractData<T> implements Closeable {
         this.lock.unlock();
     }
 
-    protected void _setType(String key, Enum<?> dt) {
+    protected void _setType(Enum<?> dt) {
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.set(key + ":type", dt.toString());
+            j.set(KeyGenerator.join(key,DataKeySuffix.TYPE.getData()), dt.toString().getBytes());
         }
     }
 
-    public final String getKey() {
+    public final byte[] getKey() {
         return key;
     }
 

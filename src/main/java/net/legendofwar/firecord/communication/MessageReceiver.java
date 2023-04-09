@@ -10,6 +10,6 @@ public interface MessageReceiver {
      * @param broadcast Whether the message was sent to all servers or not
      * @param message The message itself
      * */
-    void receive(String channel, String sender, boolean broadcast, String message);
+    void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message);
 
 }

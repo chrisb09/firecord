@@ -13,7 +13,7 @@ import redis.clients.jedis.Jedis;
 
 public class Firecord {
 
-    private static String id = null;
+    private static byte[] id = null;
     private static NodeType nodeType = NodeType.STANDALONE;
 
     /**
@@ -23,7 +23,7 @@ public class Firecord {
      * @param nodeType Type of this node
      * @return boolean returns if the initialization is valid or not
      */
-    public static boolean init(String id, NodeType nodeType) {
+    public static boolean init(byte[] id, NodeType nodeType) {
         Firecord.id = id;
         Firecord.nodeType = nodeType;
         JedisCommunication.init(id);
@@ -31,7 +31,7 @@ public class Firecord {
     }
 
     /**
-     * Initialize the Firecord instance. ID's are not allowed to container ":".
+     * Initialize the Firecord instance.
      * 
      * @param nodeType Type of this node
      * @return boolean returns if the initialization is valid or not
@@ -82,7 +82,7 @@ public class Firecord {
      * @param channel Channel to listen to. Channels are not allowed  to contain ":"
      * @param receiver Receiver to handle the messages.
      */
-    public static void subscribe(String channel, MessageReceiver receiver) {
+    public static void subscribe(byte[] channel, MessageReceiver receiver) {
         JedisCommunication.subscribe(channel, receiver);
     }
 
@@ -91,7 +91,7 @@ public class Firecord {
      * 
      * @param channel Channel to unsubscribe from.
      */
-    public static void unsubscribe(String channel) {
+    public static void unsubscribe(byte[] channel) {
         JedisCommunication.unsubscribe(channel);
     }
 
@@ -102,7 +102,7 @@ public class Firecord {
      * @param channel The channel on which we send this message. Cannot contain ":".
      * @param message The message we send.
      */
-    public static void publish(String receiver, String channel, String message) {
+    public static void publish(byte[] receiver, byte[] channel, byte[] message) {
         JedisCommunication.publish(receiver, channel, message);
     }
 
@@ -112,7 +112,7 @@ public class Firecord {
      * @param channel The channel on which we send this message. Cannot contain ":".
      * @param message The message we send.
      */
-    public static void broadcast(String channel, String message) {
+    public static void broadcast(byte[] channel, byte[] message) {
         JedisCommunication.broadcast(channel, message);
     }
 

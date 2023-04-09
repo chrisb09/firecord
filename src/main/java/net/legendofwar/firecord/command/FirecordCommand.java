@@ -14,6 +14,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RLong;
+import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
 import net.legendofwar.firecord.tool.NodeType;
 import redis.clients.jedis.Jedis;
 
@@ -21,6 +22,7 @@ public class FirecordCommand {
 
     static DataGenerator<RLong> dg = new DataGenerator<>("longdata", RLong.class);
 
+    static KeyLookupTable testKeyLookupTable;
     static RInteger test = null;
     static RInteger test1 = null;
     static RInteger test2 = null;
@@ -37,6 +39,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " id          §e show id of this node");
             sender.sendMessage("§b" + label + " ids/list    §e show ids of all nodes");
             sender.sendMessage("§b" + label + " test        §e broadcast test message");
+            sender.sendMessage("§b" + label + " testid      §e test the KeyLookupTable");
             sender.sendMessage("§b" + label + " testint     §e small data sync example");
             sender.sendMessage("§b" + label + " loadis      §e large data sync example");
             sender.sendMessage("§b" + label + " storeis     §e large data sync example");
@@ -172,6 +175,22 @@ public class FirecordCommand {
             sender.sendMessage("§atestint++;");
             test.add(1);
             sender.sendMessage("§btestint: §e" + test.get());
+        } else if (args[0].equalsIgnoreCase("testid")) {
+            if (testKeyLookupTable == null) {
+                testKeyLookupTable = new KeyLookupTable("test".getBytes(), 2);
+            }
+            String testname = "tobi20";
+            if (args.length > 1) {
+                testname = args[1];
+            }
+            sender.sendMessage("§bName: " + testname);
+            sender.sendMessage("§bName-Bytes: " + testname.getBytes());
+            byte[] id = testKeyLookupTable.lookUpId(testname);
+            sender.sendMessage("§btestkeylookup (name->id) (Bytes): §e" + id);
+            sender.sendMessage("§btestkeylookup (name->id): §e" + testKeyLookupTable.lookUpIdLong(testname));
+            byte[] name = testKeyLookupTable.lookUpName(id);
+            sender.sendMessage("§breverse-lookup (id->name)(bytes): §e" + name);
+            sender.sendMessage("§breverse-lookup (id->name): §e" + new String(name));
         } else if (args[0].equalsIgnoreCase("testanon")) {
             RLong ad = dg.create(7l);
             sender.sendMessage("§btestanon: §e" + ad.getKey() + "=§a" + ad);

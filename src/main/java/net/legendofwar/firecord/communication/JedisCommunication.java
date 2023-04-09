@@ -1,36 +1,41 @@
 package net.legendofwar.firecord.communication;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
+import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
+import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
 import net.legendofwar.firecord.tool.Units;
+import redis.clients.jedis.BinaryJedisPubSub;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
-public class JedisCommunication extends JedisPubSub {
+public class JedisCommunication extends BinaryJedisPubSub {
 
-    private static String id;
+    private static byte[] id;
     private static Thread thread = null;
     private static Thread nodeThread = null;
     private static JedisCommunication handler = null;
-    private static final HashMap<String, MessageReceiver> receivers = new HashMap<String, MessageReceiver>();
-    private static final HashSet<String> nodes = new HashSet<String>();
-    private static final JedisLock nodesLock = new JedisLock("nodes");
+    private static final HashMap<byte[], MessageReceiver> receivers = new HashMap<byte[], MessageReceiver>();
+    private static final HashSet<byte[]> nodes = new HashSet<byte[]>();
+    private static final JedisLock nodesLock = new JedisLock("nodes".getBytes());
 
-    private final String[] channels;
+    private final byte[][] channels;
 
-    public static void init(String id) {
+    public static void init(byte[] id) {
         JedisCommunication.id = id;
         // smsg: server message, one for server specific and one for broadcast messages
-        handler = new JedisCommunication(new String[] { "smsg:" + id, "smsg:broadcast" });
+        handler = new JedisCommunication(new byte[][] {KeyGenerator.join(JedisCommunicationChannels.SERVER_MESSAGE.getData(), id), JedisCommunicationChannels.SERVER_MESSAGE_BROADCAST.getData()});
         thread = new Thread(new Runnable() {
 
             public void run() {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                    System.out.println("subscribe to: " + String.join(", ", handler.channels));
+                    System.out.println("subscribe to: " + String.join(", ", Arrays.asList(handler.channels).stream().map(bytearray -> ByteFunctions.asHexadecimal(bytearray)).toList() ));
                     j.subscribe(handler, handler.channels);
                 }
             }
@@ -53,21 +58,21 @@ public class JedisCommunication extends JedisPubSub {
         nodeThread.start();
 
         // test channel
-        subscribe("test", new MessageReceiver() {
+        subscribe(JedisCommunicationChannels.TEST.getData(), new MessageReceiver() {
 
             @Override
-            public void receive(String channel, String sender, boolean broadcast, String message) {
-                System.out.println("Receive test message from " + sender + "(broadcast=" + broadcast + "): " + message);
+            public void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message) {
+                System.out.println("Receive test message from " + ByteFunctions.asHexadecimal(sender) + "(broadcast=" + broadcast + "): " + ByteFunctions.asHexadecimal(message));
             }
 
         });
 
-        // test channel
-        subscribe("log", new MessageReceiver() {
+        // log channel
+        subscribe(JedisCommunicationChannels.LOG.getData(), new MessageReceiver() {
 
             @Override
-            public void receive(String channel, String sender, boolean broadcast, String message) {
-                System.out.println("[" + sender + "]: " + message);
+            public void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message) {
+                System.out.println("[" + ByteFunctions.asHexadecimal(sender) + "]: " + message);
             }
 
         });
@@ -76,10 +81,10 @@ public class JedisCommunication extends JedisPubSub {
         subscribe("ping", new MessageReceiver() {
 
             @Override
-            public void receive(String channel, String sender, boolean broadcast, String message) {
-                long delta = System.nanoTime() - Long.parseLong(message);
+            public void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message) {
+                long delta = System.nanoTime() - ByteFunctions.decodeId(message); // we can reuse this function
                 System.out.println(
-                        "Received ping from " + sender + "(broadcast=" + broadcast + "): " + Units.getTimeDelta(delta));
+                        "Received ping from " + ByteFunctions.asHexadecimal(sender) + "(broadcast=" + broadcast + "): " + Units.getTimeDelta(delta));
                 publish(sender, "pong", message);
             }
 
@@ -89,7 +94,7 @@ public class JedisCommunication extends JedisPubSub {
         subscribe("pong", new MessageReceiver() {
 
             @Override
-            public void receive(String channel, String sender, boolean broadcast, String message) {
+            public void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message) {
                 long delta = System.nanoTime() - Long.parseLong(message);
                 System.out.println("Received pong from " + sender + "(broadcast=" + broadcast + "): rtt="
                         + Units.getTimeDelta(delta));
@@ -110,8 +115,8 @@ public class JedisCommunication extends JedisPubSub {
                 nodesLock.lock();
                 try {
                     nodes.clear();
-                    Set<String> found = j.smembers("nodes");
-                    for (String s : found) {
+                    Set<byte[]> found = j.smembers("nodes");
+                    for (byte[] s : found) {
                         if (j.get("node:" + s) != null) {
                             nodes.add(s);
                         } else {
@@ -130,17 +135,17 @@ public class JedisCommunication extends JedisPubSub {
         }
     }
 
-    public static Set<String> getNodes() {
+    public static Set<byte[]> getNodes() {
         return nodes;
     }
 
-    public static void subscribe(String channel, MessageReceiver receiver) {
+    public static void subscribe(byte[] channel, MessageReceiver receiver) {
         synchronized (receivers) {
             receivers.put(channel, receiver);
         }
     }
 
-    public static void unsubscribe(String channel) {
+    public static void unsubscribe(byte[] channel) {
         synchronized (receivers) {
             if (receivers.containsKey(channel)) {
                 receivers.remove(channel);
@@ -148,7 +153,7 @@ public class JedisCommunication extends JedisPubSub {
         }
     }
 
-    public static void publish(String receiver, String channel, String message) {
+    public static void publish(byte[] receiver, byte[] channel, byte[] message) {
         synchronized (nodes) {
             if (nodes.contains(receiver)) {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -158,20 +163,20 @@ public class JedisCommunication extends JedisPubSub {
         }
     }
 
-    public static void broadcast(String channel, String message) {
+    public static void broadcast(byte[] channel, byte[] message) {
         try (Jedis j = ClassicJedisPool.getJedis()) {
             j.publish("smsg:broadcast", channel + ":" + id + ":" + message);
         }
     }
 
-    private JedisCommunication(String[] channels) {
+    private JedisCommunication(byte[][] channels) {
         this.channels = channels;
     }
 
-    private void receive(String message, boolean broadcast) {
-        String[] parts = message.split(":");
-        String channel = parts[0];
-        String sender = parts[1];
+    private void receive(byte[] message, boolean broadcast) {
+        byte[][] parts = message.split(":");
+        byte[] channel = parts[0];
+        byte[] sender = parts[1];
         if (sender.equals(id) && broadcast) {
             // don't receive messages from this node itself
             return;
@@ -205,7 +210,7 @@ public class JedisCommunication extends JedisPubSub {
     }
 
     @Override
-    public void onMessage(String redis_channel, String message) {
+    public void onMessage(byte[] redis_channel, byte[] message) {
         try {
             this.receive(message, redis_channel.equals("smsg:broadcast"));
         } catch (Exception e) {
@@ -216,27 +221,27 @@ public class JedisCommunication extends JedisPubSub {
     }
 
     @Override
-    public void onPMessage(String pattern, String redis_channel, String message) {
+    public void onPMessage(byte[] pattern, byte[] redis_channel, byte[] message) {
         this.receive(message, redis_channel.equals("smsg:broadcast"));
     }
 
     @Override
-    public void onSubscribe(String channel, int subscribedChannels) {
+    public void onSubscribe(byte[] channel, int subscribedChannels) {
 
     }
 
     @Override
-    public void onUnsubscribe(String channel, int subscribedChannels) {
+    public void onUnsubscribe(byte[] channel, int subscribedChannels) {
 
     }
 
     @Override
-    public void onPUnsubscribe(String pattern, int subscribedChannels) {
+    public void onPUnsubscribe(byte[] pattern, int subscribedChannels) {
 
     }
 
     @Override
-    public void onPSubscribe(String pattern, int subscribedChannels) {
+    public void onPSubscribe(byte[] pattern, int subscribedChannels) {
 
     }
 
