@@ -41,6 +41,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " loadis      §e large data sync example");
             sender.sendMessage("§b" + label + " storeis     §e large data sync example");
             sender.sendMessage("§b" + label + " testlist    §e list test command");
+            sender.sendMessage("§b" + label + " testclaim   §e check loading of testclaims");
             sender.sendMessage("§b" + label + " testanon    §e anonymous type test command");
             sender.sendMessage("§b" + label + " testobject  §e test object command");
             sender.sendMessage("§b" + label + " testenum    §e construct an enum");
@@ -164,6 +165,15 @@ public class FirecordCommand {
                 sender.sendMessage("§bRedis: §c"
                         + String.join(",", Arrays.toString(j.lrange(testlist3.getKey(), 0, -1).toArray())));
             }
+        } else if (args[0].equalsIgnoreCase("testclaim")){
+            if (AbstractData.loaded.containsKey("test:auction:claims_copy")) {
+                sender.sendMessage("§ealready loaded");
+            }
+            RList<?> l = (RList<?>) AbstractData.create("test:auction:claims_copy");
+            sender.sendMessage("§btest:auction:claims_copy.size(): §a"+l.size());
+            @SuppressWarnings("all")
+            TestObject to = new TestObject("testobject:"+( (int) (Math.random()*90+10)));
+            sender.sendMessage(to.getKey());
         } else if (args[0].equalsIgnoreCase("testint")) {
             if (test == null) {
                 test = new RInteger("testint");

@@ -191,13 +191,17 @@ public abstract class AbstractObject extends AbstractData<Object> {
         if (key != null) {
             // make sure the object is NOT a temporary placeholde
             Set<String> existing = null;
+            boolean hadEntres = false;
             try (AbstractData<?> ad = this.lock()) {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
                     existing = j.smembers(key);
                 }
             }
+            if (existing.size() != 0){
+                hadEntres = true;
+            }
             loadObject(this.getClass(), existing);
-            if (existing.isEmpty()) {
+            if (!hadEntres) {
                 _setType(key, DataType.OBJECT);
                 try (Jedis j = ClassicJedisPool.getJedis()) {
                     j.set(key + ":class", this.getClass().getName());
