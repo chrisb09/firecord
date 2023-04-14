@@ -10,8 +10,12 @@ import java.util.Map;
 import java.util.Set;
 
 import net.legendofwar.firecord.Firecord;
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
+import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import redis.clients.jedis.Jedis;
 
 public class DataGenerator<T extends AbstractData<?>> {
@@ -26,7 +30,7 @@ public class DataGenerator<T extends AbstractData<?>> {
                 synchronized (dp.curated) {
                     dp.curated.remove(ad.getKey());
                     try (Jedis j = Firecord.getJedis()) {
-                        j.srem(dp.key, ad.getKey());
+                        j.srem(dp.key.getData(), ad.getKey().getData());
                     }
                 }
 
@@ -36,7 +40,7 @@ public class DataGenerator<T extends AbstractData<?>> {
         if (deleteInDB) {
             del(ad.getKey());
             // send firecord message to other nodes
-            Firecord.broadcast("del_key", ad.getKey());
+            Firecord.broadcast(JedisCommunicationChannel.DEL_KEY, ad.getKey());
         }
 
         // Delete
@@ -47,7 +51,7 @@ public class DataGenerator<T extends AbstractData<?>> {
                     if (field.getName().equals("loaded")) {
                         field.setAccessible(true);
                         try {
-                            HashMap<String, ?> loaded = (HashMap<String, ?>) (field.get(null));
+                            HashMap<Bytes, ?> loaded = (HashMap<Bytes, ?>) (field.get(null));
                             synchronized (loaded) {
                                 loaded.remove(ad.getKey());
                             }
@@ -79,20 +83,23 @@ public class DataGenerator<T extends AbstractData<?>> {
         delete(ad, true);
     }
 
-    private static void del(String k) {
+    private static void del(Bytes key) {
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.del(k + ":updated", k + ":class", k + ":type", k);
+            for (DataKeySuffix dks : DataKeySuffix.values()) {
+                j.del(ByteFunctions.join(key, dks));
+            }
+            j.del(key.getData());
         }
     }
 
-    final String key;
+    final Bytes key;
     final Thread thread;
     final DataType type;
     final Class<T> c;
 
-    Map<String, T> curated = new HashMap<String, T>();
+    Map<Bytes, T> curated = new HashMap<Bytes, T>();
 
-    public DataGenerator(String key, Class<T> c) {
+    public DataGenerator(Bytes key, Class<T> c) {
         this(key, c, true);
     }
 
@@ -102,7 +109,7 @@ public class DataGenerator<T extends AbstractData<?>> {
      * @param manualMemoryManagement true means there will be no automatic deletion
      */
 
-    public DataGenerator(String key, Class<T> c, boolean manualMemoryManagement) {
+    public DataGenerator(Bytes key, Class<T> c, boolean manualMemoryManagement) {
         synchronized (dataPools) {
             dataPools.add(this);
         }
@@ -123,18 +130,19 @@ public class DataGenerator<T extends AbstractData<?>> {
                 @Override
                 public void run() {
                     while (true) {
-                        Set<String> keySet;
+                        Set<Bytes> keySet;
                         synchronized (curated) {
                             keySet = curated.keySet();
                         }
                         long lastChecked = 0l;
                         try (Jedis j = ClassicJedisPool.getJedis()) {
-                            for (String s : keySet) {
-                                j.set(s + ":updated", System.currentTimeMillis() + "");
+                            for (Bytes bytearray : keySet) {
+                                j.set(ByteFunctions.join(bytearray, DataKeySuffix.UPDATED),
+                                        ByteFunctions.encodeNumber(System.currentTimeMillis()));
                             }
-                            String lC = j.get(key + ":updated");
+                            byte[] lC = j.get(ByteFunctions.join(key, DataKeySuffix.UPDATED));
                             if (lC != null) {
-                                lastChecked = Long.parseLong(lC);
+                                lastChecked = ByteFunctions.decodeNumber(lC);
                             }
                         }
 
@@ -144,27 +152,28 @@ public class DataGenerator<T extends AbstractData<?>> {
                         if (threadStart + 3600000l < now && lastChecked + 30000l < now) {
                             long ts = now - 3600000l;
                             try (Jedis j = ClassicJedisPool.getJedis()) {
-                                j.set(key + ":updated", now + "");
-                                for (String s : j.smembers(key)) {
-                                    String v = j.get(s + ":updated");
-                                    if (v == null || Long.parseLong(v) < ts) {
+                                j.set(ByteFunctions.join(key, DataKeySuffix.UPDATED), ByteFunctions.encodeNumber(now));
+                                for (byte[] curatedKey : j.smembers(key.getData())) {
+                                    Bytes cK = new Bytes(curatedKey);
+                                    byte[] lastUpdated = j.get(ByteFunctions.join(cK, DataKeySuffix.UPDATED));
+                                    if (lastUpdated == null || ByteFunctions.decodeNumber(lastUpdated) < ts) {
                                         AbstractData<?> ad = null;
                                         synchronized (AbstractData.loaded) {
-                                            if (AbstractData.loaded.containsKey(s))
-                                                ad = AbstractData.loaded.get(s);
+                                            if (AbstractData.loaded.containsKey(cK))
+                                                ad = AbstractData.loaded.get(cK);
                                         }
                                         if (ad != null) {
                                             delete(ad, true);
                                         } else {
                                             // fallback
-                                            del(s);
-                                            j.srem(key, s);
+                                            del(cK);
+                                            j.srem(key.getData(), curatedKey);
                                         }
                                     }
                                 }
                             }
                             try (Jedis j = ClassicJedisPool.getJedis()) {
-                                j.set(key + ":updated", now + "");
+                                j.set(ByteFunctions.join(key, DataKeySuffix.UPDATED), ByteFunctions.encodeNumber(now));
                             }
                         }
 
@@ -189,7 +198,7 @@ public class DataGenerator<T extends AbstractData<?>> {
         if (type == null || type == DataType.INVALID || !type.canBeLoaded()) {
             return null;
         }
-        String k = key + ":" + getNewId();
+        Bytes k = key.append(new Bytes(getNewId(), 4));
         T ad;
         ad = (T) AbstractData.callConstructor(k, c);
 
@@ -202,8 +211,8 @@ public class DataGenerator<T extends AbstractData<?>> {
             curated.put(k, ad);
         }
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.set(k + ":updated", System.currentTimeMillis() + "");
-            j.sadd(key, k);
+            j.set(ByteFunctions.join(k, DataKeySuffix.UPDATED), ByteFunctions.encodeNumber(System.currentTimeMillis()));
+            j.sadd(key.getData(), k.getData());
         }
         return ad;
     }
@@ -225,7 +234,7 @@ public class DataGenerator<T extends AbstractData<?>> {
 
     private long getNewId() {
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            return j.incr(key + ":id");
+            return j.incr(ByteFunctions.join(key, DataKeySuffix.SPECIFIC));
         }
     }
 

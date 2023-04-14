@@ -14,18 +14,20 @@ import java.lang.Math;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.jedis.dataset.Bytes;
+
 public class TestObject extends AbstractObject {
 
-    static DataGenerator<RDouble> dg = new DataGenerator<>("doublepool", RDouble.class);
+    static DataGenerator<RDouble> dg = new DataGenerator<>(new Bytes("doublepool"), RDouble.class);
 
-    private RInteger testint = new RInteger("testint");
+    private RInteger testint = new RInteger(new Bytes("testint"));
     public Integer ti = 7;
 
     private RInteger a = RInteger(25);
     RString b; // = null;
     public RBoolean c; // = null;
     RWrapper d;
-    final RBoolean e = new RBoolean("exampleboolean");
+    final RBoolean e = new RBoolean(new Bytes("exampleboolean"));
 
     static RDouble f;
 
@@ -39,13 +41,13 @@ public class TestObject extends AbstractObject {
 
     RItemStack j;
 
-    public TestObject(@NotNull String key) {
+    public TestObject(@NotNull Bytes key) {
         super(key);
-        System.out.println("a: "+a);
+        System.out.println("a: " + a);
         a.add(5);
-        System.out.println("a: "+a);
+        System.out.println("a: " + a);
         b.setIfEmpty("Hello World");
-        d.setIfEmpty("testlist1");
+        d.setIfEmpty(new Bytes("testlist1"));
         f.setIfEmpty(23.4);
     }
 
@@ -53,7 +55,7 @@ public class TestObject extends AbstractObject {
     public String toString() {
         System.out.println(b);
         return a + ":" + b + ":" + c + ":" + d + ":" + e + ":" + f + ":" + g + ":" + h + ":" + i + ":"
-                + ((j != null) ? j.toString().length() : "not-loaded");
+                + ((j != null) ? "length " + j.toString().length() : "not-loaded");
     }
 
     public RInteger getTestInt() {
@@ -71,7 +73,7 @@ public class TestObject extends AbstractObject {
     public void selectRandomTestlist() {
         int x = (1 + ((int) (Math.random() * 3)));
         System.out.println("Select testlist" + x);
-        d.set("testlist" + x);
+        d.set(new Bytes("testlist" + x));
     }
 
     public void selectRandomDatatype() {

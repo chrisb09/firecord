@@ -3,6 +3,7 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 
@@ -10,27 +11,32 @@ public final class RWrapper extends SmallData<AbstractData<?>> {
 
     final static Object DEFAULT_VALUE = null;
 
-    final static AbstractData<?> NULL_ENTRY = new RString("null");
+    final static AbstractData<?> NULL_ENTRY = new RString(new Bytes());
 
     /*
      * object or the corresponding objeyKey cannot be null !
      */
 
-    public RWrapper(@NotNull String key) {
+    public RWrapper(@NotNull Bytes key) {
         this(key, ClassicJedisPool.getValue(key));
     }
 
-    public RWrapper(@NotNull String key, @NotNull String objectKey) {
+    public RWrapper(@NotNull Bytes key, @NotNull Bytes objectKey) {
         this(key, AbstractData.create(objectKey));
     }
 
-    public RWrapper(@NotNull String key, @NotNull AbstractData<?> object) {
+    public RWrapper(@NotNull Bytes key, @NotNull AbstractData<?> object) {
         super(key, object);
     }
 
     @Override
-    protected void fromString(String value) {
-        AbstractData<?> entry = AbstractData.create(value);
+    protected Bytes toBytes() {
+        return this.value.getKey();
+    }
+
+    @Override
+    protected void fromBytes(byte[] value) {
+        AbstractData<?> entry = AbstractData.create(new Bytes(value));
         if (entry != null) {
             this.value = entry;
         }
@@ -39,23 +45,23 @@ public final class RWrapper extends SmallData<AbstractData<?>> {
     @Override
     public String toString() {
         if (this.value != null) {
-            return this.value.getKey();
+            return "[" + this.value.getKey() + "]";
         } else {
-            return null;
+            return "[null]";
         }
     }
 
-    public void set(String key) {
+    public void set(Bytes key) {
         if (this.key == null) {
             // only abstract objects should create temporary entries
             AbstractObject.replaceTemp(this).set(key);
             return;
         }
-        fromString(key);
+        fromBytes(key);
         this.set(this.value);
     }
 
-    public void setIfEmpty(String key) {
+    public void setIfEmpty(Bytes key) {
         if (this.key == null) {
             // only abstract objects should create temporary entries
             AbstractObject.replaceTemp(this).setIfEmpty(key);

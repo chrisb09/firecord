@@ -1,19 +1,29 @@
 package net.legendofwar.firecord.jedis.dataset.datakeys;
 
-public enum DataKeySuffix {
+import net.legendofwar.firecord.jedis.dataset.ByteDataInterface;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 
-    NONE(0x00),
-    TYPE(0x01),
-    CLASS(0x02),
-    UPDATED(0x03);
+public enum DataKeySuffix implements ByteDataInterface {
 
-    private byte data;
+    // @formatter:off
+    SPECIFIC(0x00),         // Used for unique entries like id-counter for DataGenerator
+    TYPE(0x01),             // Specifies the type of entry
+    CLASS(0x02),            // Specifies the class, used for OBJECTs
+    UPDATED(0x03);          // Specifies the last time this entry was cared for by a DataGenerator
+    // @formatter:on
+
+    private Bytes data;
 
     private DataKeySuffix(int data) {
-        this.data = (byte) data;
+        this.data = new Bytes((byte) data);
     }
 
-    public byte getData() {
+    public byte[] getData() {
+        return data.getData();
+    }
+
+    @Override
+    public Bytes getBytes() {
         return data;
     }
 

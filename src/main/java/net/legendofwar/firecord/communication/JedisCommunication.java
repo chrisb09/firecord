@@ -1,42 +1,62 @@
 package net.legendofwar.firecord.communication;
 
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.javatuples.Triplet;
+
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
-import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeyPrefix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
 import net.legendofwar.firecord.tool.Units;
 import redis.clients.jedis.BinaryJedisPubSub;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPubSub;
 
 public class JedisCommunication extends BinaryJedisPubSub {
 
-    private static byte[] id;
+    private static Bytes name;
     private static Thread thread = null;
     private static Thread nodeThread = null;
     private static JedisCommunication handler = null;
-    private static final HashMap<byte[], MessageReceiver> receivers = new HashMap<byte[], MessageReceiver>();
-    private static final HashSet<byte[]> nodes = new HashSet<byte[]>();
-    private static final JedisLock nodesLock = new JedisLock("nodes".getBytes());
+    private static final HashMap<Bytes, MessageReceiver> receivers = new HashMap<Bytes, MessageReceiver>();
+    private static final HashSet<Bytes> nodes = new HashSet<Bytes>();
+    private static final byte nodeIdSize = 1; // how many bytes are used for name encodings
+    public static final KeyLookupTable nodeKeyLookUpTable = new KeyLookupTable(
+            KeyGenerator.getLockKey(DataKeyPrefix.NODE.getBytes()), nodeIdSize);
+    private static final Bytes nodes_key = DataKeyPrefix.NODE.getBytes();
+    private static final JedisLock nodesLock = new JedisLock(nodes_key);
 
-    private final byte[][] channels;
+    private final Bytes[] channels;
 
-    public static void init(byte[] id) {
-        JedisCommunication.id = id;
+    public static Bytes getBroadcastMessageChannel() {
+        return JedisCommunicationChannel.SERVER_MESSAGE_BROADCAST.getBytes();
+    }
+
+    public static Bytes getServerMessageChannel(Bytes serverName) {
+        return JedisCommunicationChannel.SERVER_MESSAGE.getBytes().append(nodeKeyLookUpTable.lookUpId(serverName));
+    }
+
+    public static void init(Bytes name) {
+        JedisCommunication.name = name;
         // smsg: server message, one for server specific and one for broadcast messages
-        handler = new JedisCommunication(new byte[][] {KeyGenerator.join(JedisCommunicationChannels.SERVER_MESSAGE.getData(), id), JedisCommunicationChannels.SERVER_MESSAGE_BROADCAST.getData()});
+        System.out.println("ServerMessageChannel: " + getServerMessageChannel(name));
+        System.out.println("BroadcastMessageChannel: " + getBroadcastMessageChannel());
+        System.out.println("BroadcastMessageChannel.length: " + getBroadcastMessageChannel().length);
+        handler = new JedisCommunication(new Bytes[] { getServerMessageChannel(name), getBroadcastMessageChannel() });
         thread = new Thread(new Runnable() {
 
             public void run() {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                    System.out.println("subscribe to: " + String.join(", ", Arrays.asList(handler.channels).stream().map(bytearray -> ByteFunctions.asHexadecimal(bytearray)).toList() ));
-                    j.subscribe(handler, handler.channels);
+                    System.out.println("subscribe to: " + String.join(", ", Arrays.stream(handler.channels)
+                            .map(bytearray -> bytearray.toString()).toList()));
+                    j.subscribe(handler, Arrays.stream(handler.channels)
+                            .map(bytearray -> bytearray.getData()).toArray(byte[][]::new));
                 }
             }
         });
@@ -58,44 +78,46 @@ public class JedisCommunication extends BinaryJedisPubSub {
         nodeThread.start();
 
         // test channel
-        subscribe(JedisCommunicationChannels.TEST.getData(), new MessageReceiver() {
+        subscribe(JedisCommunicationChannel.TEST, new MessageReceiver() {
 
             @Override
-            public void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message) {
-                System.out.println("Receive test message from " + ByteFunctions.asHexadecimal(sender) + "(broadcast=" + broadcast + "): " + ByteFunctions.asHexadecimal(message));
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
+                System.out.println("Receive test message from " + sender + "(broadcast="
+                        + broadcast + "): " + message);
             }
 
         });
 
         // log channel
-        subscribe(JedisCommunicationChannels.LOG.getData(), new MessageReceiver() {
+        subscribe(JedisCommunicationChannel.LOG, new MessageReceiver() {
 
             @Override
-            public void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message) {
-                System.out.println("[" + ByteFunctions.asHexadecimal(sender) + "]: " + message);
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
+                System.out.println("[" + sender + "]: " + message);
             }
 
         });
 
         // ping channel
-        subscribe("ping", new MessageReceiver() {
+        subscribe(JedisCommunicationChannel.PING, new MessageReceiver() {
 
             @Override
-            public void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message) {
-                long delta = System.nanoTime() - ByteFunctions.decodeId(message); // we can reuse this function
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
+                long delta = System.nanoTime() - message.decodeNumber();
                 System.out.println(
-                        "Received ping from " + ByteFunctions.asHexadecimal(sender) + "(broadcast=" + broadcast + "): " + Units.getTimeDelta(delta));
-                publish(sender, "pong", message);
+                        "Received ping from " + sender + "(broadcast=" + broadcast + "): "
+                                + Units.getTimeDelta(delta));
+                publish(sender, JedisCommunicationChannel.PONG, message);
             }
 
         });
 
         // ping channel
-        subscribe("pong", new MessageReceiver() {
+        subscribe(JedisCommunicationChannel.PONG, new MessageReceiver() {
 
             @Override
-            public void receive(byte[] channel, byte[] sender, boolean broadcast, byte[] message) {
-                long delta = System.nanoTime() - Long.parseLong(message);
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
+                long delta = System.nanoTime() - message.decodeNumber();
                 System.out.println("Received pong from " + sender + "(broadcast=" + broadcast + "): rtt="
                         + Units.getTimeDelta(delta));
             }
@@ -115,19 +137,20 @@ public class JedisCommunication extends BinaryJedisPubSub {
                 nodesLock.lock();
                 try {
                     nodes.clear();
-                    Set<byte[]> found = j.smembers("nodes");
+                    Set<byte[]> found = j.smembers(nodes_key.getData());
                     for (byte[] s : found) {
-                        if (j.get("node:" + s) != null) {
-                            nodes.add(s);
+                        if (j.get(DataKeyPrefix.NODE.getBytes().append(s).getData()) != null) {
+                            nodes.add(new Bytes(s));
                         } else {
-                            j.srem("nodes", s);
+                            j.srem(nodes_key.getData(), s);
                         }
                     }
-                    if (!nodes.contains(id)) {
-                        nodes.add(id);
-                        j.sadd("nodes", id);
+                    if (!nodes.contains(name)) {
+                        nodes.add(name);
+                        j.sadd(nodes_key.getData(), name.getData());
                     }
-                    j.setex("node:" + id, 10, "1"); // continuosly keep entry
+                    // continuosly keep entry
+                    j.setex(DataKeyPrefix.NODE.getBytes().append(name).getData(), 10, new Bytes(1).getData());
                 } finally {
                     nodesLock.unlock();
                 }
@@ -135,17 +158,21 @@ public class JedisCommunication extends BinaryJedisPubSub {
         }
     }
 
-    public static Set<byte[]> getNodes() {
+    public static Set<Bytes> getNodes() {
         return nodes;
     }
 
-    public static void subscribe(byte[] channel, MessageReceiver receiver) {
+    public static void subscribe(Bytes channel, MessageReceiver receiver) {
         synchronized (receivers) {
             receivers.put(channel, receiver);
         }
     }
 
-    public static void unsubscribe(byte[] channel) {
+    public static void subscribe(JedisCommunicationChannel channel, MessageReceiver receiver) {
+        subscribe(channel.getBytes(), receiver);
+    }
+
+    public static void unsubscribe(Bytes channel) {
         synchronized (receivers) {
             if (receivers.containsKey(channel)) {
                 receivers.remove(channel);
@@ -153,47 +180,97 @@ public class JedisCommunication extends BinaryJedisPubSub {
         }
     }
 
-    public static void publish(byte[] receiver, byte[] channel, byte[] message) {
+    public static void unsubscribe(JedisCommunicationChannel channel) {
+        unsubscribe(channel.getBytes());
+    }
+
+    public static void publish(Bytes receiver, Bytes channel, Bytes message) {
+        if (channel.length != JedisCommunicationChannel.CHANNEL_BYTE_LENGTH) {
+            throw new InvalidParameterException("The given channel has a length of " + channel.length
+                    + " Bytes, while only " + JedisCommunicationChannel.CHANNEL_BYTE_LENGTH
+                    + " Bytes are allowed. Channel: " + channel);
+        }
         synchronized (nodes) {
             if (nodes.contains(receiver)) {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                    j.publish("smsg:" + receiver, channel + ":" + id + ":" + message);
+                    // [2 Byte: channel][X Byte: sender-id][Length-2-X Byte: message]
+                    j.publish(getServerMessageChannel(receiver).getData(),
+                            ByteMessage.write(channel, nodeKeyLookUpTable.lookUpId(name), message).getData());
+                    /*
+                     * ByteBuffer bytebuffer = ByteBuffer.allocate(2 + nodeIdSize + message.length);
+                     * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
+                     * bytebuffer.put(channel.getData());
+                     * bytebuffer.put(nodeKeyLookUpTable.lookUpId(name));
+                     * bytebuffer.put(message);
+                     * bytebuffer.position(0);
+                     * j.publish(getServerMessageChannel(receiver), bytebuffer.array());
+                     */
                 }
             }
         }
     }
 
-    public static void broadcast(byte[] channel, byte[] message) {
+    public static void publish(Bytes receiver, JedisCommunicationChannel channel, Bytes message) {
+        publish(receiver, channel.getBytes(), message);
+    }
+
+    public static void broadcast(Bytes channel, Bytes message) {
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.publish("smsg:broadcast", channel + ":" + id + ":" + message);
+            // [2 Byte: channel][X Byte: sender-id][Length-2-X Byte: message]
+
+            j.publish(getBroadcastMessageChannel().getData(),
+                    ByteMessage.write(channel, nodeKeyLookUpTable.lookUpId(name), message).getData());
+            /*
+             * ByteBuffer bytebuffer = ByteBuffer.allocate(2 + nodeIdSize + message.length);
+             * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
+             * bytebuffer.put(channel);
+             * bytebuffer.put(nodeKeyLookUpTable.lookUpId(name));
+             * bytebuffer.put(message);
+             * bytebuffer.position(0);
+             * j.publish(getBroadcastMessageChannel(), bytebuffer.array());
+             */
         }
     }
 
-    private JedisCommunication(byte[][] channels) {
+    public static void broadcast(JedisCommunicationChannel channel, Bytes message) {
+        broadcast(channel.getBytes(), message);
+    }
+
+    private JedisCommunication(Bytes[] channels) {
         this.channels = channels;
     }
 
-    private void receive(byte[] message, boolean broadcast) {
-        byte[][] parts = message.split(":");
-        byte[] channel = parts[0];
-        byte[] sender = parts[1];
-        if (sender.equals(id) && broadcast) {
-            // don't receive messages from this node itself
-            return;
-        }
+    private void receive(Bytes message, boolean broadcast) {
+        // [2 Byte: channel][X Byte: sender-id][Length-2-X Byte: message]
+        Triplet<Bytes, Bytes, Bytes> m = ByteMessage.readIn(message, Bytes.class, Bytes.class, Bytes.class);
+        Bytes channel = m.getValue0();
+        Bytes sender_id = m.getValue1();
+        Bytes sender_name = nodeKeyLookUpTable.lookUpName(sender_id);
+        Bytes content = m.getValue2();
+        /*
+         * ByteBuffer bytebuffer = ByteBuffer.wrap(message);
+         * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
+         * byte[] channel = new byte[JedisCommunicationChannel.CHANNEL_BYTE_LENGTH];
+         * for (int i = 0; i < JedisCommunicationChannel.CHANNEL_BYTE_LENGTH; i++) {
+         * channel[i] = bytebuffer.get();
+         * }
+         * byte[] sender_id_bytes = new byte[nodeIdSize];
+         * for (int i = 0; i < nodeIdSize; i++) {
+         * sender_id_bytes[i] = bytebuffer.get();
+         * }
+         * byte[] sender_name = nodeKeyLookUpTable.lookUpName(sender_id_bytes);
+         * if (Arrays.equals(sender_name, name) && broadcast) {
+         * // don't receive messages from this node itself
+         * return;
+         * }
+         */
         synchronized (nodes) {
-            if (!nodes.contains(sender)) {
+            if (!nodes.contains(sender_name)) {
                 // in case a new node sends a message immediately we need to be able to answer
-                nodes.add(sender);
+                nodes.add(sender_name);
             }
         }
-        String rest = "";
-        if (parts.length >= 3) {
-            rest = parts[2];
-        }
-        for (int i = 3; i < parts.length; i++) {
-            rest += ":" + parts[i];
-        }
+        // byte[] rest = bytebuffer.array();
         MessageReceiver recv = null;
         synchronized (receivers) {
             if (receivers.containsKey(channel)) {
@@ -201,28 +278,31 @@ public class JedisCommunication extends BinaryJedisPubSub {
             } else {
                 System.out.println("Received message in channel currently not handled by any listener.");
                 System.out.println("Message channel: '" + channel + "'");
-                System.out.println("Currently registred channels: " + String.join(", ", receivers.keySet()));
+                System.out.println("Currently registred channels: " + String.join(", ",
+                        receivers.keySet().stream().map(bytearray -> bytearray.toString()).toList()));
             }
         }
         if (recv != null) {
-            recv.receive(channel, sender, broadcast, rest);
+            recv.receive(channel, sender_name, broadcast, content);
         }
     }
 
     @Override
     public void onMessage(byte[] redis_channel, byte[] message) {
         try {
-            this.receive(message, redis_channel.equals("smsg:broadcast"));
+            this.receive(new Bytes(message),
+                    Arrays.equals(redis_channel, JedisCommunicationChannel.SERVER_MESSAGE_BROADCAST.getData()));
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error in message on redis_channel " + redis_channel);
-            System.out.println("Message: " + message);
+            System.out.println("Error in message on redis_channel " + new Bytes(redis_channel));
+            System.out.println("Message: " + new Bytes(message));
         }
     }
 
     @Override
     public void onPMessage(byte[] pattern, byte[] redis_channel, byte[] message) {
-        this.receive(message, redis_channel.equals("smsg:broadcast"));
+        this.receive(new Bytes(message),
+                Arrays.equals(redis_channel, JedisCommunicationChannel.SERVER_MESSAGE_BROADCAST.getData()));
     }
 
     @Override

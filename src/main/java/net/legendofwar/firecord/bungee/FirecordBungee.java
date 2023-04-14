@@ -3,6 +3,7 @@ package net.legendofwar.firecord.bungee;
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.command.BungeeSender;
 import net.legendofwar.firecord.command.FirecordCommand;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.tool.NodeType;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Command;
@@ -19,7 +20,7 @@ public class FirecordBungee extends Plugin {
         String serverName = pathSplit[pathSplit.length - 3];
         getLogger().info("ServerName: " + serverName);
 
-        Firecord.init(serverName, NodeType.BUNGEE);
+        Firecord.init(new Bytes(serverName), NodeType.BUNGEE);
 
         net.md_5.bungee.api.ProxyServer.getInstance().getPluginManager().registerCommand(this, new Command("firecord") {
 

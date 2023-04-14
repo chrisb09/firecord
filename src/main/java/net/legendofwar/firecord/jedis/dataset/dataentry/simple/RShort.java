@@ -3,6 +3,7 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
@@ -11,11 +12,11 @@ public final class RShort extends NumericData<Short> {
 
     final static Short DEFAULT_VALUE = 0;
 
-    public RShort(@NotNull String key) {
+    public RShort(@NotNull Bytes key) {
         this(key, null);
     }
 
-    public RShort(@NotNull String key, Short defaultValue) {
+    public RShort(@NotNull Bytes key, Short defaultValue) {
         super(key, defaultValue);
     }
 
@@ -27,7 +28,7 @@ public final class RShort extends NumericData<Short> {
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            this.value = (short) j.incrBy(key, value);
+            this.value = (short) j.incrBy(key.getData(), value);
             this._update();
         }
         return this.value;
@@ -41,7 +42,7 @@ public final class RShort extends NumericData<Short> {
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            this.value = (short) j.incrBy(key, -value);
+            this.value = (short) j.incrBy(key.getData(), -value);
             this._update();
         }
         return this.value;
@@ -55,8 +56,8 @@ public final class RShort extends NumericData<Short> {
         }
         try (AbstractData<Short> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.value = (short) (Short.parseShort(j.get(key)) * value);
-                j.set(key, this.value.toString());
+                this.value = (short) (Short.parseShort(new Bytes(j.get(key.getData())).asString()) * value);
+                j.set(key.getData(), new Bytes(this.value.toString()).getData());
                 this._update();
             }
         }
@@ -71,8 +72,8 @@ public final class RShort extends NumericData<Short> {
         }
         try (AbstractData<Short> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.value = (short) (Short.parseShort(j.get(key)) / value);
-                j.set(key, this.value.toString());
+                this.value = (short) (Short.parseShort(new Bytes(j.get(key.getData())).asString()) / value);
+                j.set(key.getData(), new Bytes(this.value.toString()).getData());
                 this._update();
             }
         }
@@ -80,8 +81,13 @@ public final class RShort extends NumericData<Short> {
     }
 
     @Override
-    protected void fromString(String value) {
-        this.value = Short.parseShort(value);
+    protected Bytes toBytes() {
+        return new Bytes(this.value.toString());
+    }
+
+    @Override
+    protected void fromBytes(byte[] value) {
+        this.value = Short.parseShort(new String(value));
     }
 
     @Override

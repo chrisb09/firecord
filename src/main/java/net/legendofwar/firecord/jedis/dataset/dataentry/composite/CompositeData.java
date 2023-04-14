@@ -1,6 +1,5 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.composite;
 
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,8 +7,10 @@ import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.communication.JedisCommunication;
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import redis.clients.jedis.Jedis;
@@ -18,15 +19,15 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
         implements Collection<T> {
 
     // Map of all (once) loaded Composite entries
-    static HashMap<String, CompositeData<?, ?>> loaded = new HashMap<String, CompositeData<?, ?>>();
+    static HashMap<Bytes, CompositeData<?, ?>> loaded = new HashMap<Bytes, CompositeData<?, ?>>();
 
     static {
 
-        JedisCommunication.subscribe("RCollection_del", new MessageReceiver() {
+        JedisCommunication.subscribe(JedisCommunicationChannel.DEL_COLLECTION, new MessageReceiver() {
 
             @Override
-            public void receive(String channel, String sender, boolean broadcast, String message) {
-                String key = new String(Base64.getDecoder().decode(message));
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
+                Bytes key = message;
                 CompositeData<?, ?> l = null;
                 synchronized (loaded) {
                     if (loaded.containsKey(key)) {
@@ -46,7 +47,7 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
 
     final E data;
 
-    CompositeData(@NotNull String key, E data, DataType dt) {
+    CompositeData(@NotNull Bytes key, E data, DataType dt) {
         super(key);
         this.data = data; // should be empty at this point
         if (key != null) {
@@ -56,7 +57,7 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
                 loaded.put(key, this);
             }
             if (this.isEmpty()) {
-                this._setType(key, dt);
+                this._setType(dt);
             }
         }
     }
@@ -90,7 +91,7 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
      * @param key
      * @return true if an element was removed
      */
-    public boolean removeKey(String key) {
+    public boolean removeKey(Bytes key) {
         synchronized (AbstractData.loaded) {
             if (AbstractData.loaded.containsKey(key)) {
                 AbstractData<?> entry = AbstractData.loaded.get(key);
@@ -106,7 +107,7 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
      * @param key
      * @return
      */
-    boolean _removeKey(String key) {
+    boolean _removeKey(Bytes key) {
         synchronized (AbstractData.loaded) {
             if (AbstractData.loaded.containsKey(key)) {
                 AbstractData<?> entry = AbstractData.loaded.get(key);
@@ -119,9 +120,9 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
     @Override
     public void clear() {
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.del(key);
+            j.del(key.getData());
         }
-        JedisCommunication.broadcast("RCollection_del", new String(Base64.getEncoder().encode(key.getBytes())));
+        JedisCommunication.broadcast(JedisCommunicationChannel.DEL_COLLECTION, key);
         synchronized (this.data) {
             this.data.clear();
         }
@@ -136,12 +137,12 @@ public abstract class CompositeData<T extends AbstractData<?>, E extends Collect
 
     @Override
     public int hashCode() {
-        synchronized (this.data){
+        synchronized (this.data) {
             return this.data.hashCode();
         }
     }
 
-    public abstract boolean containsKey(String key);
+    public abstract boolean containsKey(Bytes key);
 
     public abstract boolean containsValue(Object value);
 

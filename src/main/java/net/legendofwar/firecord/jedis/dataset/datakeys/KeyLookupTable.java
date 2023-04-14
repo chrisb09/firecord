@@ -6,6 +6,7 @@ import java.util.Map;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import redis.clients.jedis.Jedis;
 
 public class KeyLookupTable {
@@ -33,24 +34,24 @@ public class KeyLookupTable {
      * 
      */
 
-    private byte[] key;
+    private Bytes key;
     private int idSize;
     private JedisLock lock;
 
-    private HashMap<byte[], byte[]> cache = new HashMap<>(); // id, name
-    private HashMap<byte[], byte[]> reverseCache = new HashMap<>(); // name, id
+    private HashMap<Bytes, Bytes> cache = new HashMap<>(); // id, name
+    private HashMap<Bytes, Bytes> reverseCache = new HashMap<>(); // name, id
 
-    public KeyLookupTable(byte[] key, int idSize) {
+    public KeyLookupTable(Bytes key, int idSize) {
         this.key = key;
         this.idSize = idSize;
         lock = new JedisLock(key);
     }
 
-    public byte[] lookUpName(long id) {
-        return lookUpName(ByteFunctions.encodeId(id, idSize));
+    public Bytes lookUpName(long id) {
+        return lookUpName(new Bytes(id, idSize));
     }
 
-    public byte[] lookUpName(byte[] id) {
+    public Bytes lookUpName(Bytes id) {
         if (cache.containsKey(id)) {
             return cache.get(id);
         }
@@ -58,14 +59,14 @@ public class KeyLookupTable {
         try {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 byte[] cache_key = getCacheKey();
-                if (j.hexists(cache_key, id)) {
-                    byte[] name = j.hget(cache_key, id);
+                if (j.hexists(cache_key, id.getData())) {
+                    Bytes name = new Bytes(j.hget(cache_key, id.getData()));
                     cache.put(id, name);
                     reverseCache.put(name, id);
                     return name;
                 } else {
                     throw new InvalidParameterException(
-                            "There is currently no id '" + id + "' in '" + cache_key + "'...");
+                            "There is currently no id '" + id + "' in '" + ByteFunctions.asHexadecimal(cache_key) + "'...");
                 }
             }
         } finally {
@@ -74,18 +75,22 @@ public class KeyLookupTable {
     }
 
     public long lookUpIdLong(String name) {
-        return ByteFunctions.decodeId(lookUpId(name));
+        return lookUpId(name).decodeNumber();
     }
 
-    public long lookUpIdLong(byte[] name) {
-        return ByteFunctions.decodeId(lookUpId(name));
+    public long lookUpIdLong(Bytes name) {
+        return lookUpId(name).decodeNumber();
     }
 
-    public byte[] lookUpId(String name) {
+    public Bytes lookUpId(byte[] name){
+        return lookUpId(new Bytes(name));
+    }
+
+    public Bytes lookUpId(String name) {
         return lookUpId(name.getBytes());
     }
 
-    public byte[] lookUpId(byte[] name) {
+    public Bytes lookUpId(Bytes name) {
         if (reverseCache.containsKey(name)) {
             return reverseCache.get(name);
         }
@@ -93,16 +98,16 @@ public class KeyLookupTable {
         try {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 byte[] reverseCacheKey = getReverseCacheKey();
-                if (j.hexists(reverseCacheKey, name)) {
-                    byte[] id = j.hget(reverseCacheKey, name);
+                if (j.hexists(reverseCacheKey, name.getData())) {
+                    Bytes id = new Bytes(j.hget(reverseCacheKey, name.getData()));
                     cache.put(id, name);
                     reverseCache.put(name, id);
                     return id;
                 } else {
-                    long newId = j.incr(KeyGenerator.join(this.key, KeyLookupEntry.COUNTER.getData()));
-                    byte[] newIdBytes = ByteFunctions.encodeId(newId, idSize);
-                    j.hset(getCacheKey(), newIdBytes, name);
-                    j.hset(getReverseCacheKey(), name, newIdBytes);
+                    long newId = j.incr(this.key.append(KeyLookupEntry.COUNTER.getData()).getData());
+                    Bytes newIdBytes = new Bytes(newId, (byte) idSize);
+                    j.hset(getCacheKey(), newIdBytes.getData(), name.getData());
+                    j.hset(getReverseCacheKey(), name.getData(), newIdBytes.getData());
                     System.out.println("Entries for " + getCacheKey());
                     for (Map.Entry<byte[], byte[]> en : j.hgetAll(getCacheKey()).entrySet()) {
                         System.out.println(en.getKey() + ": " + en.getValue());
@@ -116,11 +121,11 @@ public class KeyLookupTable {
     }
 
     private byte[] getCacheKey() {
-        return KeyGenerator.join(this.key, KeyLookupEntry.CACHE.getData());
+        return this.key.append(KeyLookupEntry.CACHE.getData()).getData();
     }
 
     private byte[] getReverseCacheKey() {
-        return KeyGenerator.join(this.key, KeyLookupEntry.REVERSE_CACHE.getData());
+        return ByteFunctions.join(this.key, KeyLookupEntry.REVERSE_CACHE.getData());
     }
 
     /*

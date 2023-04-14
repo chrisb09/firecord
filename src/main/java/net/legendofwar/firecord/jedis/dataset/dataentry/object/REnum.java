@@ -4,6 +4,7 @@ import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
 
@@ -16,7 +17,7 @@ public final class REnum<T extends Enum<T>> extends SimpleAbstractObject<T> {
     RString className;
     RString value;
 
-    public REnum(@NotNull String key, @NotNull T defaultValue) {
+    public REnum(@NotNull Bytes key, @NotNull T defaultValue) {
         super(key);
         c = (Class<T>) defaultValue.getClass();
         className.set(defaultValue.getClass().getName());
@@ -26,7 +27,7 @@ public final class REnum<T extends Enum<T>> extends SimpleAbstractObject<T> {
         }
     }
 
-    public REnum(String key) {
+    public REnum(Bytes key) {
         super(key);
         Class<?> c = null;
         try {

@@ -2,18 +2,21 @@ package net.legendofwar.firecord;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 import net.legendofwar.firecord.communication.JedisCommunication;
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.tool.FileIO;
 import net.legendofwar.firecord.tool.NodeType;
 import redis.clients.jedis.Jedis;
 
 public class Firecord {
 
-    private static byte[] id = null;
+    private static Bytes id = null;
     private static NodeType nodeType = NodeType.STANDALONE;
 
     /**
@@ -23,11 +26,11 @@ public class Firecord {
      * @param nodeType Type of this node
      * @return boolean returns if the initialization is valid or not
      */
-    public static boolean init(byte[] id, NodeType nodeType) {
+    public static boolean init(Bytes id, NodeType nodeType) {
         Firecord.id = id;
         Firecord.nodeType = nodeType;
         JedisCommunication.init(id);
-        return id != null && id.length() != 0;
+        return id != null && id.length != 0;
     }
 
     /**
@@ -37,7 +40,7 @@ public class Firecord {
      * @return boolean returns if the initialization is valid or not
      */
     public static boolean init(NodeType nodeType) {
-        return init(loadId(new File("id")), nodeType);
+        return init(new Bytes(loadId(new File("id"))), nodeType);
     }
 
     /**
@@ -52,8 +55,17 @@ public class Firecord {
      * 
      * @return String id of this node
      */
-    public static String getId() {
+    public static Bytes getId() {
         return id;
+    }
+
+    /**
+     * Get the id of this node.
+     * 
+     * @return String id of this node
+     */
+    public static String getIdName() {
+        return id.asString();
     }
 
     /**
@@ -79,11 +91,22 @@ public class Firecord {
      * Subscribe a receiver to a message channel. The receiver does not run in the
      * main thread so be mindful of this.
      * 
-     * @param channel Channel to listen to. Channels are not allowed  to contain ":"
+     * @param channel  Channel to listen to. Channels are not allowed to contain ":"
      * @param receiver Receiver to handle the messages.
      */
-    public static void subscribe(byte[] channel, MessageReceiver receiver) {
+    public static void subscribe(Bytes channel, MessageReceiver receiver) {
         JedisCommunication.subscribe(channel, receiver);
+    }
+
+    /**
+     * Subscribe a receiver to a message channel. The receiver does not run in the
+     * main thread so be mindful of this.
+     * 
+     * @param channel  Channel to listen to. Channels are not allowed to contain ":"
+     * @param receiver Receiver to handle the messages.
+     */
+    public static void subscribe(JedisCommunicationChannel channel, MessageReceiver receiver) {
+        JedisCommunication.subscribe(new Bytes(channel), receiver);
     }
 
     /**
@@ -91,19 +114,43 @@ public class Firecord {
      * 
      * @param channel Channel to unsubscribe from.
      */
-    public static void unsubscribe(byte[] channel) {
+    public static void unsubscribe(JedisCommunicationChannel channel) {
+        JedisCommunication.unsubscribe(new Bytes(channel));
+    }
+
+    /**
+     * Unsubscribe a certain channel.
+     * 
+     * @param channel Channel to unsubscribe from.
+     */
+    public static void unsubscribe(Bytes channel) {
         JedisCommunication.unsubscribe(channel);
     }
 
     /**
      * Send a message to a node, message to itself are allowed too.
      * 
-     * @param receiver The node that should receive this message. Cannot contain ":".
-     * @param channel The channel on which we send this message. Cannot contain ":".
-     * @param message The message we send.
+     * @param receiver The node that should receive this message. Cannot contain
+     *                 ":".
+     * @param channel  The channel on which we send this message. Cannot contain
+     *                 ":".
+     * @param message  The message we send.
      */
-    public static void publish(byte[] receiver, byte[] channel, byte[] message) {
+    public static void publish(Bytes receiver, Bytes channel, Bytes message) {
         JedisCommunication.publish(receiver, channel, message);
+    }
+
+    /**
+     * Send a message to a node, message to itself are allowed too.
+     * 
+     * @param receiver The node that should receive this message. Cannot contain
+     *                 ":".
+     * @param channel  The channel on which we send this message. Cannot contain
+     *                 ":".
+     * @param message  The message we send.
+     */
+    public static void publish(Bytes receiver, JedisCommunicationChannel channel, Bytes message) {
+        JedisCommunication.publish(receiver, new Bytes(channel), message);
     }
 
     /**
@@ -112,8 +159,18 @@ public class Firecord {
      * @param channel The channel on which we send this message. Cannot contain ":".
      * @param message The message we send.
      */
-    public static void broadcast(byte[] channel, byte[] message) {
+    public static void broadcast(Bytes channel, Bytes message) {
         JedisCommunication.broadcast(channel, message);
+    }
+
+    /**
+     * Broadcast a message to all other nodes.
+     * 
+     * @param channel The channel on which we send this message. Cannot contain ":".
+     * @param message The message we send.
+     */
+    public static void broadcast(JedisCommunicationChannel channel, Bytes message) {
+        JedisCommunication.broadcast(new Bytes(channel), message);
     }
 
     /**
@@ -121,11 +178,15 @@ public class Firecord {
      * 
      * @return Set<String> Set of all IDs of nodes.
      */
-    public static Set<String> getNodes() {
+    public static Set<Bytes> getNodes() {
         return JedisCommunication.getNodes();
     }
 
-    
+    public static Set<String> getNodeNames() {
+        return new HashSet<String>(
+                JedisCommunication.getNodes().stream().map(bytearray -> bytearray.asString()).toList());
+    }
+
     // hidden methods
 
     private static String loadId(File file) {

@@ -8,10 +8,13 @@ import java.util.HashMap;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.Firecord;
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
@@ -20,27 +23,27 @@ public abstract class AbstractData<T> implements Closeable {
 
     static {
 
-        Firecord.subscribe("del_key", new MessageReceiver() {
+        Firecord.subscribe(JedisCommunicationChannel.DEL_KEY, new MessageReceiver() {
 
             @Override
-            public void receive(String channel, String sender, boolean broadcast, String message) {
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
                 AbstractData<?> ad = null;
                 synchronized (loaded) {
-                    if (loaded.containsKey(message)){
+                    if (loaded.containsKey(message)) {
                         ad = loaded.get(message);
                     }
                 }
                 DataGenerator.delete(ad, false);
             }
-            
+
         });
 
     }
 
-    public static AbstractData<?> callConstructor(@NotNull byte[] key, @NotNull Class<?> c) {
+    public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c) {
 
         try {
-            return (AbstractData<?>) c.getDeclaredConstructor(byte[].class).newInstance(key);
+            return (AbstractData<?>) c.getDeclaredConstructor(Bytes.class).newInstance(key);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
@@ -57,10 +60,11 @@ public abstract class AbstractData<T> implements Closeable {
         return null;
     }
 
-    public static AbstractData<?> callConstructor(@NotNull byte[] key, @NotNull Class<?> c, Object defaultValue) {
+    public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c, Object defaultValue) {
 
         try {
-            return (AbstractData<?>) c.getDeclaredConstructor(byte[].class, defaultValue.getClass()).newInstance(key, defaultValue);
+            return (AbstractData<?>) c.getDeclaredConstructor(Bytes.class, defaultValue.getClass()).newInstance(key,
+                    defaultValue);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
@@ -87,10 +91,11 @@ public abstract class AbstractData<T> implements Closeable {
      * @param key
      * @return
      */
-    public static AbstractData<?> create(@NotNull byte[] key) {
+    public static AbstractData<?> create(@NotNull Bytes key) {
 
-        // since reflection is used the @NotNull annotation does not guarantee null safety
-        if (key == null){
+        // since reflection is used the @NotNull annotation does not guarantee null
+        // safety
+        if (key == null) {
             return null;
         }
 
@@ -102,8 +107,8 @@ public abstract class AbstractData<T> implements Closeable {
         }
         String type = null;
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            byte[] t = j.get(KeyGenerator.join(key, DataKeySuffix.TYPE.getData()));
-            if (t != null){
+            byte[] t = j.get(ByteFunctions.join(key, DataKeySuffix.TYPE));
+            if (t != null) {
                 type = new String(t);
             }
         }
@@ -125,7 +130,7 @@ public abstract class AbstractData<T> implements Closeable {
                     String className = null;
                     byte[] cN;
                     try (Jedis j = ClassicJedisPool.getJedis()) {
-                        cN = j.get(KeyGenerator.join(key, DataKeySuffix.CLASS.getData()));
+                        cN = j.get(ByteFunctions.join(key, DataKeySuffix.CLASS));
                     }
                     if (cN != null) {
                         className = new String(cN);
@@ -149,12 +154,12 @@ public abstract class AbstractData<T> implements Closeable {
 
     }
 
-    protected final byte[] key;
+    protected final Bytes key;
     protected final JedisLock lock;
 
-    public static HashMap<byte[], AbstractData<?>> loaded = new HashMap<byte[], AbstractData<?>>();
+    public static HashMap<Bytes, AbstractData<?>> loaded = new HashMap<Bytes, AbstractData<?>>();
 
-    protected AbstractData(@NotNull byte[] key) {
+    protected AbstractData(@NotNull Bytes key) {
         this.key = key;
         if (key != null) {
             // make sure the object is NOT a temporary placeholde
@@ -188,11 +193,11 @@ public abstract class AbstractData<T> implements Closeable {
 
     protected void _setType(Enum<?> dt) {
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.set(KeyGenerator.join(key,DataKeySuffix.TYPE.getData()), dt.toString().getBytes());
+            j.set(ByteFunctions.join(key, DataKeySuffix.TYPE), dt.toString().getBytes());
         }
     }
 
-    public final byte[] getKey() {
+    public final Bytes getKey() {
         return key;
     }
 

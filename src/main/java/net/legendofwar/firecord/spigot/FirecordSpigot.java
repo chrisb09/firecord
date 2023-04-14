@@ -10,6 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.command.FirecordCommand;
 import net.legendofwar.firecord.command.SpigotSender;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.tool.NodeType;
 
 public final class FirecordSpigot extends JavaPlugin implements Listener {
@@ -23,7 +24,7 @@ public final class FirecordSpigot extends JavaPlugin implements Listener {
         String serverName = pathSplit[pathSplit.length - 3];
         Bukkit.getLogger().info("ServerName: " + serverName);
 
-        if (Firecord.init(serverName, NodeType.SPIGOT)) {
+        if (Firecord.init(new Bytes(serverName), NodeType.SPIGOT)) {
             this.getCommand("firecord").setExecutor(new CommandExecutor() {
 
                 @Override

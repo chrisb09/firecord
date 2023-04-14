@@ -5,17 +5,19 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.communication.JedisCommunication;
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 
 public abstract class LargeData<T> extends SimpleData<T> {
 
     static {
 
-        JedisCommunication.subscribe("update_key_large", new MessageReceiver() {
+        JedisCommunication.subscribe(JedisCommunicationChannel.UPDATE_LARGE_KEY, new MessageReceiver() {
 
             @Override
             @SuppressWarnings("unchecked")
-            public void receive(String channel, String sender, boolean broadcast, String message) {
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
                 SimpleData<Object> entry = null;
                 synchronized (loaded) {
                     if (loaded.containsKey(message)) {
@@ -46,7 +48,7 @@ public abstract class LargeData<T> extends SimpleData<T> {
 
     }
 
-    LargeData(@NotNull String key, T defaultValue) {
+    LargeData(@NotNull Bytes key, T defaultValue) {
         super(key, defaultValue);
     }
 
@@ -73,9 +75,9 @@ public abstract class LargeData<T> extends SimpleData<T> {
         recentlyModified.add(this);
         if (broadcast) {
             if (this.value != null) {
-                JedisCommunication.broadcast("update_key_large", this.key);
+                JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_LARGE_KEY, this.key);
             } else {
-                JedisCommunication.broadcast("del_key_value", this.key);
+                JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
             }
         }
     }

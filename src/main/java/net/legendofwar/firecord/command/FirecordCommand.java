@@ -1,11 +1,17 @@
 package net.legendofwar.firecord.command;
 
 import java.util.Arrays;
-import java.util.Base64;
+import java.util.List;
+
+import org.javatuples.Pair;
+import org.javatuples.Triplet;
 
 import net.legendofwar.firecord.Firecord;
+import net.legendofwar.firecord.communication.ByteMessage;
 import net.legendofwar.firecord.communication.JedisCommunication;
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
@@ -20,7 +26,7 @@ import redis.clients.jedis.Jedis;
 
 public class FirecordCommand {
 
-    static DataGenerator<RLong> dg = new DataGenerator<>("longdata", RLong.class);
+    static DataGenerator<RLong> dg = new DataGenerator<>(new Bytes("longdata"), RLong.class);
 
     static KeyLookupTable testKeyLookupTable;
     static RInteger test = null;
@@ -45,55 +51,56 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " storeis     §e large data sync example");
             sender.sendMessage("§b" + label + " testlist    §e list test command");
             sender.sendMessage("§b" + label + " testanon    §e anonymous type test command");
+            sender.sendMessage("§b" + label + " testmessage §e write&read to a test-byte[]");
             sender.sendMessage("§b" + label + " testobject  §e test object command");
             sender.sendMessage("§b" + label + " testenum    §e construct an enum");
             sender.sendMessage("§b" + label + " ping <node> §e broadcast test message");
             sender.sendMessage("§b" + label + " redis <key> §e get redis entry at key");
             sender.sendMessage("§b" + label + " help        §e show this help page");
         } else if (args[0].equalsIgnoreCase("id")) {
-            sender.sendMessage("§bid: §e" + Firecord.getId());
+            sender.sendMessage("§bid: §e" + Firecord.getId().asString());
         } else if (args[0].equalsIgnoreCase("ids") || args[0].equalsIgnoreCase("list")) {
-            sender.sendMessage("§bids: §e" + String.join(", ", Firecord.getNodes()));
+            sender.sendMessage("§bids: §e" + String.join(", ", Firecord.getNodeNames()));
         } else if (args[0].equalsIgnoreCase("test")) {
             sender.sendMessage("§7send broadcast message to all other nodes that causes a entry in the log.");
-            Firecord.broadcast("test", "Hello World");
+            Firecord.broadcast(JedisCommunicationChannel.TEST, new Bytes("Hello World"));
         } else if (args[0].equalsIgnoreCase("serialize")) {
             if (test == null) {
-                test = new RInteger("testint");
+                test = new RInteger(new Bytes("testint"));
                 test.setIfEmpty(0);
             }
         } else if (args[0].equalsIgnoreCase("testlist")) {
             if (testlist1 == null) {
-                testlist1 = new RList<RInteger>("testlist1");
+                testlist1 = new RList<RInteger>(new Bytes("testlist1"));
             }
             if (testlist2 == null) {
-                testlist2 = new RList<RInteger>("testlist2");
+                testlist2 = new RList<RInteger>(new Bytes("testlist2"));
             }
             if (testlist3 == null) {
-                testlist3 = new RList<AbstractData<?>>("testlist3");
+                testlist3 = new RList<AbstractData<?>>(new Bytes("testlist3"));
             }
             if (test1 == null) {
-                test1 = (RInteger) AbstractData.create("testint1");
+                test1 = (RInteger) AbstractData.create(new Bytes("testint1"));
                 if (test1 == null) {
-                    test1 = new RInteger("testint1");
+                    test1 = new RInteger(new Bytes("testint1"));
                     test1.setIfEmpty(1);
                 }
             }
             if (test2 == null) {
-                test2 = (RInteger) AbstractData.create("testint2");
+                test2 = (RInteger) AbstractData.create(new Bytes("testint2"));
                 if (test2 == null) {
-                    test2 = new RInteger("testint2");
+                    test2 = new RInteger(new Bytes("testint2"));
                     test2.setIfEmpty(2);
                 }
             }
             if (test3 == null) {
-                test3 = (RInteger) AbstractData.create("testint3");
+                test3 = (RInteger) AbstractData.create(new Bytes("testint3"));
                 if (test3 == null) {
-                    test3 = new RInteger("testint3");
+                    test3 = new RInteger(new Bytes("testint3"));
                     test3.setIfEmpty(3);
                 }
             }
-            String logKey = new String(Base64.getEncoder().encode(testlist2.getKey().getBytes()));
+            Bytes logKey = testlist2.getKey();
             sender.sendMessage("§btestlist1: §e" + String.join(",", Arrays.toString(testlist1.toArray())));
             sender.sendMessage("§btestlist2: §e" + String.join(",", Arrays.toString(testlist2.toArray())));
             sender.sendMessage("§btestlist3: §e" + String.join(",", Arrays.toString(testlist3.toArray())));
@@ -110,21 +117,24 @@ public class FirecordCommand {
             sender.sendMessage("§btestlist1: §e" + String.join(",", Arrays.toString(testlist1.toArray())));
             sender.sendMessage("§a#2 add Elements of list #1");
             testlist2.addAll(testlist1);
-            JedisCommunication.broadcast("log", "After first add: ");
-            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
-            JedisCommunication.broadcast("RList_log", logKey);
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG, new Bytes("After first add: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testlist2.toArray()))));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LIST_LOG, logKey);
             sender.sendMessage("§a#2 add Elements of list #1 at position 1");
             testlist2.addAll(1, testlist1);
-            JedisCommunication.broadcast("log", "After second add: ");
-            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
-            JedisCommunication.broadcast("RList_log", logKey);
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG, new Bytes("After second add: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testlist2.toArray()))));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LIST_LOG, logKey);
             sender.sendMessage("§a#2 add Elements of list #1 at position 3");
             testlist2.addAll(3, testlist1);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
             sender.sendMessage("§btestlist2: §e" + String.join(",", Arrays.toString(testlist2.toArray())));
-            JedisCommunication.broadcast("log", "After adding: ");
-            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
-            JedisCommunication.broadcast("RList_log", logKey);
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG, new Bytes("After adding: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testlist2.toArray()))));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LIST_LOG, logKey);
             sender.sendMessage("§a#3 add Element 3");
             testlist3.add(test3);
             sender.sendMessage("§btestlist3: §e" + testlist3.size());
@@ -137,16 +147,19 @@ public class FirecordCommand {
             testlist2.remove(4);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
             sender.sendMessage("§btestlist2: §e" + String.join(",", Arrays.toString(testlist2.toArray())));
-            JedisCommunication.broadcast("log", "After remove of element nr 4: ");
-            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
-            JedisCommunication.broadcast("RList_log", logKey);
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG, new Bytes("After remove of element nr 4: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testlist2.toArray()))));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LIST_LOG, logKey);
             sender.sendMessage("§a#2 retain all elements found in list #3");
             testlist2.retainAll(testlist3);
             sender.sendMessage("§btestlist2: §e" + testlist2.size());
             sender.sendMessage("§btestlist2: §e" + String.join(",", Arrays.toString(testlist2.toArray())));
-            JedisCommunication.broadcast("log", "After retaining all elements found in #3: ");
-            JedisCommunication.broadcast("log", "#2 " + String.join(",", Arrays.toString(testlist2.toArray())));
-            JedisCommunication.broadcast("RList_log", logKey);
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("After retaining all elements found in #3: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testlist2.toArray()))));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LIST_LOG, logKey);
             sender.sendMessage("§b#3 set entry nr. 0 to element 1");
             testlist3.set(0, test1);
             sender.sendMessage("§btestlist3: §e" + testlist3.size());
@@ -157,27 +170,45 @@ public class FirecordCommand {
                 sender.sendMessage("§btestlist1:");
                 sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist1.toArray())));
                 sender.sendMessage("§bRedis: §c"
-                        + String.join(",", Arrays.toString(j.lrange(testlist1.getKey(), 0, -1).toArray())));
+                        + String.join(",", Arrays.toString(j.lrange(testlist1.getKey().getData(), 0, -1).toArray())));
                 sender.sendMessage("§btestlist2:");
                 sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist2.toArray())));
                 sender.sendMessage("§bRedis: §c"
-                        + String.join(",", Arrays.toString(j.lrange(testlist2.getKey(), 0, -1).toArray())));
+                        + String.join(",", Arrays.toString(j.lrange(testlist2.getKey().getData(), 0, -1).toArray())));
                 sender.sendMessage("§btestlist3:");
                 sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist3.toArray())));
                 sender.sendMessage("§bRedis: §c"
-                        + String.join(",", Arrays.toString(j.lrange(testlist3.getKey(), 0, -1).toArray())));
+                        + String.join(",", Arrays.toString(j.lrange(testlist3.getKey().getData(), 0, -1).toArray())));
             }
         } else if (args[0].equalsIgnoreCase("testint")) {
             if (test == null) {
-                test = new RInteger("testint");
+                test = new RInteger(new Bytes("testint"));
             }
             sender.sendMessage("§btestint: §e" + test.get());
             sender.sendMessage("§atestint++;");
             test.add(1);
             sender.sendMessage("§btestint: §e" + test.get());
+        } else if (args[0].equalsIgnoreCase("testwrite")) {
+            if (test == null) {
+                test = new RInteger(new Bytes("testint"));
+            }
+            sender.sendMessage("§btestwrite:");
+            Bytes m = ByteMessage.write((byte) 5);
+            sender.sendMessage("§b5: §a" + ByteMessage.readIn(m, Byte.class).getValue0());
+            m = ByteMessage.write((byte) 5, "testint");
+            sender.sendMessage("§bMessage: "+m);
+            Pair<Byte, String> t = ByteMessage.readIn(m, Byte.class, String.class);
+            sender.sendMessage("§b5,testint: §a" + t.getValue0() + "§b,§a" + t.getValue1());
+            m = ByteMessage.write((byte) 5, "testint",
+                    new Bytes[] { new Bytes("testlist1"), new Bytes("testlist2"), new Bytes("testlist3") });
+            Triplet<Byte, String, Bytes[]> tr = ByteMessage.readIn(m, Byte.class, String.class, Bytes[].class);
+            Bytes[] byts = tr.getValue2();
+            List<Bytes> bl = Arrays.asList(byts);
+            sender.sendMessage("§b5,testint: §a" + t.getValue0() + "§b,§a" + t.getValue1() + "§b,§a"
+                    + String.join("§b,§a", bl.stream().map(bytes -> bytes.asString()).toList()));
         } else if (args[0].equalsIgnoreCase("testid")) {
             if (testKeyLookupTable == null) {
-                testKeyLookupTable = new KeyLookupTable("test".getBytes(), 2);
+                testKeyLookupTable = new KeyLookupTable(new Bytes("test"), 2);
             }
             String testname = "tobi20";
             if (args.length > 1) {
@@ -185,18 +216,18 @@ public class FirecordCommand {
             }
             sender.sendMessage("§bName: " + testname);
             sender.sendMessage("§bName-Bytes: " + testname.getBytes());
-            byte[] id = testKeyLookupTable.lookUpId(testname);
+            Bytes id = testKeyLookupTable.lookUpId(testname);
             sender.sendMessage("§btestkeylookup (name->id) (Bytes): §e" + id);
             sender.sendMessage("§btestkeylookup (name->id): §e" + testKeyLookupTable.lookUpIdLong(testname));
-            byte[] name = testKeyLookupTable.lookUpName(id);
+            Bytes name = testKeyLookupTable.lookUpName(id);
             sender.sendMessage("§breverse-lookup (id->name)(bytes): §e" + name);
-            sender.sendMessage("§breverse-lookup (id->name): §e" + new String(name));
+            sender.sendMessage("§breverse-lookup (id->name): §e" + name.asString());
         } else if (args[0].equalsIgnoreCase("testanon")) {
             RLong ad = dg.create(7l);
             sender.sendMessage("§btestanon: §e" + ad.getKey() + "=§a" + ad);
         } else if (args[0].equalsIgnoreCase("testobject")) {
             if (testob == null) {
-                testob = new TestObject("testobject");
+                testob = new TestObject(new Bytes("testobject"));
             }
             sender.sendMessage("§btestob: §e" + testob);
             sender.sendMessage("§atestob.incrA();");
@@ -210,7 +241,7 @@ public class FirecordCommand {
             sender.sendMessage("§btestob: §e" + testob);
         } else if (args[0].equalsIgnoreCase("testenum")) {
             if (testenum == null) {
-                testenum = new REnum<DataType>("testenum", DataType.STRING);
+                testenum = new REnum<DataType>(new Bytes("testenum"), DataType.STRING);
             }
             sender.sendMessage("§btestenum.toString(): §e" + testenum.toString());
             DataType newValue = DataType.values()[(int) (Math.random() * DataType.values().length)];
@@ -225,7 +256,8 @@ public class FirecordCommand {
                     org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(args[1]);
                     if (p != null) {
                         if (testis == null) {
-                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis");
+                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack(
+                                    new Bytes("testis"));
                         }
                         p.getInventory().setItemInMainHand(
                                 ((net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack) testis).get());
@@ -244,7 +276,8 @@ public class FirecordCommand {
                     org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(args[1]);
                     if (p != null) {
                         if (testis == null) {
-                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack("testis");
+                            testis = new net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack(
+                                    new Bytes("testis"));
                         }
                         ((net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack) (testis))
                                 .set(p.getInventory().getItemInMainHand());
@@ -269,7 +302,13 @@ public class FirecordCommand {
                 sender.sendMessage("§c" + label + " ping <node>");
             } else {
                 sender.sendMessage("§7send ping message to §e" + args[1] + "§7. See log for result.");
-                Firecord.publish(args[1], "ping", "" + System.nanoTime());
+                if (Firecord.getNodeNames().contains(args[1])) {
+                    Firecord.publish(JedisCommunication.nodeKeyLookUpTable.lookUpId(args[1]),
+                            JedisCommunicationChannel.PING, new Bytes(System.nanoTime()));
+                } else {
+                    sender.sendMessage("§cWe could not find node named \"§e" + args[1] + "§c\" in nodes: §a"
+                            + String.join("§b, §a", Firecord.getNodeNames()));
+                }
             }
         } else {
             sender.sendMessage("§3This subcommand isn't known...");

@@ -4,26 +4,33 @@ import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.jedis.dataset.Bytes;
+
 public final class RUUID extends SmallData<UUID> {
 
     final static UUID DEFAULT_VALUE = new UUID(0, 0);
 
-    public RUUID(@NotNull String key) {
+    public RUUID(@NotNull Bytes key) {
         this(key, null);
     }
 
-    public RUUID(@NotNull String key, UUID defaultValue) {
+    public RUUID(@NotNull Bytes key, UUID defaultValue) {
         super(key, defaultValue);
     }
 
     @Override
-    protected void fromString(String value) {
-        this.value = UUID.fromString(value);
+    protected Bytes toBytes() {
+        return new Bytes(this.value.toString());
+    }
+
+    @Override
+    protected void fromBytes(byte[] value) {
+        this.value = UUID.fromString(new String(value));
     }
 
     @Override
     public String toString() {
-        return "" + this.value;
+        return this.value.toString();
     }
 
 }

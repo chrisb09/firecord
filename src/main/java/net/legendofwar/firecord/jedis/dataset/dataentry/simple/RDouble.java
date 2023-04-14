@@ -3,6 +3,7 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
@@ -11,11 +12,11 @@ public final class RDouble extends NumericData<Double> {
 
     final static Double DEFAULT_VALUE = 0.0;
 
-    public RDouble(@NotNull String key) {
+    public RDouble(@NotNull Bytes key) {
         this(key, null);
     }
 
-    public RDouble(@NotNull String key, Double defaultValue) {
+    public RDouble(@NotNull Bytes key, Double defaultValue) {
         super(key, defaultValue);
     }
 
@@ -27,8 +28,8 @@ public final class RDouble extends NumericData<Double> {
         }
         try (AbstractData<Double> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.value = Double.parseDouble(j.get(key)) + value;
-                j.set(key, this.value.toString());
+                this.value = Double.parseDouble(new Bytes(j.get(key.getData())).asString()) + value;
+                j.set(key.getData(), new Bytes(this.value.toString()).getData());
                 this._update();
             }
         }
@@ -43,8 +44,8 @@ public final class RDouble extends NumericData<Double> {
         }
         try (AbstractData<Double> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.value = Double.parseDouble(j.get(key)) - value;
-                j.set(key, this.value.toString());
+                this.value = Double.parseDouble(new Bytes(j.get(key.getData())).asString()) - value;
+                j.set(key.getData(), new Bytes(this.value.toString()).getData());
                 this._update();
             }
         }
@@ -59,8 +60,8 @@ public final class RDouble extends NumericData<Double> {
         }
         try (AbstractData<Double> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.value = Double.parseDouble(j.get(key)) * value;
-                j.set(key, this.value.toString());
+                this.value = Double.parseDouble(new Bytes(j.get(key.getData())).asString()) * value;
+                j.set(key.getData(), new Bytes(this.value.toString()).getData());
                 this._update();
             }
         }
@@ -75,8 +76,8 @@ public final class RDouble extends NumericData<Double> {
         }
         try (AbstractData<Double> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                this.value = Double.parseDouble(j.get(key)) / value;
-                j.set(key, this.value.toString());
+                this.value = Double.parseDouble(new Bytes(j.get(key.getData())).asString()) / value;
+                j.set(key.getData(), new Bytes(this.value.toString()).getData());
                 this._update();
             }
         }
@@ -84,8 +85,13 @@ public final class RDouble extends NumericData<Double> {
     }
 
     @Override
-    protected void fromString(String value) {
-        this.value = Double.parseDouble(value);
+    protected Bytes toBytes() {
+        return new Bytes(this.value.toString());
+    }
+
+    @Override
+    protected void fromBytes(byte[] value) {
+        this.value = Double.parseDouble(new String(value));
     }
 
     @Override

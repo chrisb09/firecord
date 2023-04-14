@@ -2,9 +2,11 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.jedis.dataset.Bytes;
+
 public abstract class NumericData<T extends Number> extends SmallData<T> {
 
-    NumericData(@NotNull String key, T defaultValue) {
+    NumericData(@NotNull Bytes key, T defaultValue) {
         super(key, defaultValue);
     }
 

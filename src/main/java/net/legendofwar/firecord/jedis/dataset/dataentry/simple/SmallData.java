@@ -1,29 +1,42 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
-import java.util.Arrays;
-import java.util.Base64;
-
+import org.javatuples.Pair;
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.communication.ByteMessage;
 import net.legendofwar.firecord.communication.JedisCommunication;
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 
 public abstract class SmallData<T> extends SimpleData<T> {
 
     static {
 
-        JedisCommunication.subscribe("update_key_small", new MessageReceiver() {
+        JedisCommunication.subscribe(JedisCommunicationChannel.UPDATE_SMALL_KEY, new MessageReceiver() {
 
             @Override
             @SuppressWarnings("unchecked")
-            public void receive(String channel, String sender, boolean broadcast, String message) {
-                String[] parts = message.split(":");
-                String key = new String(Base64.getDecoder().decode(parts[0]));
-                String value = String.join(":", Arrays.copyOfRange(parts, 1, parts.length, parts.getClass()));
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
+                // [2 byte, short, key-length in bytes: n][n Bytes: key][length - 2 - n byte:
+                // value]
+                Pair<Bytes, Bytes> m = ByteMessage.readIn(message, Bytes.class, Bytes.class);
+                Bytes key = m.getValue0();
+                Bytes value = m.getValue1();
+                /*
+                 * ByteBuffer bytebuffer = ByteBuffer.wrap(message);
+                 * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
+                 * short key_length = bytebuffer.getShort();
+                 * byte[] key = new byte[key_length];
+                 * for (int i = 0; i < key_length; i++) {
+                 * key[i] = bytebuffer.get();
+                 * }
+                 * byte[] value = bytebuffer.array();
+                 */
                 synchronized (loaded) {
                     if (loaded.containsKey(key)) {
                         SmallData<Object> sd = ((SmallData<Object>) loaded.get(key));
-                        sd.fromString(value);
+                        sd.fromBytes(value);
                         if (sd.listener != null) {
                             sd.listener.accept(sd);
                         }
@@ -35,7 +48,7 @@ public abstract class SmallData<T> extends SimpleData<T> {
 
     }
 
-    protected SmallData(@NotNull String key, T defaultValue) {
+    protected SmallData(@NotNull Bytes key, T defaultValue) {
         super(key, defaultValue);
     }
 
@@ -54,13 +67,24 @@ public abstract class SmallData<T> extends SimpleData<T> {
         this.valid = true;
         recentlyModified.add(this);
         if (broadcast) {
-            // we are using the default charset, if for some reason this is run on different
-            // machines with different charsets this encoding would need to be changed.
             if (this.value != null) {
-                String msg = Base64.getEncoder().encodeToString(this.key.getBytes()) + ":" + this.toString();
-                JedisCommunication.broadcast("update_key_small", msg);
+                // [2 byte, short, key-length in bytes: n][n Bytes: key][length - 2 - n byte:
+                // value]
+                JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_SMALL_KEY,
+                        ByteMessage.write(this.key, this.toBytes()));
+                /*
+                 * byte[] data = this.toBytes();
+                 * ByteBuffer bytebuffer = ByteBuffer.allocate(2 + this.key.length +
+                 * data.length);
+                 * bytebuffer.putShort((short) data.length);
+                 * bytebuffer.put(this.key);
+                 * bytebuffer.put(data);
+                 * bytebuffer.position(0);
+                 * JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_SMALL_KEY,
+                 * bytebuffer.array());
+                 */
             } else {
-                JedisCommunication.broadcast("del_key_value", this.key);
+                JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
             }
         }
     }

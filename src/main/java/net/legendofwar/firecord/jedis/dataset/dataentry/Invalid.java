@@ -1,8 +1,10 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry;
 
+import net.legendofwar.firecord.jedis.dataset.Bytes;
+
 public class Invalid extends AbstractData<String> {
 
-    public Invalid(byte[] key) {
+    public Invalid(Bytes key) {
         super(key);
     }
 

@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.tool.ReadProperties;
 
 public class ClassicJedisPool {
@@ -114,10 +115,14 @@ public class ClassicJedisPool {
      * Shortcut function to get a single value
      * @return redis get at key result
      */
-    public static String getValue(String key){
+    public static byte[] getValue(byte[] key){
         try (Jedis j = getJedis()){
             return j.get(key);
         }
+    }
+
+    public static Bytes getValue(Bytes key){
+        return new Bytes(getValue(key.getData()));
     }
 
 }

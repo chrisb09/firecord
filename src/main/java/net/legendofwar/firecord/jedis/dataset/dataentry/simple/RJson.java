@@ -3,21 +3,28 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
+import net.legendofwar.firecord.jedis.dataset.Bytes;
+
 public class RJson extends LargeData<JSONObject> {
 
     final static JSONObject DEFAULT_VALUE = new JSONObject();
 
-    public RJson(@NotNull String key) {
+    public RJson(@NotNull Bytes key) {
         this(key, null);
     }
 
-    public RJson(@NotNull String key, JSONObject defaultValue) {
+    public RJson(@NotNull Bytes key, JSONObject defaultValue) {
         super(key, defaultValue);
     }
 
     @Override
-    protected void fromString(@NotNull String value) {
-        this.value = new JSONObject(value);
+    protected Bytes toBytes() {
+        return new Bytes(this.value.toString());
+    }
+
+    @Override
+    protected void fromBytes(@NotNull byte[] value) {
+        this.value = new JSONObject(new String(value));
     }
 
     @Override

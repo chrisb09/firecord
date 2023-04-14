@@ -1,5 +1,9 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import org.jetbrains.annotations.NotNull;
+
+import net.legendofwar.firecord.jedis.dataset.Bytes;
+
 public abstract class DynamicLargeData<T> extends LargeData<T> {
 
     /*
@@ -11,7 +15,7 @@ public abstract class DynamicLargeData<T> extends LargeData<T> {
      * and data size we use it as a proxy for data size
      */
 
-    DynamicLargeData(String key, T defaultValue) {
+    DynamicLargeData(@NotNull Bytes key, T defaultValue) {
         super(key, defaultValue);
     }
 

@@ -12,8 +12,10 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.communication.JedisCommunication;
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
@@ -41,14 +43,14 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
     static Queue<SimpleData<?>> recentlyModified = new ConcurrentLinkedQueue<SimpleData<?>>();
 
     // Map of all (once) loaded SimpleData entries
-    static HashMap<String, SimpleData<?>> loaded = new HashMap<String, SimpleData<?>>();
+    static HashMap<Bytes, SimpleData<?>> loaded = new HashMap<Bytes, SimpleData<?>>();
 
     static {
 
-        JedisCommunication.subscribe("del_key_value", new MessageReceiver() {
+        JedisCommunication.subscribe(JedisCommunicationChannel.DEL_KEY_VALUE, new MessageReceiver() {
 
             @Override
-            public void receive(String channel, String sender, boolean broadcast, String message) {
+            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
                 SimpleData<?> entry = null;
                 synchronized (loaded) {
                     if (loaded.containsKey(message)) {
@@ -169,7 +171,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 	// @formatter:on
 
     @SuppressWarnings("unchecked")
-    SimpleData(@NotNull String key, T defaultValue) {
+    SimpleData(@NotNull Bytes key, T defaultValue) {
         super(key);
         DataType dt = DataType.getByC(this.getClass());
         T dv;
@@ -183,7 +185,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
             // make sure the object is NOT a temporary placeholder
             loaded.put(key, this);
             if (this._get(false) == null) {
-                this._setType(key, dt);
+                this._setType(dt);
                 this.set(dv);
             }
         } else {
@@ -209,11 +211,11 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
      */
     protected abstract void _update(boolean broadcast);
 
-    void _fromString(String value) {
+    void _fromBytes(byte[] value) {
         if (value == null) {
             this.value = null;
         } else {
-            fromString(value);
+            fromBytes(value);
         }
     }
 
@@ -222,7 +224,18 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
      * 
      * @param value
      */
-    abstract protected void fromString(@NotNull String value);
+    abstract protected void fromBytes(@NotNull byte[] value);
+
+    protected void fromBytes(@NotNull Bytes value) {
+        this.fromBytes(value.getData());
+    }
+
+    /**
+     * Gets byte[] representation of entry
+     * 
+     * @param value
+     */
+    abstract protected Bytes toBytes();
 
     /**
      * Determine the time we keep the value of this entry in memory, in ms
@@ -255,9 +268,9 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         boolean success = false;
         try (Jedis j = ClassicJedisPool.getJedis()) {
             if (value != null) {
-                success = j.set(key, this.toString()).equals("OK");
+                success = j.set(key.getData(), this.toBytes().getData()).equals("OK");
             } else {
-                success = j.del(key) == 1;
+                success = j.del(key.getData()) == 1;
             }
             this._update();
         }
@@ -288,12 +301,12 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
     }
 
     private T _get(boolean modify) {
-        String stringValue;
+        byte[] byteValue;
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            stringValue = j.get(key);
+            byteValue = j.get(key.getData());
         }
-        if (stringValue != null) {
-            this._fromString(stringValue);
+        if (byteValue != null) {
+            this._fromBytes(byteValue);
         }
         if (modify) {
             this._update(false);
@@ -318,7 +331,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         return get(true);
     }
 
-    public static <F> F getValue(SimpleData<F> object){
+    public static <F> F getValue(SimpleData<F> object) {
         return object.value;
     }
 

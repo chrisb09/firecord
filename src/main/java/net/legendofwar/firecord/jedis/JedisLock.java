@@ -2,6 +2,7 @@ package net.legendofwar.firecord.jedis;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.params.SetParams;
@@ -13,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class JedisLock implements Lock {
 
-    final static long DEFAULT_TIMEOUT = 20000; //20s
+    final static long DEFAULT_TIMEOUT = 20000; // 20s
     final static SetParams params;
 
     static {
@@ -22,28 +23,27 @@ public class JedisLock implements Lock {
         params.nx();
     }
 
-    final byte[] id;
+    final Bytes id;
 
     private final Lock slave_lock = new ReentrantLock();
 
-    public JedisLock(@NotNull byte[] id) {
+    public JedisLock(@NotNull Bytes id) {
         this.id = KeyGenerator.getLockKey(id);
-        
+
     }
 
-    public final byte[] getId() {
+    public final Bytes getId() {
         return id;
     }
 
-
     @Override
     public void lock() {
-        try(Jedis jedis = ClassicJedisPool.getJedis()) {
-            String result = jedis.set(id, KeyGenerator.bytes((byte) 1), params);
+        try (Jedis jedis = ClassicJedisPool.getJedis()) {
+            String result = jedis.set(id.getData(), new Bytes((byte) 1).getData(), params);
             while (result == null) {
                 try {
                     Thread.sleep(1);
-                    result = jedis.set(id, KeyGenerator.bytes((byte) 1), params);
+                    result = jedis.set(id.getData(), new Bytes((byte) 1).getData(), params);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -55,14 +55,14 @@ public class JedisLock implements Lock {
 
     @Override
     public void lockInterruptibly() throws InterruptedException {
-        try(Jedis jedis = ClassicJedisPool.getJedis()) {
-            String result = jedis.set(id, KeyGenerator.bytes((byte) 1), params);
+        try (Jedis jedis = ClassicJedisPool.getJedis()) {
+            String result = jedis.set(id.getData(), new Bytes((byte) 1).getData(), params);
             while (result == null) {
                 Thread.sleep(1);
-                result = jedis.set(id, KeyGenerator.bytes((byte) 1), params);
+                result = jedis.set(id.getData(), new Bytes((byte) 1).getData(), params);
             }
         } catch (Exception e) {
-            if(e instanceof InterruptedException iex) {
+            if (e instanceof InterruptedException iex) {
                 throw iex;
             } else {
                 e.printStackTrace();
@@ -72,6 +72,7 @@ public class JedisLock implements Lock {
 
     /**
      * Should NOT be used
+     * 
      * @return New Condition object
      */
     @Override
@@ -81,8 +82,8 @@ public class JedisLock implements Lock {
 
     @Override
     public boolean tryLock() {
-        try(Jedis jedis = ClassicJedisPool.getJedis()) {
-            return jedis.set(id, KeyGenerator.bytes((byte) 1), params) != null;
+        try (Jedis jedis = ClassicJedisPool.getJedis()) {
+            return jedis.set(id.getData(), new Bytes((byte) 1).getData(), params) != null;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -91,13 +92,13 @@ public class JedisLock implements Lock {
 
     @Override
     public boolean tryLock(long lockTime, @NotNull TimeUnit timeUnit) {
-        try(Jedis jedis = ClassicJedisPool.getJedis()) {
+        try (Jedis jedis = ClassicJedisPool.getJedis()) {
             long now = System.nanoTime();
             long timeout = now + timeUnit.toNanos(lockTime);
-            String result = jedis.set(id, KeyGenerator.bytes((byte) 1), params);
+            String result = jedis.set(id.getData(), new Bytes((byte) 1).getData(), params);
             while (result == null && timeout > System.nanoTime()) {
                 Thread.sleep(1);
-                result = jedis.set(id, KeyGenerator.bytes((byte) 1), params);
+                result = jedis.set(id.getData(), new Bytes((byte) 1).getData(), params);
             }
             return result != null;
         } catch (Exception e) {
@@ -108,11 +109,11 @@ public class JedisLock implements Lock {
 
     @Override
     public void unlock() {
-        try(Jedis jedis = ClassicJedisPool.getJedis()) {
-            jedis.del(id);
+        try (Jedis jedis = ClassicJedisPool.getJedis()) {
+            jedis.del(id.getData());
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
+
 }

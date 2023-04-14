@@ -3,6 +3,7 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.object;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.Invalid;
@@ -32,16 +34,35 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RUUID;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.SimpleData;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
+import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeyPrefix;
+import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
+import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
 import redis.clients.jedis.Jedis;
 
 public abstract class AbstractObject extends AbstractData<Object> {
 
-    public static final HashMap<String, AbstractObject> loaded = new HashMap<String, AbstractObject>();
+    public static final HashMap<Bytes, AbstractObject> loaded = new HashMap<Bytes, AbstractObject>();
 
     // (temp-entry, parent)
     private static final HashMap<AbstractData<?>, AbstractObject> tempEntryParent = new HashMap<>();
     // (temp-entry, real-entry)
     private static final HashMap<AbstractData<?>, AbstractData<?>> alreadyReplaced = new HashMap<>();
+
+    private static final KeyLookupTable fieldKeyLookupTable = new KeyLookupTable(
+            DataKeyPrefix.KEY_LOOKUP_TABLE.getBytes().append("fields".getBytes()), 4);
+
+    private static final KeyLookupTable staticClassNameKeyLookupTable = new KeyLookupTable(
+            DataKeyPrefix.KEY_LOOKUP_TABLE.getBytes().append("static".getBytes()), 2);
+
+    public static Bytes getFieldKey(Bytes objectKey, String fieldName) {
+        return objectKey.append(fieldKeyLookupTable.lookUpId(fieldName));
+    }
+
+    public static Bytes getStaticClassNameKey(String className) {
+        return DataKeyPrefix.KEY_LOOKUP_TABLE.getBytes().append(new Bytes((byte) 0),
+                staticClassNameKeyLookupTable.lookUpId(className));
+    }
 
     @SuppressWarnings("unchecked")
     public static <F extends AbstractData<?>> F replaceTemp(F entry) {
@@ -66,8 +87,8 @@ public abstract class AbstractObject extends AbstractData<Object> {
             }
             if (existingEntry != null) {
                 if (existingEntry.equals(entry)) {
-                    // get intended entry via object.key+::+fieldName
-                    String key = object.getKey() + "::" + field.getName();
+                    // get intended entry
+                    Bytes key = getFieldKey(object.getKey(), field.getName());
                     replacingEntry = (F) AbstractData.create(key);
                     if (replacingEntry == null) {
                         if (entry instanceof SimpleInterface) {
@@ -144,7 +165,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
         return setTemp(RBoolean.class, defaultValue);
     }
 
-    protected RByteArray RByteArray(byte[] defaultValue) {
+    protected RByteArray RByteArray(Bytes defaultValue) {
         return setTemp(RByteArray.class, defaultValue);
     }
 
@@ -186,21 +207,23 @@ public abstract class AbstractObject extends AbstractData<Object> {
         return object;
     }
 
-    protected AbstractObject(@NotNull String key) {
+    protected AbstractObject(@NotNull Bytes key) {
         super(key);
         if (key != null) {
             // make sure the object is NOT a temporary placeholde
-            Set<String> existing = null;
+            Set<Bytes> existing = null;
             try (AbstractData<?> ad = this.lock()) {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                    existing = j.smembers(key);
+                    existing = new HashSet<Bytes>(
+                            j.smembers(key.getData()).stream().map(bytearray -> new Bytes(bytearray)).toList());
                 }
             }
+            boolean hadEntries = existing.isEmpty();
             loadObject(this.getClass(), existing);
-            if (existing.isEmpty()) {
-                _setType(key, DataType.OBJECT);
+            if (hadEntries) {
+                _setType(DataType.OBJECT);
                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                    j.set(key + ":class", this.getClass().getName());
+                    j.set(ByteFunctions.join(key, DataKeySuffix.CLASS), this.getClass().getName().getBytes());
                 }
             }
             synchronized (loaded) {
@@ -215,7 +238,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
      * @param c
      * @param entries
      */
-    private void loadObject(Class<?> c, Set<String> entries) {
+    private void loadObject(Class<?> c, Set<Bytes> entries) {
         while (c != AbstractObject.class) {
             for (Field field : c.getDeclaredFields()) {
                 if (AbstractData.class.isAssignableFrom(field.getType())) {
@@ -230,11 +253,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
                             e.printStackTrace();
                         }
                         if (existingValue == null) {
-                            String entryKey = "";
+                            Bytes entryKey = null;
                             if (Modifier.isStatic(field.getModifiers())) {
-                                entryKey = c.getName() + "::" + field.getName();
+                                entryKey = getFieldKey(getStaticClassNameKey(c.getName()), field.getName());
                             } else {
-                                entryKey = this.key + "::" + field.getName();
+                                entryKey = getFieldKey(this.key, field.getName());
                             }
                             AbstractData<?> entry = AbstractData.create(entryKey);
                             if (entry == null) {
@@ -257,11 +280,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                     e.printStackTrace();
                                 }
                             }
-                            if (!entries.contains(field.getName())) {
+                            if (!entries.contains(entryKey)) {
                                 // all DataEntries that don't have a corresponding entry in the underlaying set
                                 // structure are added
                                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                                    j.sadd(key, entryKey);
+                                    j.sadd(key.getData(), entryKey.getData());
                                 }
                                 entries.add(entryKey);
                             }
