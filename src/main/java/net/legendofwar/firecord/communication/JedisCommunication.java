@@ -193,18 +193,8 @@ public class JedisCommunication extends BinaryJedisPubSub {
         synchronized (nodes) {
             if (nodes.contains(receiver)) {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                    // [2 Byte: channel][X Byte: sender-id][Length-2-X Byte: message]
                     j.publish(getServerMessageChannel(receiver).getData(),
                             ByteMessage.write(channel, nodeKeyLookUpTable.lookUpId(name), message).getData());
-                    /*
-                     * ByteBuffer bytebuffer = ByteBuffer.allocate(2 + nodeIdSize + message.length);
-                     * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
-                     * bytebuffer.put(channel.getData());
-                     * bytebuffer.put(nodeKeyLookUpTable.lookUpId(name));
-                     * bytebuffer.put(message);
-                     * bytebuffer.position(0);
-                     * j.publish(getServerMessageChannel(receiver), bytebuffer.array());
-                     */
                 }
             }
         }
@@ -216,19 +206,8 @@ public class JedisCommunication extends BinaryJedisPubSub {
 
     public static void broadcast(Bytes channel, Bytes message) {
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            // [2 Byte: channel][X Byte: sender-id][Length-2-X Byte: message]
-
             j.publish(getBroadcastMessageChannel().getData(),
                     ByteMessage.write(channel, nodeKeyLookUpTable.lookUpId(name), message).getData());
-            /*
-             * ByteBuffer bytebuffer = ByteBuffer.allocate(2 + nodeIdSize + message.length);
-             * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
-             * bytebuffer.put(channel);
-             * bytebuffer.put(nodeKeyLookUpTable.lookUpId(name));
-             * bytebuffer.put(message);
-             * bytebuffer.position(0);
-             * j.publish(getBroadcastMessageChannel(), bytebuffer.array());
-             */
         }
     }
 
@@ -241,29 +220,11 @@ public class JedisCommunication extends BinaryJedisPubSub {
     }
 
     private void receive(Bytes message, boolean broadcast) {
-        // [2 Byte: channel][X Byte: sender-id][Length-2-X Byte: message]
         Triplet<Bytes, Bytes, Bytes> m = ByteMessage.readIn(message, Bytes.class, Bytes.class, Bytes.class);
         Bytes channel = m.getValue0();
         Bytes sender_id = m.getValue1();
         Bytes sender_name = nodeKeyLookUpTable.lookUpName(sender_id);
         Bytes content = m.getValue2();
-        /*
-         * ByteBuffer bytebuffer = ByteBuffer.wrap(message);
-         * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
-         * byte[] channel = new byte[JedisCommunicationChannel.CHANNEL_BYTE_LENGTH];
-         * for (int i = 0; i < JedisCommunicationChannel.CHANNEL_BYTE_LENGTH; i++) {
-         * channel[i] = bytebuffer.get();
-         * }
-         * byte[] sender_id_bytes = new byte[nodeIdSize];
-         * for (int i = 0; i < nodeIdSize; i++) {
-         * sender_id_bytes[i] = bytebuffer.get();
-         * }
-         * byte[] sender_name = nodeKeyLookUpTable.lookUpName(sender_id_bytes);
-         * if (Arrays.equals(sender_name, name) && broadcast) {
-         * // don't receive messages from this node itself
-         * return;
-         * }
-         */
         if (sender_name.equals(name) && broadcast) {
             // don't receive messages from this node itself
             return;
@@ -274,7 +235,6 @@ public class JedisCommunication extends BinaryJedisPubSub {
                 nodes.add(sender_name);
             }
         }
-        // byte[] rest = bytebuffer.array();
         MessageReceiver recv = null;
         synchronized (receivers) {
             if (receivers.containsKey(channel)) {

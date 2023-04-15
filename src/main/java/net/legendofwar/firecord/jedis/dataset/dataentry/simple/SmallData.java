@@ -18,21 +18,9 @@ public abstract class SmallData<T> extends SimpleData<T> {
             @Override
             @SuppressWarnings("unchecked")
             public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
-                // [2 byte, short, key-length in bytes: n][n Bytes: key][length - 2 - n byte:
-                // value]
                 Pair<Bytes, Bytes> m = ByteMessage.readIn(message, Bytes.class, Bytes.class);
                 Bytes key = m.getValue0();
                 Bytes value = m.getValue1();
-                /*
-                 * ByteBuffer bytebuffer = ByteBuffer.wrap(message);
-                 * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
-                 * short key_length = bytebuffer.getShort();
-                 * byte[] key = new byte[key_length];
-                 * for (int i = 0; i < key_length; i++) {
-                 * key[i] = bytebuffer.get();
-                 * }
-                 * byte[] value = bytebuffer.array();
-                 */
                 synchronized (loaded) {
                     if (loaded.containsKey(key)) {
                         SmallData<Object> sd = ((SmallData<Object>) loaded.get(key));
@@ -68,21 +56,8 @@ public abstract class SmallData<T> extends SimpleData<T> {
         recentlyModified.add(this);
         if (broadcast) {
             if (this.value != null) {
-                // [2 byte, short, key-length in bytes: n][n Bytes: key][length - 2 - n byte:
-                // value]
                 JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_SMALL_KEY,
                         ByteMessage.write(this.key, this.toBytes()));
-                /*
-                 * byte[] data = this.toBytes();
-                 * ByteBuffer bytebuffer = ByteBuffer.allocate(2 + this.key.length +
-                 * data.length);
-                 * bytebuffer.putShort((short) data.length);
-                 * bytebuffer.put(this.key);
-                 * bytebuffer.put(data);
-                 * bytebuffer.position(0);
-                 * JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_SMALL_KEY,
-                 * bytebuffer.array());
-                 */
             } else {
                 JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
             }
