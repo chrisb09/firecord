@@ -21,11 +21,19 @@ public class Bytes implements ByteDataInterface {
     }
 
     public Bytes(byte[] data) {
-        set(data);
+        if (data != null) {
+            set(data);
+        } else {
+            set(new byte[0]);
+        }
     }
 
     public Bytes(String data) {
-        set(data.getBytes());
+        if (data != null) {
+            set(data.getBytes());
+        } else {
+            set(new byte[0]);
+        }
     }
 
     public Bytes(ByteBuffer buffer) {
@@ -34,7 +42,11 @@ public class Bytes implements ByteDataInterface {
     }
 
     public Bytes(ByteDataInterface bdi) {
-        set(bdi.getData());
+        if (bdi != null) {
+            set(bdi.getData());
+        } else {
+            set(new byte[0]);
+        }
     }
 
     public Bytes(byte b) {

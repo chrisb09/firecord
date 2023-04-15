@@ -264,6 +264,10 @@ public class JedisCommunication extends BinaryJedisPubSub {
          * return;
          * }
          */
+        if (sender_name.equals(name) && broadcast) {
+            // don't receive messages from this node itself
+            return;
+        }
         synchronized (nodes) {
             if (!nodes.contains(sender_name)) {
                 // in case a new node sends a message immediately we need to be able to answer

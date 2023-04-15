@@ -116,12 +116,18 @@ public class ClassicJedisPool {
      * @return redis get at key result
      */
     public static byte[] getValue(byte[] key){
+        if (key == null) {
+            return null;
+        }
         try (Jedis j = getJedis()){
             return j.get(key);
         }
     }
 
     public static Bytes getValue(Bytes key){
+        if (key == null) {
+            return null;
+        }
         return new Bytes(getValue(key.getData()));
     }
 

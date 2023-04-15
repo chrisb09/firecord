@@ -83,7 +83,7 @@ public class FirecordCommand {
                 test1 = (RInteger) AbstractData.create(new Bytes("testint1"));
                 if (test1 == null) {
                     test1 = new RInteger(new Bytes("testint1"));
-                    test1.setIfEmpty(1);
+                    test1.set(1);
                 }
             }
             if (test2 == null) {
@@ -170,15 +170,18 @@ public class FirecordCommand {
                 sender.sendMessage("§btestlist1:");
                 sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist1.toArray())));
                 sender.sendMessage("§bRedis: §c"
-                        + String.join(",", Arrays.toString(j.lrange(testlist1.getKey().getData(), 0, -1).toArray())));
+                        + String.join(",", (j.lrange(testlist1.getKey().getData(), 0, -1)).stream()
+                                .map(bytearray -> new Bytes(bytearray).asString()).toList()));
                 sender.sendMessage("§btestlist2:");
                 sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist2.toArray())));
                 sender.sendMessage("§bRedis: §c"
-                        + String.join(",", Arrays.toString(j.lrange(testlist2.getKey().getData(), 0, -1).toArray())));
+                        + String.join(",", (j.lrange(testlist2.getKey().getData(), 0, -1)).stream()
+                                .map(bytearray -> new Bytes(bytearray).asString()).toList()));
                 sender.sendMessage("§btestlist3:");
                 sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist3.toArray())));
                 sender.sendMessage("§bRedis: §c"
-                        + String.join(",", Arrays.toString(j.lrange(testlist3.getKey().getData(), 0, -1).toArray())));
+                        + String.join(",", (j.lrange(testlist3.getKey().getData(), 0, -1)).stream()
+                                .map(bytearray -> new Bytes(bytearray).asString()).toList()));
             }
         } else if (args[0].equalsIgnoreCase("testint")) {
             if (test == null) {
@@ -196,7 +199,7 @@ public class FirecordCommand {
             Bytes m = ByteMessage.write((byte) 5);
             sender.sendMessage("§b5: §a" + ByteMessage.readIn(m, Byte.class).getValue0());
             m = ByteMessage.write((byte) 5, "testint");
-            sender.sendMessage("§bMessage: "+m);
+            sender.sendMessage("§bMessage: " + m);
             Pair<Byte, String> t = ByteMessage.readIn(m, Byte.class, String.class);
             sender.sendMessage("§b5,testint: §a" + t.getValue0() + "§b,§a" + t.getValue1());
             m = ByteMessage.write((byte) 5, "testint",
@@ -303,7 +306,7 @@ public class FirecordCommand {
             } else {
                 sender.sendMessage("§7send ping message to §e" + args[1] + "§7. See log for result.");
                 if (Firecord.getNodeNames().contains(args[1])) {
-                    Firecord.publish(JedisCommunication.nodeKeyLookUpTable.lookUpId(args[1]),
+                    Firecord.publish(new Bytes(args[1]),
                             JedisCommunicationChannel.PING, new Bytes(System.nanoTime()));
                 } else {
                     sender.sendMessage("§cWe could not find node named \"§e" + args[1] + "§c\" in nodes: §a"

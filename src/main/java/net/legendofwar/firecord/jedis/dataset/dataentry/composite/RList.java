@@ -710,13 +710,16 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_INDEX,
                 ByteMessage.write(this.key, arg0));
-        /*ByteBuffer bytebuffer = ByteBuffer.allocate(4 + this.key.length + 4);
-        bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
-        bytebuffer.putInt(this.key.length);
-        bytebuffer.put(this.key);
-        bytebuffer.putInt(arg0);
-        bytebuffer.position(0);
-        JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_INDEX, bytebuffer.array());*/
+        /*
+         * ByteBuffer bytebuffer = ByteBuffer.allocate(4 + this.key.length + 4);
+         * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
+         * bytebuffer.putInt(this.key.length);
+         * bytebuffer.put(this.key);
+         * bytebuffer.putInt(arg0);
+         * bytebuffer.position(0);
+         * JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_INDEX,
+         * bytebuffer.array());
+         */
         synchronized (this.data) {
             return this.data.remove(arg0);
         }
@@ -731,35 +734,41 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         }
         byte[][] keys = new byte[arg0.size()][];
         int index = 0;
-        //int totalKeyLength = 0;
-        synchronized (arg0){
+        // int totalKeyLength = 0;
+        synchronized (arg0) {
             for (Object element : arg0) {
                 if (element instanceof AbstractData) {
                     @SuppressWarnings("all")
                     AbstractData<?> entry = (AbstractData<?>) element;
                     keys[index++] = entry.getKey().getData();
-            //        totalKeyLength += entry.getKey().length;
+                    // totalKeyLength += entry.getKey().length;
                 }
                 try (Jedis j = ClassicJedisPool.getJedis()) {
                     j.lrem(key.getData(), 0, ((T) (element)).getKey().getData());
                 }
             }
         }
-        synchronized (arg0){
+        synchronized (arg0) {
             JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_ALL,
-                    ByteMessage.write(this.key, arg0.stream().map(entry -> entry instanceof AbstractData ? ((T) (entry)).getKey() : null).toArray(Bytes[]::new)));
+                    ByteMessage.write(this.key,
+                            arg0.stream().map(entry -> entry instanceof AbstractData ? ((T) (entry)).getKey() : null)
+                                    .toArray(Bytes[]::new)));
         }
-        /*ByteBuffer bytebuffer = ByteBuffer.allocate(4 + this.key.length + 4 + 4 * keys.length + totalKeyLength);
-        bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
-        bytebuffer.putInt(this.key.length);
-        bytebuffer.put(this.key);
-        bytebuffer.putInt(keys.length);
-        for (int i = 0; i < keys.length; i++) {
-            bytebuffer.putInt(keys[i].length);
-            bytebuffer.put(keys[i]);
-        }
-        bytebuffer.position(0);
-        JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_ALL, bytebuffer.array());*/
+        /*
+         * ByteBuffer bytebuffer = ByteBuffer.allocate(4 + this.key.length + 4 + 4 *
+         * keys.length + totalKeyLength);
+         * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
+         * bytebuffer.putInt(this.key.length);
+         * bytebuffer.put(this.key);
+         * bytebuffer.putInt(keys.length);
+         * for (int i = 0; i < keys.length; i++) {
+         * bytebuffer.putInt(keys[i].length);
+         * bytebuffer.put(keys[i]);
+         * }
+         * bytebuffer.position(0);
+         * JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_ALL,
+         * bytebuffer.array());
+         */
         synchronized (arg0) {
             synchronized (this.data) {
                 return this.data.removeAll(arg0);
@@ -773,32 +782,35 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         }
         List<T> toRem;
         synchronized (this.data) {
-            byte[][] keys = new byte[arg0.size()][];
-            int index = 0;
-            //int totalKeyLength = 0;
+            // int totalKeyLength = 0;
             toRem = new ArrayList<>(this.data.size() - arg0.size());
             for (T element : this.data) {
                 if (!arg0.contains(element)) {
                     toRem.add(element);
-                    keys[index++] = element.getKey().getData();
-            //        totalKeyLength += element.getKey().length;
+                    // totalKeyLength += element.getKey().length;
                 }
             }
             // [4 Byte: key length: n][n Byte: key][4 Byte: amount of retainedKeys
             // [4 Byte: retainedKey_i length: m_i][m_i Byte: retainedKey_i]...
             JedisCommunication.broadcast(JedisCommunicationChannel.LIST_RETAIN_ALL,
-                ByteMessage.write(this.key, arg0.stream().map(entry -> entry instanceof AbstractData ? ((T) (entry)).getKey() : null).toArray(Bytes[]::new)));
-            /*ByteBuffer bytebuffer = ByteBuffer.allocate(4 + this.key.length + 4 + 4 * keys.length + totalKeyLength);
-            bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
-            bytebuffer.putInt(this.key.length);
-            bytebuffer.put(this.key);
-            bytebuffer.putInt(keys.length);
-            for (int i = 0; i < keys.length; i++) {
-                bytebuffer.putInt(keys[i].length);
-                bytebuffer.put(keys[i]);
-            }
-            bytebuffer.position(0);
-            JedisCommunication.broadcast(JedisCommunicationChannel.LIST_RETAIN_ALL, bytebuffer.array());*/
+                    ByteMessage.write(this.key,
+                            arg0.stream().map(entry -> entry instanceof AbstractData ? ((T) (entry)).getKey() : null)
+                                    .toArray(Bytes[]::new)));
+            /*
+             * ByteBuffer bytebuffer = ByteBuffer.allocate(4 + this.key.length + 4 + 4 *
+             * keys.length + totalKeyLength);
+             * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
+             * bytebuffer.putInt(this.key.length);
+             * bytebuffer.put(this.key);
+             * bytebuffer.putInt(keys.length);
+             * for (int i = 0; i < keys.length; i++) {
+             * bytebuffer.putInt(keys[i].length);
+             * bytebuffer.put(keys[i]);
+             * }
+             * bytebuffer.position(0);
+             * JedisCommunication.broadcast(JedisCommunicationChannel.LIST_RETAIN_ALL,
+             * bytebuffer.array());
+             */
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 for (T element : toRem) {
                     j.lrem(key.getData(), 0, element.getKey().getData());
@@ -822,15 +834,20 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
         }
         // [4 Byte: key-length: n][n Byte: key][4 Byte: index][length-4-4-n Byte: added
         // key]
-        JedisCommunication.broadcast(JedisCommunicationChannel.LIST_SET, ByteMessage.write(this.key, arg0, arg1.getKey()));
-        /*ByteBuffer bytebuffer = ByteBuffer.allocate(4 + this.key.length + 4 + arg1.getKey().length);
-        bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
-        bytebuffer.putInt(this.key.length);
-        bytebuffer.put(this.key);
-        bytebuffer.putInt(arg0);
-        bytebuffer.put(arg1.getKey());
-        bytebuffer.position(0);
-        JedisCommunication.broadcast(JedisCommunicationChannel.LIST_SET, bytebuffer.array());*/
+        JedisCommunication.broadcast(JedisCommunicationChannel.LIST_SET,
+                ByteMessage.write(this.key, arg0, arg1.getKey()));
+        /*
+         * ByteBuffer bytebuffer = ByteBuffer.allocate(4 + this.key.length + 4 +
+         * arg1.getKey().length);
+         * bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
+         * bytebuffer.putInt(this.key.length);
+         * bytebuffer.put(this.key);
+         * bytebuffer.putInt(arg0);
+         * bytebuffer.put(arg1.getKey());
+         * bytebuffer.position(0);
+         * JedisCommunication.broadcast(JedisCommunicationChannel.LIST_SET,
+         * bytebuffer.array());
+         */
         synchronized (this.data) {
             return this.data.set(arg0, arg1);
         }

@@ -39,10 +39,10 @@ public enum ByteMessage {
             case LONG:
                 return buffer.getLong();
             case BYTES:
-                System.out.println("pos: "+buffer.position());
+                //System.out.println("pos: "+buffer.position());
                 int size = buffer.getInt();
-                System.out.println("pos: "+buffer.position());
-                System.out.println("Read in Bytes of size:"+size);
+                //System.out.println("pos: "+buffer.position());
+                //System.out.println("Read in Bytes of size:"+size);
                 byte[] bytes = new byte[size];
                 for (int i = 0; i < size; i++) {
                     bytes[i] = buffer.get();
@@ -50,7 +50,7 @@ public enum ByteMessage {
                 return new Bytes(bytes);
             case ARRAY:
                 int arraySize = buffer.getInt();
-                System.out.println("Read in Array of size:"+arraySize);
+                //System.out.println("Read in Array of size:"+arraySize);
                 //Object[] array = new Object[arraySize];
                 Object array = Array.newInstance(c, arraySize);
                 for (int i = 0; i < arraySize; i++) {
@@ -128,7 +128,7 @@ public enum ByteMessage {
         bytebuffer.order(ByteOrder.LITTLE_ENDIAN);
         Object[] objects = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
-            System.out.println("#"+i+". "+fields[i].getByteMessage().name()+" pos: "+bytebuffer.position());
+            //System.out.println("#"+i+". "+fields[i].getByteMessage().name()+" pos: "+bytebuffer.position());
             objects[i] = fields[i].read(bytebuffer);
         }
         return objects;
