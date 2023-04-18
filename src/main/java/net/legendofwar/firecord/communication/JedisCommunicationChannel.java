@@ -27,6 +27,9 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     LIST_RETAIN_ALL(19),
     LIST_SET(20),
     LIST_LOG(21),                       // Debug print to compare redis and cache values
+
+    CHAT_BROADCAST(100),
+    
     ;
 
     // @formatter:on
