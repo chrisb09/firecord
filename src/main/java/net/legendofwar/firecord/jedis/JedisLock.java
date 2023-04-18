@@ -7,6 +7,8 @@ import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.params.SetParams;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -34,6 +36,36 @@ public class JedisLock implements Lock {
 
     public final Bytes getId() {
         return id;
+    }
+
+    /*
+     * Tries to lock multiple locks, and unlocks them again if we cannot unlock all
+     */
+    public boolean tryLockMultiple(JedisLock... partners) {
+        List<JedisLock> unlocked = new ArrayList<JedisLock>();
+        if (tryLock()) {
+            unlocked.add(this);
+            for (JedisLock l : partners) {
+                if (l.tryLock()) {
+                    unlocked.add(l);
+                } else {
+                    // failed to lock
+                    for (JedisLock u : unlocked) {
+                        u.unlock();
+                    }
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void unlockMultiple(JedisLock... partners) {
+        this.unlock();
+        for (JedisLock p : partners) {
+            p.unlock();
+        }
     }
 
     @Override

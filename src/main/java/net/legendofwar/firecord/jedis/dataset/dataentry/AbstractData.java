@@ -172,6 +172,19 @@ public abstract class AbstractData<T> implements Closeable {
         }
     }
 
+    public boolean tryLockMultiple(JedisLock... partners) {
+        return this.lock.tryLockMultiple(partners);
+    }
+
+    public void unlockMultiple(JedisLock... partners) {
+        this.lock.unlockMultiple(partners);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <E extends AbstractData<T>> E lock(E object) {
+        return (E) this.lock();
+    }
+
     public AbstractData<T> lock() {
         if (this.key == null) {
             // only abstract objects should create temporary entries
