@@ -8,12 +8,30 @@ interface SimpleInterface<T> {
     + boolean setIfEmpty()
 }
 
+interface ByteDataInterface {
+    + byte[] getData();
+    + Bytes getBytes();
+}
+
+class Bytes implements ByteDataInterface {
+    + Bytes append()
+    + void set()
+}
+
+enum JedisCommunicationChannel implements ByteDataInterface {
+    + int getId()
+}
+
+
 abstract AbstractData <T> {
-    + {static} HashMap<String, AbstractData> loaded
+    + {static} HashMap<Bytes, AbstractData> loaded
     + {static} AbstractData create()
     + AbstractData lock()
+    + boolean tryLockMultiple()
     + void close()
-    + String getKey()
+    + void unlockMultiple()
+    + Bytes getKey()
+    + String asString()
 }
 
 abstract SmallData <T> extends SimpleData {
@@ -25,7 +43,7 @@ abstract LargeData <T> extends SimpleData {
 }
 
 abstract SimpleData<T> extends AbstractData implements SimpleInterface {
-    + {static} HashMap<String, SimpleData> loaded
+    + {static} HashMap<Bytes, SimpleData> loaded
 }
 
 class Invalid extends AbstractData {
@@ -96,12 +114,12 @@ class RByteArray extends LargeData {
 class RJson extends LargeData {
     + boolean hasKey()
     + String getAsString()
-    + String getAsInt()
-    + String getAsLong()
-    + String getAsDouble()
-    + String getAsBoolean()
-    + String getAsEnum()
-    + String getAsNumber()
+    + int getAsInt()
+    + long getAsLong()
+    + double getAsDouble()
+    + boolean getAsBoolean()
+    + Enum getAsEnum()
+    + Number getAsNumber()
     + void putString()
     + void putInt()
     + void putLong()
@@ -111,23 +129,26 @@ class RJson extends LargeData {
 }
 
 
-abstract CompositeData <T extends AbstractData,E> extends AbstractData {
-    + {static} HashMap<String, CompositeData<?,?>> loaded
+abstract CompositeData <T extends AbstractData> extends AbstractData {
+    + {static} HashMap<Bytes, CompositeData<?,?>> loaded
+    + void clear()
+    + boolean isEmpty()
+    + int size()
+}
+
+abstract CollectionData <T extends AbstractData,\nE extends Collection<T>> extends CompositeData implements Collection {
     + void set()
     + boolean removeKey()
-    + void clear()
     + boolean contains()
     + boolean containsKey()
     + boolean containsValue()
     + boolean containsAll()
-    + boolean isEmpty()
     + Iterator<T> iterator()
-    + int size()
     + Object[] toArray()
     + F[] toArray()
 }
 
-class RList <T extends AbstractData> extends CompositeData {
+class RList <T extends AbstractData> extends CollectionData {
     + boolean add()
     + void add()
     + boolean addAll()
@@ -185,6 +206,18 @@ class DataGenerator<T extends AbstractData> {
 }
 
 DataGenerator - AbstractData
+
+
+
+AbstractData *-- Bytes
+CompositeData *-- Bytes
+CollectionData *-- Bytes
+AbstractObject *-- Bytes
+RWrapper *-- Bytes
+SimpleData *-- Bytes
+
+Bytes -- ByteDataInterface
+Bytes -- JedisCommunicationChannel
 
 
 
