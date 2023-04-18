@@ -10,7 +10,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 
-public class RMap<T extends AbstractData<?>, E extends AbstractData<?>> extends CompositeData<T> implements Map<T, E> {
+public class RMap<T extends AbstractData<?>> extends CompositeData<T> implements Map<Bytes, T> {
 
     RMap(@NotNull Bytes key) {
         super(key, DataType.MAP);
@@ -35,13 +35,13 @@ public class RMap<T extends AbstractData<?>, E extends AbstractData<?>> extends 
     }
 
     @Override
-    public Set<Entry<T, E>> entrySet() {
+    public Set<Entry<Bytes, T>> entrySet() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'entrySet'");
     }
 
     @Override
-    public E get(Object arg0) {
+    public T get(Object arg0) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'get'");
     }
@@ -53,25 +53,25 @@ public class RMap<T extends AbstractData<?>, E extends AbstractData<?>> extends 
     }
 
     @Override
-    public Set<T> keySet() {
+    public Set<Bytes> keySet() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'keySet'");
     }
 
     @Override
-    public E put(T arg0, E arg1) {
+    public T put(Bytes arg0, T arg1) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'put'");
     }
 
     @Override
-    public void putAll(Map<? extends T, ? extends E> arg0) {
+    public void putAll(Map<? extends Bytes, ? extends T> arg0) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'putAll'");
     }
 
     @Override
-    public E remove(Object arg0) {
+    public T remove(Object arg0) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'remove'");
     }
@@ -83,7 +83,7 @@ public class RMap<T extends AbstractData<?>, E extends AbstractData<?>> extends 
     }
 
     @Override
-    public Collection<E> values() {
+    public Collection<T> values() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'values'");
     }
