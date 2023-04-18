@@ -18,13 +18,13 @@ import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
-import net.legendofwar.firecord.jedis.dataset.dataentry.simple.SimpleData;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.args.ListPosition;
 
 @SuppressWarnings("unchecked")
-public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> implements List<T> {
+public class RList<T extends AbstractData<?>> extends CollectionData<T, List<T>> implements List<T> {
 
     static HashMap<Bytes, RList<AbstractData<?>>> loaded = new HashMap<Bytes, RList<AbstractData<?>>>();
 
@@ -280,23 +280,18 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
 
     }
 
-    private RList(@NotNull Bytes key, ArrayList<T> data) {
-        super(key, data, DataType.LIST);
+    public RList(@NotNull Bytes key) {
+        super(key, DataType.LIST);
         synchronized (loaded) {
             loaded.put(key, (RList<AbstractData<?>>) this);
         }
     }
 
-    public RList(@NotNull Bytes key, int initialCapacity) {
-        this(key, new ArrayList<T>(initialCapacity));
-    }
-
-    public RList(@NotNull Bytes key) {
-        this(key, new ArrayList<T>());
-    }
-
     @Override
     void _load() {
+        if (this.data == null) {
+            this.data = new ArrayList<T>();
+        }
         try (Jedis j = ClassicJedisPool.getJedis()) {
             List<byte[]> keys = j.lrange(this.key.getData(), 0, -1);
             synchronized (this.data) {
@@ -596,13 +591,13 @@ public class RList<T extends AbstractData<?>> extends CompositeData<T, List<T>> 
     public boolean containsValue(Object value) {
         synchronized (this.data) {
             for (T entry : this.data) {
-                if (entry instanceof SimpleData) {
-                    SimpleData<Object> e = (SimpleData<Object>) entry;
+                if (entry instanceof SimpleInterface) {
+                    SimpleInterface<Object> e = (SimpleInterface<Object>) entry;
                     if (e.get().equals(value)) {
                         return true;
                     }
-                } else if (entry instanceof CompositeData) {
-                    CompositeData<AbstractData<?>, ?> e = (CompositeData<AbstractData<?>, ?>) entry;
+                } else if (entry instanceof CollectionData) {
+                    CollectionData<AbstractData<?>, ?> e = (CollectionData<AbstractData<?>, ?>) entry;
                     if (e.data.equals(value)) {
                         return true;
                     }
