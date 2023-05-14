@@ -300,7 +300,7 @@ public class RList<T extends AbstractData<?>> extends CollectionData<T, List<T>>
                     AbstractData<?> ad = AbstractData.create(new Bytes(k));
                     if (ad != null) {
                         // since load is called AFTER we put this object into the AbstractData loaded
-                        // map cyclical dependencies are handled correctly
+                        // map, cyclical dependencies are handled correctly
                         this.data.add((T) ad);
                     }
                 }
