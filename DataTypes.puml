@@ -166,6 +166,35 @@ class RList <T extends AbstractData> extends CollectionData {
 
 }
 
+class RMap <Bytes, T extends AbstractData> extends CompositeData {
+    + boolean containsKey()
+    + boolean containsValue()
+    + Set<Entry<Bytes, T>> entrySet()
+    + T get(Object arg0)
+    + Set<Bytes> keySet()
+    + T put()
+    + void putAll()
+    + T remove()
+    + Collection<T> values()
+}
+
+RMap *-- SlaveCollection
+
+
+abstract SlaveCollection <T extends AbstractData> implements Collection {
+    + void clear()
+    + boolean contains()
+    + boolean containsAll()
+    + boolean isEmpty()
+    + Iterator<T> iterator()
+    + boolean remove()
+    + boolean removeAll()
+    + boolean retainAll()
+    + int size()
+    + Object[] toArray()
+    + F[] toArray()
+}
+
 CompositeData o-- AbstractData
 
 abstract AbstractObject extends AbstractData {
