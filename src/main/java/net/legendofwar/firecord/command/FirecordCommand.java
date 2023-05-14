@@ -16,6 +16,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
+import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
@@ -39,6 +40,9 @@ public class FirecordCommand {
     static RList<RInteger> testlist1 = null;
     static RList<RInteger> testlist2 = null;
     static RList<AbstractData<?>> testlist3 = null;
+    static RMap<RInteger> testmap1 = null;
+    static RMap<RInteger> testmap2 = null;
+    static RMap<AbstractData<?>> testmap3 = null;
 
     public static boolean onCommand(Sender sender, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
@@ -50,6 +54,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " loadis      §e large data sync example");
             sender.sendMessage("§b" + label + " storeis     §e large data sync example");
             sender.sendMessage("§b" + label + " testlist    §e list test command");
+            sender.sendMessage("§b" + label + " testmap     §e map test command");
             sender.sendMessage("§b" + label + " testanon    §e anonymous type test command");
             sender.sendMessage("§b" + label + " testmessage §e write&read to a test-byte[]");
             sender.sendMessage("§b" + label + " testobject  §e test object command");
@@ -69,6 +74,73 @@ public class FirecordCommand {
                 test = new RInteger(new Bytes("testint"));
                 test.setIfEmpty(0);
             }
+        } else if (args[0].equalsIgnoreCase("testmap")) {
+
+            if (testmap1 == null) {
+                testmap1 = new RMap<RInteger>(new Bytes("testmap1"));
+            }
+            if (testmap2 == null) {
+                testmap2 = new RMap<RInteger>(new Bytes("testmap2"));
+            }
+            if (testmap3 == null) {
+                testmap3 = new RMap<AbstractData<?>>(new Bytes("testmap3"));
+            }
+            if (test1 == null) {
+                test1 = (RInteger) AbstractData.create(new Bytes("testint1"));
+                if (test1 == null) {
+                    test1 = new RInteger(new Bytes("testint1"));
+                    test1.set(1);
+                }
+            }
+            if (test2 == null) {
+                test2 = (RInteger) AbstractData.create(new Bytes("testint2"));
+                if (test2 == null) {
+                    test2 = new RInteger(new Bytes("testint2"));
+                    test2.setIfEmpty(2);
+                }
+            }
+            if (test3 == null) {
+                test3 = (RInteger) AbstractData.create(new Bytes("testint3"));
+                if (test3 == null) {
+                    test3 = new RInteger(new Bytes("testint3"));
+                    test3.setIfEmpty(3);
+                }
+            }
+            sender.sendMessage("§btestmap1: §e" + String.join(",", Arrays.toString(testmap1.entrySet().stream()
+                    .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
+            sender.sendMessage("§btestmap2: §e" + String.join(",", Arrays.toString(testmap2.entrySet().stream()
+                    .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
+            sender.sendMessage("§btestmap3: §e" + String.join(",", Arrays.toString(testmap3.entrySet().stream()
+                    .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
+            sender.sendMessage("§bClear testmaps");
+            testmap1.clear();
+            testmap2.clear();
+            testmap3.clear();
+            RInteger a = (RInteger) AbstractData.create(new Bytes("testint"+(1+ ((int) (Math.random()*3)))));
+            RInteger b = (RInteger) AbstractData.create(new Bytes("testint"+(1+ ((int) (Math.random()*3)))));
+            RInteger c = (RInteger) AbstractData.create(new Bytes("testint"+(1+ ((int) (Math.random()*3)))));
+            sender.sendMessage("§a#1 put a:"+a+", b:"+b+", c:"+c);
+            testmap1.put(new Bytes("a"), a);
+            testmap1.put(new Bytes("b"), b);
+            testmap1.put(new Bytes("c"), c);
+            sender.sendMessage("§btestmap1: §e" + testmap1.size());
+            sender.sendMessage("§btestmap1: §e" + String.join(",", Arrays.toString(testmap1.entrySet().stream()
+                    .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
+
+            sender.sendMessage("§a#2 put a:3, d:3");
+            sender.sendMessage("§a#2 putAll #1");
+            testmap2.put(new Bytes("a"), test3);
+            testmap2.put(new Bytes("d"), test3);
+            testmap2.putAll(testmap1);
+            sender.sendMessage("§btestmap2: §e" + testmap2.size());
+            sender.sendMessage("§btestmap1: §e" + String.join(",", Arrays.toString(testmap2.entrySet().stream()
+                    .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
+
+            sender.sendMessage("§a#2 remove b");
+            testmap2.remove(new Bytes("b"));
+            sender.sendMessage("§btestmap2: §e" + testmap2.size());
+            sender.sendMessage("§btestmap2: §e" + String.join(",", Arrays.toString(testmap2.entrySet().stream()
+                    .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
         } else if (args[0].equalsIgnoreCase("testlist")) {
             if (testlist1 == null) {
                 testlist1 = new RList<RInteger>(new Bytes("testlist1"));
