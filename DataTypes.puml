@@ -149,6 +149,7 @@ abstract CollectionData <T extends AbstractData,\nE extends Collection<T>> exten
 }
 
 class RList <T extends AbstractData> extends CollectionData {
+    + {static} HashMap<Bytes, RList> loaded
     + boolean add()
     + void add()
     + boolean addAll()
@@ -167,6 +168,7 @@ class RList <T extends AbstractData> extends CollectionData {
 }
 
 class RMap <Bytes, T extends AbstractData> extends CompositeData {
+    + {static} HashMap<Bytes, RMap> loaded
     + boolean containsKey()
     + boolean containsValue()
     + Set<Entry<Bytes, T>> entrySet()
@@ -181,7 +183,7 @@ class RMap <Bytes, T extends AbstractData> extends CompositeData {
 RMap *-- SlaveCollection
 
 
-abstract SlaveCollection <T extends AbstractData> implements Collection {
+class SlaveCollection <T extends AbstractData> implements Collection {
     + void clear()
     + boolean contains()
     + boolean containsAll()
