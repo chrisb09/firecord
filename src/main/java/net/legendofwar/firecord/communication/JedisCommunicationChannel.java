@@ -16,7 +16,7 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     UPDATE_SMALL_KEY(8),
     UPDATE_LARGE_KEY(9),
     DEL_KEY_VALUE(10),
-    DEL_COLLECTION(11),
+    COLLECTION_CLEAR(11),
     LIST_ADD(12),
     LIST_ADD_ALL(13),
     LIST_ADD_INDEX(14),
@@ -27,7 +27,10 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     LIST_RETAIN_ALL(19),
     LIST_SET(20),
     LIST_LOG(21),                       // Debug print to compare redis and cache values
-
+    MAP_CLEAR(22),
+    MAP_PUT(23),
+    MAP_PUT_ALL(24),
+    MAP_REMOVE(25),
     CHAT_BROADCAST(100),
     
     ;

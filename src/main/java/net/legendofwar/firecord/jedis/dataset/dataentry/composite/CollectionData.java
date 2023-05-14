@@ -19,7 +19,7 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
 
     static {
 
-        JedisCommunication.subscribe(JedisCommunicationChannel.DEL_COLLECTION, new MessageReceiver() {
+        JedisCommunication.subscribe(JedisCommunicationChannel.COLLECTION_CLEAR, new MessageReceiver() {
 
             @Override
             public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
@@ -99,7 +99,7 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
         try (Jedis j = ClassicJedisPool.getJedis()) {
             j.del(key.getData());
         }
-        JedisCommunication.broadcast(JedisCommunicationChannel.DEL_COLLECTION, key);
+        JedisCommunication.broadcast(JedisCommunicationChannel.COLLECTION_CLEAR, key);
         synchronized (this.data) {
             this.data.clear();
         }
