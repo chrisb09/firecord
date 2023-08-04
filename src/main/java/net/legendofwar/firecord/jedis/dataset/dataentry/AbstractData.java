@@ -60,11 +60,11 @@ public abstract class AbstractData<T> implements Closeable {
         return null;
     }
 
-    public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c, Object defaultValue) {
+    public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c, Object defaultValue, Class<?> defaultValueClass) {
 
         try {
-            return (AbstractData<?>) c.getDeclaredConstructor(Bytes.class, defaultValue.getClass()).newInstance(key,
-                    defaultValue);
+            return (AbstractData<?>) c.getDeclaredConstructor(Bytes.class, defaultValueClass).newInstance(key,
+            defaultValue);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {

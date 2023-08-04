@@ -99,7 +99,13 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                 dv = ((SimpleAbstractObject<?>) entry).getTempValue();
                             }
                             if (dv != null) {
-                                replacingEntry = (F) callConstructor(key, entry.getClass(), dv);
+                                if (entry instanceof RWrapper) {
+                                    // Otherwise the RWrapper constructor fails since it's defined for AbstracData<?> but
+                                    // usually is passed a subclass of object
+                                    replacingEntry = (F) callConstructor(key, entry.getClass(), dv, AbstractData.class);
+                                } else {
+                                    replacingEntry = (F) callConstructor(key, entry.getClass(), dv, dv.getClass());
+                                }
                             } else {
                                 replacingEntry = (F) callConstructor(key, entry.getClass());
                             }
@@ -190,7 +196,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
     }
 
     protected RWrapper RWrapper(Object defaultValue) {
-        return setTemp(RWrapper.class, defaultValue);
+        return setTemp(RWrapper.class, defaultValue, AbstractData.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -198,9 +204,13 @@ public abstract class AbstractObject extends AbstractData<Object> {
         return (REnum<T>) setTemp(REnum.class, defaultValue);
     }
 
-    @SuppressWarnings("unchecked")
     private <T extends AbstractData<?>> T setTemp(Class<T> c, Object defaultValue) {
-        T object = (T) AbstractData.callConstructor(null, c, defaultValue);
+        return setTemp(c, defaultValue, defaultValue.getClass());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends AbstractData<?>> T setTemp(Class<T> c, Object defaultValue, Class<?> defaultValueClass) {
+        T object = (T) AbstractData.callConstructor(null, c, defaultValue, defaultValueClass);
         synchronized (tempEntryParent) {
             tempEntryParent.put(object, this);
         }
