@@ -5,10 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 
-public class RInteger extends NumericData<Integer> {
+public final class RInteger extends NumericData<Integer> {
 
     final static Integer DEFAULT_VALUE = 0;
 
@@ -23,8 +22,8 @@ public class RInteger extends NumericData<Integer> {
     @Override
     public Integer add(Integer value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).add(value);
+            printTempErrorMsg();
+            return null;
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -37,8 +36,8 @@ public class RInteger extends NumericData<Integer> {
     @Override
     public Integer sub(Integer value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).sub(value);
+            printTempErrorMsg();
+            return null;
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -51,8 +50,8 @@ public class RInteger extends NumericData<Integer> {
     @Override
     public Integer mul(Integer value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).mul(value);
+            printTempErrorMsg();
+            return null;
         }
         try (AbstractData<Integer> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -67,8 +66,8 @@ public class RInteger extends NumericData<Integer> {
     @Override
     public Integer div(Integer value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).div(value);
+            printTempErrorMsg();
+            return null;
         }
         try (AbstractData<Integer> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {

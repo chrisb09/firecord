@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 
-public class RString extends SmallData<String> {
+public final class RString extends SmallData<String> {
 
     final static String DEFAULT_VALUE = "";
 

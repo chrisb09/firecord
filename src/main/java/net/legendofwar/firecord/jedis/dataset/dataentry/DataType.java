@@ -68,7 +68,8 @@ public enum DataType {
 
     // for later use in custom objects
     WRAPPER(RWrapper.class),
-    OBJECT(null);
+    OBJECT(null),
+    CLASS(null);
 
     final Class<?> c;
     // set if this entry type should not be loaded on all nodes that are not this

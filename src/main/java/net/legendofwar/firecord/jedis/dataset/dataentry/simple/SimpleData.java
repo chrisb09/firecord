@@ -1,5 +1,7 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -7,8 +9,10 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
+import org.javatuples.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.communication.JedisCommunication;
@@ -19,7 +23,6 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
-import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 
 public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInterface<T> {
@@ -44,6 +47,8 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 
     // Map of all (once) loaded SimpleData entries
     static HashMap<Bytes, SimpleData<?>> loaded = new HashMap<Bytes, SimpleData<?>>();
+
+    private static LinkedBlockingQueue<Pair<SimpleData<?>, Object>> asyncSetQueue = new LinkedBlockingQueue<>();
 
     static {
 
@@ -157,6 +162,52 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 
         thread.start();
 
+        Thread asyncSetThread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Pair<SimpleData<?>, Object> data = asyncSetQueue.take();
+                        SimpleData<?> simpleData = data.getValue0();
+                        Object value = data.getValue1();
+                        if (simpleData != null){
+                            // Get a reference to the 'set' method
+                            Class<?> clazz = simpleData.getClass();
+                            while (clazz != null) {
+                                for (Method method : clazz.getDeclaredMethods()){
+                                    if (method.getName().equals("set") && method.getParameterTypes().length == 1 && method.getParameterTypes()[0].isAssignableFrom(value.getClass())){
+                                        try {
+                                            method.setAccessible(true);
+                                            method.invoke(simpleData, value);
+                                            clazz = null;
+                                        } catch (IllegalAccessException | InvocationTargetException e){
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                                if (clazz != null) {
+                                    if (SimpleData.class.equals(clazz)){
+                                        clazz = null;
+                                        System.out.println("Couldn't find a set method...");
+                                    } else {
+                                        clazz = clazz.getSuperclass();
+                                    }
+                                }
+                            }
+                    
+                        }
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+
+                }
+            }
+
+        });
+
+        asyncSetThread.start();
+
     }
 
     // @formatter:off
@@ -261,8 +312,8 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
      */
     public boolean set(T value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).set(value);
+            printTempErrorMsg();
+            return false;
         }
         this.value = value;
         boolean success = false;
@@ -277,6 +328,14 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         return success;
     }
 
+    public void setAsync(T value) {
+        if (this.key == null) {
+            printTempErrorMsg();
+            return;
+        }
+        asyncSetQueue.add(Pair.with(this, value));
+    }
+
     public void listen(Consumer<SimpleInterface<T>> listener) {
         this.listener = listener;
     }
@@ -289,8 +348,8 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
      */
     public boolean setIfEmpty(T value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).setIfEmpty(value);
+            printTempErrorMsg();
+            return false;
         }
         T v = get();
         T defaultValue = getDefaultValue();
@@ -318,8 +377,8 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 
     private T get(boolean modify) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).get();
+            printTempErrorMsg();
+            return null;
         }
         if (!valid) {
             return _get(modify);

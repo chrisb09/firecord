@@ -17,7 +17,7 @@ public final class RItemStack extends DynamicLargeData<ItemStack> {
     final static ItemStack DEFAULT_VALUE = new ItemStack(Material.AIR, 1);
 
     public RItemStack(@NotNull Bytes key) {
-        this(key, null);
+        this(key, DEFAULT_VALUE);
     }
 
     public RItemStack(@NotNull Bytes key, ItemStack defaultValue) {

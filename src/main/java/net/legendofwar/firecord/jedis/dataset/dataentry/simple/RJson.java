@@ -5,7 +5,7 @@ import org.json.JSONObject;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 
-public class RJson extends LargeData<JSONObject> {
+public final class RJson extends LargeData<JSONObject> {
 
     final static JSONObject DEFAULT_VALUE = new JSONObject();
 

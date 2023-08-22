@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 
 public final class RByte extends NumericData<Byte> {
@@ -28,10 +27,10 @@ public final class RByte extends NumericData<Byte> {
     }
 
     @Override
-    public Byte add(Byte value) {
+    public Byte add(Byte value){
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).add(value);
+            printTempErrorMsg();
+            return null;
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -44,8 +43,8 @@ public final class RByte extends NumericData<Byte> {
     @Override
     public Byte sub(Byte value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).sub(value);
+            printTempErrorMsg();
+            return null;
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -58,8 +57,8 @@ public final class RByte extends NumericData<Byte> {
     @Override
     public Byte mul(Byte value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).mul(value);
+            printTempErrorMsg();
+            return null;
         }
         try (AbstractData<Byte> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -74,8 +73,8 @@ public final class RByte extends NumericData<Byte> {
     @Override
     public Byte div(Byte value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).div(value);
+            printTempErrorMsg();
+            return null;
         }
         try (AbstractData<Byte> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {

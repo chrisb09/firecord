@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 
 public final class RWrapper extends SmallData<AbstractData<?>> {
 
@@ -53,8 +52,7 @@ public final class RWrapper extends SmallData<AbstractData<?>> {
 
     public void set(Bytes key) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            AbstractObject.replaceTemp(this).set(key);
+            printTempErrorMsg();
             return;
         }
         fromBytes(key);
@@ -63,8 +61,7 @@ public final class RWrapper extends SmallData<AbstractData<?>> {
 
     public void setIfEmpty(Bytes key) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            AbstractObject.replaceTemp(this).setIfEmpty(key);
+            printTempErrorMsg();
             return;
         }
         if (this.value == null) {

@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
-import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 
 public final class RFloat extends NumericData<Float> {
@@ -23,8 +22,8 @@ public final class RFloat extends NumericData<Float> {
     @Override
     public Float add(Float value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).add(value);
+            printTempErrorMsg();
+            return null;
         }
         try (AbstractData<Float> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -39,8 +38,8 @@ public final class RFloat extends NumericData<Float> {
     @Override
     public Float sub(Float value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).sub(value);
+            printTempErrorMsg();
+            return null;
         }
         try (AbstractData<Float> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -55,8 +54,8 @@ public final class RFloat extends NumericData<Float> {
     @Override
     public Float mul(Float value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).mul(value);
+            printTempErrorMsg();
+            return null;
         }
         try (AbstractData<Float> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -71,8 +70,8 @@ public final class RFloat extends NumericData<Float> {
     @Override
     public Float div(Float value) {
         if (this.key == null) {
-            // only abstract objects should create temporary entries
-            return AbstractObject.replaceTemp(this).div(value);
+            printTempErrorMsg();
+            return null;
         }
         try (AbstractData<Float> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
