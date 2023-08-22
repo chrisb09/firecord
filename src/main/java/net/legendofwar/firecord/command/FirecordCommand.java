@@ -53,6 +53,13 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testint     §e small data sync example");
             sender.sendMessage("§b" + label + " loadis      §e large data sync example");
             sender.sendMessage("§b" + label + " storeis     §e large data sync example");
+            sender.sendMessage("§b" + label + " testfield   §e test a field change of testob");
+            sender.sendMessage("§b" + label + " teststatic  §e testfield for static vars");
+            sender.sendMessage("§b" + label + " testchar    §e runs RChar related test");
+            sender.sendMessage("§b" + label + " testnull    §e test null toggle");
+            sender.sendMessage("§b" + label + " testow      §e test overwrite");
+            sender.sendMessage("§b" + label + " testasync   §e test setAsync");
+            sender.sendMessage("§b" + label + " tested      §e test encode-decode");
             sender.sendMessage("§b" + label + " testlist    §e list test command");
             sender.sendMessage("§b" + label + " testmap     §e map test command");
             sender.sendMessage("§b" + label + " testanon    §e anonymous type test command");
@@ -300,6 +307,40 @@ public class FirecordCommand {
         } else if (args[0].equalsIgnoreCase("testanon")) {
             RLong ad = dg.create(7l);
             sender.sendMessage("§btestanon: §e" + ad.getKey() + "=§a" + ad);
+
+        } else if (args[0].equalsIgnoreCase("testfield")) {
+            if (testob == null) {
+                testob = new TestObject(new Bytes("testobject_new"));
+            }
+            sender.sendMessage("§btestob: §e" + testob.printA());
+            sender.sendMessage("§atestob.switchA();");
+            testob.switchA();
+            sender.sendMessage("§atestob.incrA();");
+            testob.incrA();
+            sender.sendMessage("§btestob: §e" + testob.printA());
+        } else if (args[0].equalsIgnoreCase("teststatic")) {
+            sender.sendMessage("§bteststatic: §e" + TestObject.printAStatic());
+            sender.sendMessage("§ateststatic.switchAStatic();");
+            TestObject.switchAStatic();
+            sender.sendMessage("§ateststatic.incrAStatic();");
+            TestObject.incrAStatic();
+            sender.sendMessage("§bteststatic: §e" + TestObject.printAStatic());
+        } else if (args[0].equalsIgnoreCase("testnull")) {
+            sender.sendMessage("§bnullt: §e" + TestObject.nullt);
+            sender.sendMessage("§a.toggleNullt();");
+            TestObject.toggleNullt();
+            sender.sendMessage("§bnullt: §e" + TestObject.nullt);
+        } else if (args[0].equalsIgnoreCase("testow")) {
+            sender.sendMessage("§boverwrite_field: §e" + TestObject.overwrite_field+" [§a"+TestObject.overwrite_field.getClass().getSimpleName()+"§e]");
+            sender.sendMessage("§a.overwriteField();");
+            TestObject.overwriteField();
+            sender.sendMessage("§boverwrite_field: §e" + TestObject.overwrite_field+" [§a"+TestObject.overwrite_field.getClass().getSimpleName()+"§e]");
+        } else if (args[0].equalsIgnoreCase("testchar")) {
+            TestObject.testChar();
+        } else if (args[0].equalsIgnoreCase("tested")) {
+            TestObject.testEncodeDecode();
+        } else if (args[0].equalsIgnoreCase("testasync")) {
+            TestObject.testAsyncSet();
         } else if (args[0].equalsIgnoreCase("testobject")) {
             if (testob == null) {
                 testob = new TestObject(new Bytes("testobject"));
