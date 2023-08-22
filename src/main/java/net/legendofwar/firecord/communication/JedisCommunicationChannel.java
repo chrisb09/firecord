@@ -31,6 +31,8 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     MAP_PUT(23),
     MAP_PUT_ALL(24),
     MAP_REMOVE(25),
+    REFERENCE_UPDATE(50),               // Informs about a changed reference in an AbstractObject
+    OBJECT_OVERWRITE(51),               // Used when a temp entry creates an object
     CHAT_BROADCAST(100),
     
     ;
