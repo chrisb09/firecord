@@ -174,14 +174,14 @@ public class Bytes implements ByteDataInterface {
         buffer.position(0);
         this.set(buffer.array());
         return this;
-    }
+    }    
 
     public long decodeNumber() {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.position(Long.BYTES - data.length);
+        //buffer.position(Long.BYTES - data.length);
         buffer.put(data);
-        if (data[0] >> 7 != 0) { // negative number
+        if ((data[data.length-1] & 0x80) != 0) { // negative number
             for (int i = 0; i < Long.BYTES - data.length; i++) {
                 // fill remaining bytes with 0xFF for proper negative numbers
                 // (not required for positive numbers as 0s are default)
