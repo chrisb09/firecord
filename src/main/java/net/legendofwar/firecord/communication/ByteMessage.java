@@ -163,7 +163,7 @@ public enum ByteMessage {
     @SuppressWarnings("unchecked")
     public static <A, B, C, D> Quartet<A, B, C, D> readIn(Bytes message, Class<A> a, Class<B> b, Class<C> c,
             Class<?> d) {
-        Object[] results = _readIn(message.getData(), a, b, c);
+        Object[] results = _readIn(message.getData(), a, b, c, d);
         return new Quartet<A, B, C, D>((A) results[0], (B) results[1], (C) results[2], (D) results[3]);
     }
 
