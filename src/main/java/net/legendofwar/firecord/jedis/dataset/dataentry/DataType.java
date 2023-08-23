@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
+import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByte;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByteArray;
@@ -60,7 +61,7 @@ public enum DataType {
     LIST(RList.class),
     SET(null),
     SORTEDSET(null),
-    MAP(null),
+    MAP(RMap.class),
 
     // java types we emulate on redis
     QUEUE(null),
@@ -126,6 +127,9 @@ public enum DataType {
     }
 
     public static DataType getByC(Class<?> c) {
+        if (c == null) {
+            return null;
+        }
         for (DataType dt : DataType.values()) {
             if (dt.getC() != null && dt.getC().equals(c)) {
                 return dt;
