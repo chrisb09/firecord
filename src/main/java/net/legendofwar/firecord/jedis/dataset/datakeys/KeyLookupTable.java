@@ -108,7 +108,6 @@ public class KeyLookupTable {
                     Bytes newIdBytes = new Bytes(newId, (byte) idSize);
                     j.hset(getCacheKey(), newIdBytes.getData(), name.getData());
                     j.hset(getReverseCacheKey(), name.getData(), newIdBytes.getData());
-                    System.out.println("Entries for " + getCacheKey());
                     for (Map.Entry<byte[], byte[]> en : j.hgetAll(getCacheKey()).entrySet()) {
                         System.out.println(en.getKey() + ": " + en.getValue());
                     }
