@@ -24,7 +24,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.args.ListPosition;
 
 @SuppressWarnings("unchecked")
-public class RList<T extends AbstractData<?>> extends CollectionData<T, List<T>> implements List<T> {
+public final class RList<T extends AbstractData<?>> extends CollectionData<T, List<T>> implements List<T> {
 
     static HashMap<Bytes, RList<AbstractData<?>>> loaded = new HashMap<Bytes, RList<AbstractData<?>>>();
 

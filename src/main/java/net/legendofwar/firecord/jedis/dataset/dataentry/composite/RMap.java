@@ -22,7 +22,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import redis.clients.jedis.Jedis;
 
 @SuppressWarnings("unchecked")
-public class RMap<T extends AbstractData<?>> extends CompositeData<T> implements Map<Bytes, T> {
+public final class RMap<T extends AbstractData<?>> extends CompositeData<T> implements Map<Bytes, T> {
 
     static HashMap<Bytes, RMap<AbstractData<?>>> loaded = new HashMap<Bytes, RMap<AbstractData<?>>>();
 

@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 
-public class TestObject extends AbstractObject {
+public final class TestObject extends AbstractObject {
 
     static DataGenerator<RDouble> dg = new DataGenerator<>(new Bytes("doublepool"), RDouble.class);
 
