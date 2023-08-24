@@ -1,6 +1,7 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry;
 
 import java.io.Closeable;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -43,7 +44,9 @@ public abstract class AbstractData<T> implements Closeable {
     public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c) {
 
         try {
-            return (AbstractData<?>) c.getDeclaredConstructor(Bytes.class).newInstance(key);
+            Constructor<?> constr = c.getDeclaredConstructor(Bytes.class);
+            constr.setAccessible(true);
+            return (AbstractData<?>) constr.newInstance(key);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
@@ -63,8 +66,9 @@ public abstract class AbstractData<T> implements Closeable {
     public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c, Object defaultValue, Class<?> defaultValueClass) {
 
         try {
-            return (AbstractData<?>) c.getDeclaredConstructor(Bytes.class, defaultValueClass).newInstance(key,
-            defaultValue);
+            Constructor<?> constr = c.getDeclaredConstructor(Bytes.class, defaultValueClass);
+            constr.setAccessible(true);
+            return (AbstractData<?>) constr.newInstance(key, defaultValue);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
