@@ -43,7 +43,7 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
 
     }
 
-    E data = null;
+    E data;
 
     CollectionData(@NotNull Bytes key, DataType dt) {
         super(key, dt);
