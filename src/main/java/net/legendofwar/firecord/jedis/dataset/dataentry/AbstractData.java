@@ -177,6 +177,10 @@ public abstract class AbstractData<T> implements Closeable {
         }
     }
 
+    public JedisLock getJedisLock(){
+        return this.lock;
+    }
+
     public boolean tryLockMultiple(JedisLock... partners) {
         return this.lock.tryLockMultiple(partners);
     }
