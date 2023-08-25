@@ -19,6 +19,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
+import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RLong;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
@@ -30,6 +31,7 @@ public class FirecordCommand {
     static DataGenerator<RLong> dg = new DataGenerator<>(new Bytes("longdata"), RLong.class);
 
     static KeyLookupTable testKeyLookupTable;
+    static RBoolean testbool = null;
     static RInteger test = null;
     static RInteger test1 = null;
     static RInteger test2 = null;
@@ -56,6 +58,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testfield   §e test a field change of testob");
             sender.sendMessage("§b" + label + " teststatic  §e testfield for static vars");
             sender.sendMessage("§b" + label + " testchar    §e runs RChar related test");
+            sender.sendMessage("§b" + label + " testbool    §e runs RBoolean test");
             sender.sendMessage("§b" + label + " testnull    §e test null toggle");
             sender.sendMessage("§b" + label + " testow      §e test overwrite");
             sender.sendMessage("§b" + label + " testasync   §e test setAsync");
@@ -270,6 +273,14 @@ public class FirecordCommand {
             sender.sendMessage("§atestint++;");
             test.add(1);
             sender.sendMessage("§btestint: §e" + test.get());
+        }  else if (args[0].equalsIgnoreCase("testbool")) {
+            if (testbool == null) {
+                testbool = new RBoolean(new Bytes("testbool"));
+            }
+            sender.sendMessage("§btestbool: §e" + testbool.get());
+            sender.sendMessage("§atestbool = !testbool");
+            testbool.set(!testbool.get());
+            sender.sendMessage("§btestbool: §e" + testbool.get());
         } else if (args[0].equalsIgnoreCase("testwrite")) {
             if (test == null) {
                 test = new RInteger(new Bytes("testint"));
