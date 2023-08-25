@@ -240,10 +240,11 @@ public class JedisCommunication extends BinaryJedisPubSub {
             if (receivers.containsKey(channel)) {
                 recv = receivers.get(channel);
             } else {
-                System.out.println("Received message in channel currently not handled by any listener.");
+                /*System.out.println("Received message in channel currently not handled by any listener.");
                 System.out.println("Message channel: '" + channel + "'");
                 System.out.println("Currently registred channels: " + String.join(", ",
                         receivers.keySet().stream().map(bytearray -> bytearray.toString()).toList()));
+                        */
             }
         }
         if (recv != null) {
