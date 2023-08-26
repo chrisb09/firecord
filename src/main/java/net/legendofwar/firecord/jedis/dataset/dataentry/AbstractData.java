@@ -256,7 +256,11 @@ public abstract class AbstractData<T> implements Closeable {
         if (listeners.size() != 0){
             // notify listeners
             for (Consumer<DataEvent<AbstractData<?>>> consumer : listeners){
-                consumer.accept(event);
+                try {
+                    consumer.accept(event);
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
             }
         }
     }
