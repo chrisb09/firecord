@@ -25,13 +25,14 @@ public final class RDouble extends NumericData<Double> {
             printTempErrorMsg();
             return null;
         }
+        Double oldValue = this.value;
         try (AbstractData<Double> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Double.parseDouble(new Bytes(j.get(key.getData())).asString()) + value;
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 
@@ -41,13 +42,14 @@ public final class RDouble extends NumericData<Double> {
             printTempErrorMsg();
             return null;
         }
+        Double oldValue = this.value;
         try (AbstractData<Double> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Double.parseDouble(new Bytes(j.get(key.getData())).asString()) - value;
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 
@@ -57,13 +59,14 @@ public final class RDouble extends NumericData<Double> {
             printTempErrorMsg();
             return null;
         }
+        Double oldValue = this.value;
         try (AbstractData<Double> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Double.parseDouble(new Bytes(j.get(key.getData())).asString()) * value;
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 
@@ -73,13 +76,14 @@ public final class RDouble extends NumericData<Double> {
             printTempErrorMsg();
             return null;
         }
+        Double oldValue = this.value;
         try (AbstractData<Double> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Double.parseDouble(new Bytes(j.get(key.getData())).asString()) / value;
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 

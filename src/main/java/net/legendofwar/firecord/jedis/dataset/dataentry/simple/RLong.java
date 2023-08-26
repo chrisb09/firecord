@@ -27,8 +27,9 @@ public final class RLong extends NumericData<Long> {
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
+            Long oldValue = this.value;
             this.value = j.incrBy(key.getData(), value);
-            this._update();
+            this._update(oldValue);
         }
         return this.value;
     }
@@ -41,8 +42,9 @@ public final class RLong extends NumericData<Long> {
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
+            Long oldValue = this.value;
             this.value = j.incrBy(key.getData(), -value);
-            this._update();
+            this._update(oldValue);
         }
         return this.value;
     }
@@ -53,13 +55,14 @@ public final class RLong extends NumericData<Long> {
             printTempErrorMsg();
             return null;
         }
+        Long oldValue = this.value;
         try (AbstractData<Long> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Long.parseLong(new Bytes(j.get(key.getData())).asString()) * value;
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 
@@ -69,13 +72,14 @@ public final class RLong extends NumericData<Long> {
             printTempErrorMsg();
             return null;
         }
+        Long oldValue = this.value;
         try (AbstractData<Long> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Long.parseLong(new Bytes(j.get(key.getData())).asString()) / value;
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 

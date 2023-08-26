@@ -8,6 +8,8 @@ import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.LargeDataSetEvent;
 
 public abstract class LargeData<T> extends SimpleData<T> {
 
@@ -18,14 +20,15 @@ public abstract class LargeData<T> extends SimpleData<T> {
             @Override
             @SuppressWarnings("unchecked")
             public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
-                SimpleData<Object> entry = null;
+                LargeData<Object> entry = null;
                 synchronized (loaded) {
                     if (loaded.containsKey(message)) {
-                        entry = (SimpleData<Object>) loaded.get(message);
+                        entry = (LargeData<Object>) loaded.get(message);
                         entry.valid = false;
-                        if (entry.listener != null) {
-                            entry.listener.accept(entry);
-                        }
+                        Object oldValue = entry.value;
+                        entry.notifyListeners(
+                            new LargeDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_LARGE_KEY, entry, oldValue));
+                        
                     }
                 }
                 if (entry != null) {
@@ -70,12 +73,14 @@ public abstract class LargeData<T> extends SimpleData<T> {
     }
 
     @Override
-    protected void _update(boolean broadcast) {
+    protected void _update(T oldValue, boolean broadcast) {
         this.valid = true;
         recentlyModified.add(this);
         if (broadcast) {
             if (this.value != null) {
                 JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_LARGE_KEY, this.key);
+                this.notifyListeners(
+                    new LargeDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_LARGE_KEY, this, oldValue));
             } else {
                 JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
             }

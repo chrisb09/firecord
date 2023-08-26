@@ -27,8 +27,9 @@ public final class RShort extends NumericData<Short> {
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
+            Short oldValue = this.value;
             this.value = (short) j.incrBy(key.getData(), value);
-            this._update();
+            this._update(oldValue);
         }
         return this.value;
     }
@@ -41,8 +42,9 @@ public final class RShort extends NumericData<Short> {
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
+            Short oldValue = this.value;
             this.value = (short) j.incrBy(key.getData(), -value);
-            this._update();
+            this._update(oldValue);
         }
         return this.value;
     }
@@ -53,13 +55,14 @@ public final class RShort extends NumericData<Short> {
             printTempErrorMsg();
             return null;
         }
+        Short oldValue = this.value;
         try (AbstractData<Short> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = (short) (Short.parseShort(new Bytes(j.get(key.getData())).asString()) * value);
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 
@@ -69,13 +72,14 @@ public final class RShort extends NumericData<Short> {
             printTempErrorMsg();
             return null;
         }
+        Short oldValue = this.value;
         try (AbstractData<Short> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = (short) (Short.parseShort(new Bytes(j.get(key.getData())).asString()) / value);
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 

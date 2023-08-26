@@ -1,11 +1,8 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.object;
 
-import java.util.function.Consumer;
-
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
-import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
 
 @SuppressWarnings("unchecked")
@@ -69,11 +66,6 @@ public final class REnum<T extends Enum<T>> extends SimpleAbstractObject<T> {
             return this.set(defaultValue);
         }
         return false;
-    }
-
-    @Override
-    public void listen(Consumer<SimpleInterface<T>> listener) {
-        this.value.listen(value -> listener.accept(this));
     }
 
     // should NOT care about being a temp value

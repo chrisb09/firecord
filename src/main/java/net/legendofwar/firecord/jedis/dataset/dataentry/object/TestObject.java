@@ -3,6 +3,8 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.object;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.DataEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.SimpleDataSetEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RDouble;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
@@ -12,9 +14,11 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
 
 import java.lang.Math;
+import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 
 public final class TestObject extends AbstractObject {
@@ -27,7 +31,7 @@ public final class TestObject extends AbstractObject {
     public static AbstractData<?> overwrite_field;
     public static RInteger asnycCounter;
 
-    private RInteger a = RInteger(25);
+    private RInteger a;
     private RInteger a_copy = RInteger(-100);
 
     public static RInteger a_static = RInteger(100);
@@ -54,6 +58,16 @@ public final class TestObject extends AbstractObject {
 
     public TestObject(@NotNull Bytes key) {
         super(key);
+        a.listen(new Consumer<DataEvent<AbstractData<?>>>() {
+
+            @Override
+            public void accept(DataEvent<AbstractData<?>> event) {
+                System.out.println("Event call: "+event.getChannel().name()+" "+event.getData() +
+                (event instanceof SimpleDataSetEvent ? " oldValue: " +
+                ((SimpleDataSetEvent<?>) (event)).getOldValue().toString() : "" ));
+            }
+            
+        }, JedisCommunicationChannel.UPDATE_SMALL_KEY, JedisCommunicationChannel.UPDATE_LARGE_KEY);
         a_copy.set(-200);
         System.out.println("a: " + a);
         a.add(5);

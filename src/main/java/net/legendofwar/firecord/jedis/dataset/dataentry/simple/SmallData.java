@@ -8,6 +8,8 @@ import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.SmallDataSetEvent;
 
 public abstract class SmallData<T> extends SimpleData<T> {
 
@@ -24,10 +26,11 @@ public abstract class SmallData<T> extends SimpleData<T> {
                 synchronized (loaded) {
                     if (loaded.containsKey(key)) {
                         SmallData<Object> sd = ((SmallData<Object>) loaded.get(key));
+                        Object oldValue = sd.value;
                         sd.fromBytes(value);
-                        if (sd.listener != null) {
-                            sd.listener.accept(sd);
-                        }
+                        
+                        sd.notifyListeners(
+                            new SmallDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_SMALL_KEY, sd, oldValue));
                     }
                 }
             }
@@ -51,13 +54,15 @@ public abstract class SmallData<T> extends SimpleData<T> {
     }
 
     @Override
-    protected void _update(boolean broadcast) {
+    protected void _update(T oldValue, boolean broadcast) {
         this.valid = true;
         recentlyModified.add(this);
         if (broadcast) {
             if (this.value != null) {
                 JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_SMALL_KEY,
                         ByteMessage.write(this.key, this.toBytes()));
+                this.notifyListeners(
+                    new SmallDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_SMALL_KEY, this, oldValue));
             } else {
                 JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
             }

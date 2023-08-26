@@ -10,7 +10,6 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
 
 import org.javatuples.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -217,7 +216,6 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 	boolean valid = false;          // determines if we hold a valid copy
     T value;                        // 
     T defaultValue;
-    Consumer<SimpleInterface<T>> listener = null;
 
 	// @formatter:on
 
@@ -250,8 +248,8 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         return this.defaultValue;
     }
 
-    protected void _update() {
-        _update(true);
+    protected void _update(T oldValue) {
+        _update(oldValue, true);
     }
 
     /**
@@ -260,7 +258,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
      * 
      * @param broadcast whether or not to announce changes to other nodes
      */
-    protected abstract void _update(boolean broadcast);
+    protected abstract void _update(T oldValue, boolean broadcast);
 
     void _fromBytes(byte[] value) {
         if (value == null) {
@@ -315,6 +313,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
             printTempErrorMsg();
             return false;
         }
+        T oldValue = this.value;
         this.value = value;
         boolean success = false;
         try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -323,7 +322,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
             } else {
                 success = j.del(key.getData()) == 1;
             }
-            this._update();
+            this._update(oldValue);
         }
         return success;
     }
@@ -334,10 +333,6 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
             return;
         }
         asyncSetQueue.add(Pair.with(this, value));
-    }
-
-    public void listen(Consumer<SimpleInterface<T>> listener) {
-        this.listener = listener;
     }
 
     /**
@@ -364,11 +359,12 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         try (Jedis j = ClassicJedisPool.getJedis()) {
             byteValue = j.get(key.getData());
         }
+        T oldValue = this.value;
         if (byteValue != null) {
             this._fromBytes(byteValue);
         }
         if (modify) {
-            this._update(false);
+            this._update(oldValue, false);
         } else {
             this.valid = true;
         }

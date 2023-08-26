@@ -4,7 +4,11 @@ import java.io.Closeable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +18,7 @@ import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.DataEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
@@ -165,11 +170,13 @@ public abstract class AbstractData<T> implements Closeable {
 
     protected final Bytes key;
     protected final JedisLock lock;
+    protected final Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> listeners;
 
     public static HashMap<Bytes, AbstractData<?>> loaded = new HashMap<Bytes, AbstractData<?>>();
 
     protected AbstractData(@NotNull Bytes key) {
         this.key = key;
+        this.listeners = new HashMap<>();
         if (key != null) {
             // make sure the object is NOT a temporary placeholde
             this.lock = new JedisLock(KeyGenerator.getLockKey(key));
@@ -214,6 +221,44 @@ public abstract class AbstractData<T> implements Closeable {
             return;
         }
         this.lock.unlock();
+    }
+
+    public void listen(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        synchronized(this.listeners){
+            for (JedisCommunicationChannel channel : channels) {
+                if (!this.listeners.containsKey(channel.getBytes())){
+                    this.listeners.put(channel.getBytes(), new ArrayList<>());
+                }
+                this.listeners.get(channel.getBytes()).add(listener);
+            }
+        }
+    }
+
+    private List<Consumer<DataEvent<AbstractData<?>>>> getFittingListeners(JedisCommunicationChannel channel){
+        return getFittingListeners(channel.getBytes());
+    }
+
+    private List<Consumer<DataEvent<AbstractData<?>>>> getFittingListeners(Bytes channel){
+        List<Consumer<DataEvent<AbstractData<?>>>> result = new ArrayList<>();
+        synchronized (this.listeners) {
+            if (this.listeners.containsKey(channel)){
+                result.addAll(this.listeners.get(channel));
+            }
+            if (this.listeners.containsKey(JedisCommunicationChannel.ANY.getBytes())){
+                result.addAll(this.listeners.get(JedisCommunicationChannel.ANY.getBytes()));
+            }
+        }
+        return result;
+    }
+
+    protected void notifyListeners(DataEvent<AbstractData<?>> event){
+        List<Consumer<DataEvent<AbstractData<?>>>> listeners = this.getFittingListeners(event.getChannel());
+        if (listeners.size() != 0){
+            // notify listeners
+            for (Consumer<DataEvent<AbstractData<?>>> consumer : listeners){
+                consumer.accept(event);
+            }
+        }
     }
 
     protected void _setType(Enum<?> dt) {

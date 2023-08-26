@@ -34,8 +34,9 @@ public final class RByte extends NumericData<Byte> {
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
+            Byte oldValue = this.value;
             this.value = (byte) j.incrBy(key.getData(), value);
-            this._update();
+            this._update(oldValue);
         }
         return this.value;
     }
@@ -48,8 +49,9 @@ public final class RByte extends NumericData<Byte> {
         }
         // single redis commands are atomic, therefore we don't need a lock
         try (Jedis j = ClassicJedisPool.getJedis()) {
+            Byte oldValue = this.value;
             this.value = (byte) j.incrBy(key.getData(), -value);
-            this._update();
+            this._update(oldValue);
         }
         return this.value;
     }
@@ -60,13 +62,14 @@ public final class RByte extends NumericData<Byte> {
             printTempErrorMsg();
             return null;
         }
+        Byte oldValue = this.value;
         try (AbstractData<Byte> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = (byte) (Byte.parseByte(new Bytes(j.get(key.getData())).asString()) * value);
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 
@@ -76,13 +79,14 @@ public final class RByte extends NumericData<Byte> {
             printTempErrorMsg();
             return null;
         }
+        Byte oldValue = this.value;
         try (AbstractData<Byte> l = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = (byte) (Byte.parseByte(new Bytes(j.get(key.getData())).asString()) / value);
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
-                this._update();
             }
         }
+        this._update(oldValue);
         return this.value;
     }
 

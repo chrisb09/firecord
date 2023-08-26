@@ -6,6 +6,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 public enum JedisCommunicationChannel implements ByteDataInterface {
 
     // @formatter:off
+    ANY(0),                             // only intended for listeners
     SERVER_MESSAGE(1),                  // (node->node) message
     SERVER_MESSAGE_BROADCAST(2),        // (node->all other nodes) mssage
     TEST(3),                            // Test message, causes entry in log
@@ -38,6 +39,15 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     ;
 
     // @formatter:on
+
+    public static JedisCommunicationChannel byBytes(Bytes channel){
+        for (JedisCommunicationChannel c : JedisCommunicationChannel.values()){
+            if (c.getBytes().equals(channel)){
+                return c;
+            }
+        }
+        return null;
+    }
 
     private Bytes data;
 
