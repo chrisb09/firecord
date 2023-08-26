@@ -4,6 +4,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
@@ -28,8 +29,8 @@ public abstract class LargeData<T> extends SimpleData<T> {
                         entry.valid = false;
                         Object oldValue = entry.value;
                         entry.notifyListeners(
-                            new LargeDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_LARGE_KEY, entry, oldValue));
-                        
+                                new LargeDataSetEvent<AbstractData<?>>(Firecord.getId(), entry, oldValue));
+
                     }
                 }
                 if (entry != null) {
@@ -81,10 +82,10 @@ public abstract class LargeData<T> extends SimpleData<T> {
             if (this.value != null) {
                 JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_LARGE_KEY, this.key);
                 this.notifyListeners(
-                    new LargeDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_LARGE_KEY, this, oldValue));
+                        new LargeDataSetEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
             } else {
                 JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
-                this.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(JedisCommunicationChannel.DEL_KEY_VALUE, this, oldValue));
+                this.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
             }
         }
     }

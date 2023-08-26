@@ -1,12 +1,15 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.event;
 
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
+import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 
 public class LargeDataSetEvent<T extends AbstractData<?>> extends SimpleDataSetEvent<T> {
 
-    public LargeDataSetEvent(JedisCommunicationChannel channel, T affected, Object oldValue) {
-        super(channel, affected, oldValue);
+    final static JedisCommunicationChannel channel = JedisCommunicationChannel.UPDATE_LARGE_KEY;
+
+    public LargeDataSetEvent(Bytes instanceId, T affected, Object oldValue) {
+        super(instanceId, channel, affected, oldValue);
     }
 
 }

@@ -84,14 +84,16 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
      * @param key
      * @return
      */
-    boolean _removeKey(Bytes key) {
+    AbstractData<?> _removeKey(Bytes key) {
         synchronized (AbstractData.loaded) {
             if (AbstractData.loaded.containsKey(key)) {
                 AbstractData<?> entry = AbstractData.loaded.get(key);
-                return this.data.remove(entry);
+                if (this.data.remove(entry)) {
+                    return entry;
+                }
             }
         }
-        return false;
+        return null;
     }
 
     @Override

@@ -3,6 +3,7 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.composite;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -10,6 +11,7 @@ import org.javatuples.Pair;
 import org.javatuples.Triplet;
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.ByteMessage;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
@@ -19,6 +21,14 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListAddAllEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListAddAllIndexEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListAddEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListAddIndexEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListRemoveAllEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListRemoveEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListRemoveIndexEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListRetainAllEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.args.ListPosition;
@@ -49,6 +59,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                         synchronized (l.data) {
                             l.data.add(entry);
                         }
+                        l.notifyListeners(new ListAddEvent<AbstractData<?>>(sender, l, entry));
                     }
                 }
             }
@@ -69,14 +80,17 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                 }
                 if (l != null) {
+                    Collection<Object> entries = new ArrayList<>(addedKeys.length);
                     for (Bytes added_key : addedKeys) {
                         AbstractData<?> entry = AbstractData.create(added_key);
                         if (entry != null) {
                             synchronized (l.data) {
                                 l.data.add(entry);
                             }
+                            entries.add(entry);
                         }
                     }
+                    l.notifyListeners(new ListAddAllEvent<AbstractData<?>>(sender, l, entries));
                 }
             }
 
@@ -102,6 +116,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                         synchronized (l.data) {
                             l.data.add(index, entry);
                         }
+                        l.notifyListeners(new ListAddIndexEvent<AbstractData<?>>(sender, l, entry, index));
                     }
                 }
             }
@@ -125,14 +140,17 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                 }
                 if (l != null) {
                     int i = 0;
+                    Collection<Object> entries = new ArrayList<>(addedKeys.length);
                     for (Bytes addedKey : addedKeys) {
                         AbstractData<?> entry = AbstractData.create(addedKey);
                         if (entry != null) {
                             synchronized (l.data) {
                                 l.data.add(index + (i++), entry);
                             }
+                            entries.add(entry);
                         }
                     }
+                    l.notifyListeners(new ListAddAllIndexEvent<AbstractData<?>>(sender, l, entries, index));
                 }
             }
 
@@ -152,7 +170,8 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                 }
                 if (l != null) {
-                    l._removeKey(removedKey);
+                    AbstractData<?> removed = l._removeKey(removedKey);
+                    l.notifyListeners(new ListRemoveEvent<AbstractData<?>>(sender, l, removed));
                 }
             }
 
@@ -172,9 +191,11 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                 }
                 if (l != null) {
+                    AbstractData<?> removed;
                     synchronized (l.data) {
-                        l.data.remove(index);
+                        removed = l.data.remove(index);
                     }
+                    l.notifyListeners(new ListRemoveIndexEvent<AbstractData<?>>(sender, l, removed, index));
                 }
             }
 
@@ -194,9 +215,14 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                 }
                 if (l != null) {
+                    List<Object> removed = new ArrayList<>(removedKeys.length);
                     for (Bytes removedKey : removedKeys) {
-                        l._removeKey(removedKey);
+                        Object r = l._removeKey(removedKey);
+                        if (r != null) {
+                            removed.add(r);
+                        }
                     }
+                    l.notifyListeners(new ListRemoveAllEvent<AbstractData<?>>(sender, l, removed));
                 }
             }
 
@@ -220,9 +246,23 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     for (Bytes retained_key : retainedKeys) {
                         toRetain.add(AbstractData.create(retained_key));
                     }
+                    Collection<AbstractData<?>> removed = new ArrayList<>(l.size() - toRetain.size());
                     synchronized (l.data) {
+                        if (l.hasListeners()) {
+                            if (toRetain.size() > 0) {
+                                HashSet<AbstractData<?>> tr = new HashSet<>(toRetain);
+                                for (AbstractData<?> ad : l) {
+                                    if (!tr.contains(ad)) {
+                                        removed.add(ad);
+                                    }
+                                }
+                            } else {
+                                removed.addAll(l.data);
+                            }
+                        }
                         l.data.retainAll(toRetain);
                     }
+                    l.notifyListeners(new ListRetainAllEvent<AbstractData<?>>(sender, l, removed));
                 }
             }
 
@@ -329,7 +369,10 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
             }
             JedisCommunication.broadcast(JedisCommunicationChannel.LIST_ADD,
                     ByteMessage.write(this.key, arg0.getKey()));
-            return this.data.add(arg0);
+            boolean result = this.data.add(arg0);
+            this.notifyListeners(new ListAddEvent<AbstractData<?>>(Firecord.getId(),
+                    this, arg0));
+            return result;
         }
     }
 
@@ -350,6 +393,8 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.LIST_ADD_INDEX,
                 ByteMessage.write(this.key, arg0, arg1.getKey()));
+
+        this.notifyListeners(new ListAddIndexEvent<AbstractData<?>>(Firecord.getId(), this, arg1, arg0));
         synchronized (this.data) {
             this.data.add(arg0, arg1);
         }
@@ -370,9 +415,12 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
             }
             JedisCommunication.broadcast(JedisCommunicationChannel.LIST_ADD_ALL,
                     ByteMessage.write(this.key, arg0.stream().map(entry -> entry.getKey()).toArray(Bytes[]::new)));
+            boolean result;
             synchronized (this.data) {
-                return this.data.addAll(arg0);
+                result = this.data.addAll(arg0);
             }
+            this.notifyListeners(new ListAddAllEvent<AbstractData<?>>(Firecord.getId(), this, arg0));
+            return result;
         }
     }
 
@@ -409,9 +457,12 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
             }
             JedisCommunication.broadcast(JedisCommunicationChannel.LIST_ADD_ALL_INDEX, ByteMessage.write(this.key, arg0,
                     arg1.stream().map(entry -> entry.getKey()).toArray(Bytes[]::new)));
+            boolean result;
             synchronized (this.data) {
-                return this.data.addAll(arg0, arg1);
+                result = this.data.addAll(arg0, arg1);
             }
+            this.notifyListeners(new ListAddAllIndexEvent<AbstractData<?>>(Firecord.getId(), this, arg1, index));
+            return result;
         }
     }
 
@@ -458,9 +509,12 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE,
                 ByteMessage.write(this.key, ((T) (arg0)).getKey()));
+        boolean result;
         synchronized (this.data) {
-            return this.data.remove(arg0);
+            result = this.data.remove(arg0);
         }
+        this.notifyListeners(new ListRemoveEvent<AbstractData<?>>(Firecord.getId(), this, arg0));
+        return result;
     }
 
     public List<Integer> indicesOf(T arg0) {
@@ -498,9 +552,12 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_INDEX,
                 ByteMessage.write(this.key, arg0));
+        T removed;
         synchronized (this.data) {
-            return this.data.remove(arg0);
+            removed = this.data.remove(arg0);
         }
+        this.notifyListeners(new ListRemoveIndexEvent<AbstractData<?>>(Firecord.getId(), this, removed, arg0));
+        return removed;
     }
 
     public boolean removeAll(Collection<?> arg0) {
@@ -524,17 +581,18 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                 }
             }
         }
+        boolean result;
         synchronized (arg0) {
             JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_ALL,
                     ByteMessage.write(this.key,
                             arg0.stream().map(entry -> entry instanceof AbstractData ? ((T) (entry)).getKey() : null)
                                     .toArray(Bytes[]::new)));
-        }
-        synchronized (arg0) {
             synchronized (this.data) {
-                return this.data.removeAll(arg0);
+                result = this.data.removeAll(arg0);
             }
         }
+        this.notifyListeners(new ListRemoveAllEvent<AbstractData<?>>(Firecord.getId(), this, arg0));
+        return result;
     }
 
     public boolean retainAll(Collection<?> arg0) {
@@ -559,9 +617,25 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                 }
             }
         }
+        boolean result;
+        Collection<AbstractData<?>> removed = new ArrayList<>(this.size() - arg0.size());
         synchronized (this.data) {
-            return this.data.retainAll(arg0);
+            result = this.data.retainAll(arg0);
+            if (this.hasListeners()) {
+                if (arg0.size() > 0) {
+                    HashSet<AbstractData<?>> tr = new HashSet<>(arg0.size());
+                    for (AbstractData<?> ad : this.data) {
+                        if (!tr.contains(ad)) {
+                            removed.add(ad);
+                        }
+                    }
+                } else {
+                    removed.addAll(this.data);
+                }
+            }
         }
+        this.notifyListeners(new ListRetainAllEvent<AbstractData<?>>(Firecord.getId(), this, removed));
+        return result;
     }
 
     public T set(int arg0, T arg1) {

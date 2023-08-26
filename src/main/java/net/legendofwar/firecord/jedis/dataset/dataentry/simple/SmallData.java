@@ -3,6 +3,7 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import org.javatuples.Pair;
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.ByteMessage;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
@@ -29,9 +30,9 @@ public abstract class SmallData<T> extends SimpleData<T> {
                         SmallData<Object> sd = ((SmallData<Object>) loaded.get(key));
                         Object oldValue = sd.value;
                         sd.fromBytes(value);
-                        
+
                         sd.notifyListeners(
-                            new SmallDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_SMALL_KEY, sd, oldValue));
+                                new SmallDataSetEvent<AbstractData<?>>(Firecord.getId(), sd, oldValue));
                     }
                 }
             }
@@ -63,10 +64,10 @@ public abstract class SmallData<T> extends SimpleData<T> {
                 JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_SMALL_KEY,
                         ByteMessage.write(this.key, this.toBytes()));
                 this.notifyListeners(
-                    new SmallDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_SMALL_KEY, this, oldValue));
+                        new SmallDataSetEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
             } else {
                 JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
-                this.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(JedisCommunicationChannel.DEL_KEY_VALUE, this, oldValue));
+                this.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
             }
         }
     }

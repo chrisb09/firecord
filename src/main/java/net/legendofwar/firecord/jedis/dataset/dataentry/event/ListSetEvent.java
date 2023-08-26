@@ -1,21 +1,24 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.event;
 
+import java.util.List;
+
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 
-public class SimpleDataDeleteEvent<T extends AbstractData<?>> extends DataEvent<T> {
+public class ListSetEvent<T extends AbstractData<?>> extends DataEvent<T> {
     
-    final static JedisCommunicationChannel channel = JedisCommunicationChannel.DEL_KEY_VALUE;
+    final static JedisCommunicationChannel channel = JedisCommunicationChannel.LIST_SET;
 
-    Object oldValue;
+    final List<Object> oldValue;
 
-    public SimpleDataDeleteEvent(Bytes instanceId, T affected, Object oldValue) {
+    public ListSetEvent(Bytes instanceId, T affected, List<Object> oldValue) {
         super(instanceId, channel, affected);
         this.oldValue = oldValue;
     }
 
     public Object getOldValue() {
-        return oldValue;
+        return this.oldValue;
     }
+
 }

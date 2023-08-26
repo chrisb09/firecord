@@ -14,6 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.javatuples.Pair;
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
@@ -63,7 +64,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
                         Object oldValue = entry.value;
                         entry.value = null;
                         entry.valid = true;
-                        entry.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(JedisCommunicationChannel.DEL_KEY_VALUE, entry, oldValue));
+                        entry.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(Firecord.getId(), entry, oldValue));
                     }
                 }
                 if (entry != null) {

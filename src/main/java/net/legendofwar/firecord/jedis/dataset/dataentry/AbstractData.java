@@ -251,9 +251,13 @@ public abstract class AbstractData<T> implements Closeable {
         return result;
     }
 
+    protected boolean hasListeners() {
+        return listeners.size() != 0;
+    }
+
     protected void notifyListeners(DataEvent<AbstractData<?>> event){
         List<Consumer<DataEvent<AbstractData<?>>>> listeners = this.getFittingListeners(event.getChannel());
-        if (listeners.size() != 0){
+        if (hasListeners()){
             // notify listeners
             for (Consumer<DataEvent<AbstractData<?>>> consumer : listeners){
                 try {
