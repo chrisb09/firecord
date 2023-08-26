@@ -7,7 +7,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 public abstract class DynamicLargeData<T> extends LargeData<T> {
 
     /*
-     * Replaces the satic aggregate and cache timeout values with
+     * Replaces the static aggregate and cache timeout values with
      * size dependent ones. Downside is, that this requires some
      * computation, therefore it should only be used on data types
      * that can vary in size from tiny to humongous
