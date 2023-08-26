@@ -10,6 +10,7 @@ import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.LargeDataSetEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.SimpleDataDeleteEvent;
 
 public abstract class LargeData<T> extends SimpleData<T> {
 
@@ -83,6 +84,7 @@ public abstract class LargeData<T> extends SimpleData<T> {
                     new LargeDataSetEvent<AbstractData<?>>(JedisCommunicationChannel.UPDATE_LARGE_KEY, this, oldValue));
             } else {
                 JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
+                this.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(JedisCommunicationChannel.DEL_KEY_VALUE, this, oldValue));
             }
         }
     }

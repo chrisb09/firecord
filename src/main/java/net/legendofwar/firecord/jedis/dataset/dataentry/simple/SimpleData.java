@@ -22,6 +22,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.SimpleDataDeleteEvent;
 import redis.clients.jedis.Jedis;
 
 public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInterface<T> {
@@ -59,8 +60,10 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
                 synchronized (loaded) {
                     if (loaded.containsKey(message)) {
                         entry = loaded.get(message);
+                        Object oldValue = entry.value;
                         entry.value = null;
                         entry.valid = true;
+                        entry.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(JedisCommunicationChannel.DEL_KEY_VALUE, entry, oldValue));
                     }
                 }
                 if (entry != null) {
