@@ -36,7 +36,7 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     OBJECT_OVERWRITE(51),               // Used when a temp entry creates an object
     CHAT_BROADCAST(100),
 
-    SHOW_ITEM_GLOBAL(99123),
+    SHOW_ITEM_GLOBAL(12345),
     
     ;
 
