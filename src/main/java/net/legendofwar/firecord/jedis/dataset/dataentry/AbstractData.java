@@ -27,6 +27,9 @@ import redis.clients.jedis.Jedis;
 
 public abstract class AbstractData<T> implements Closeable {
 
+    public static HashMap<Bytes, AbstractData<?>> loaded = new HashMap<Bytes, AbstractData<?>>();
+    protected final static Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> globalListeners = new HashMap<>();
+
     static {
 
         Firecord.subscribe(JedisCommunicationChannel.DEL_KEY, new MessageReceiver() {
@@ -167,12 +170,36 @@ public abstract class AbstractData<T> implements Closeable {
         return null;
 
     }
+    public static void listenGlobal(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        synchronized(globalListeners){
+            for (JedisCommunicationChannel channel : channels) {
+                if (!globalListeners.containsKey(channel.getBytes())){
+                    globalListeners.put(channel.getBytes(), new ArrayList<>());
+                }
+                globalListeners.get(channel.getBytes()).add(listener);
+            }
+        }
+    }
+
+    public static void stopListeningGlobal(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        synchronized(globalListeners){
+            for (JedisCommunicationChannel channel : channels) {
+                if (globalListeners.containsKey(channel.getBytes())){
+                    List<Consumer<DataEvent<AbstractData<?>>>> list = globalListeners.get(channel.getBytes());
+                    while (list.contains(listener)){
+                        list.remove(listener);
+                    }
+                    if (list.size() == 0){
+                        globalListeners.remove(channel.getBytes());
+                    }
+                }
+            }
+        }
+    }
 
     protected final Bytes key;
     protected final JedisLock lock;
     protected final Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> listeners;
-
-    public static HashMap<Bytes, AbstractData<?>> loaded = new HashMap<Bytes, AbstractData<?>>();
 
     protected AbstractData(@NotNull Bytes key) {
         this.key = key;
@@ -234,6 +261,26 @@ public abstract class AbstractData<T> implements Closeable {
         }
     }
 
+    public void stopListening(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        synchronized(this.listeners){
+            for (JedisCommunicationChannel channel : channels) {
+                if (this.listeners.containsKey(channel.getBytes())){
+                    List<Consumer<DataEvent<AbstractData<?>>>> list = this.listeners.get(channel.getBytes());
+                    while (list.contains(listener)){
+                        list.remove(listener);
+                    }
+                    if (list.size() == 0){
+                        this.listeners.remove(channel.getBytes());
+                    }
+                }
+            }
+        }
+    }
+
+    public void stopListening(Consumer<DataEvent<AbstractData<?>>> listener){
+        stopListening(listener, JedisCommunicationChannel.values());
+    }
+
     private List<Consumer<DataEvent<AbstractData<?>>>> getFittingListeners(JedisCommunicationChannel channel){
         return getFittingListeners(channel.getBytes());
     }
@@ -246,6 +293,14 @@ public abstract class AbstractData<T> implements Closeable {
             }
             if (this.listeners.containsKey(JedisCommunicationChannel.ANY.getBytes())){
                 result.addAll(this.listeners.get(JedisCommunicationChannel.ANY.getBytes()));
+            }
+        }
+        synchronized (globalListeners){
+            if (globalListeners.containsKey(channel)){
+                result.addAll(globalListeners.get(channel));
+            }
+            if (globalListeners.containsKey(JedisCommunicationChannel.ANY.getBytes())){
+                result.addAll(globalListeners.get(JedisCommunicationChannel.ANY.getBytes()));
             }
         }
         return result;

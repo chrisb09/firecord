@@ -2,6 +2,7 @@ package net.legendofwar.firecord.command;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
@@ -17,6 +18,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.DataEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
@@ -46,6 +48,17 @@ public class FirecordCommand {
     static RMap<RInteger> testmap2 = null;
     static RMap<AbstractData<?>> testmap3 = null;
 
+    static boolean testlistener_active = false;
+    static Consumer<DataEvent<AbstractData<?>>> testlistener = new Consumer<>() {
+
+        @Override
+        public void accept(DataEvent<AbstractData<?>> event) {
+            System.out.println("[Testlistener][" + event.getChannel().name() + "][" + event.getInstanceId() + "]: "
+                    + event.getData().getKey());
+        }
+
+    };
+
     public static boolean onCommand(Sender sender, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
             sender.sendMessage("§b" + label + " id          §e show id of this node");
@@ -60,6 +73,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testchar    §e runs RChar related test");
             sender.sendMessage("§b" + label + " testbool    §e runs RBoolean test");
             sender.sendMessage("§b" + label + " testnull    §e test null toggle");
+            sender.sendMessage("§b" + label + " testlisten  §e toggle test listener");
             sender.sendMessage("§b" + label + " testow      §e test overwrite");
             sender.sendMessage("§b" + label + " testasync   §e test setAsync");
             sender.sendMessage("§b" + label + " tested      §e test encode-decode");
@@ -126,10 +140,10 @@ public class FirecordCommand {
             testmap1.clear();
             testmap2.clear();
             testmap3.clear();
-            RInteger a = (RInteger) AbstractData.create(new Bytes("testint"+(1+ ((int) (Math.random()*3)))));
-            RInteger b = (RInteger) AbstractData.create(new Bytes("testint"+(1+ ((int) (Math.random()*3)))));
-            RInteger c = (RInteger) AbstractData.create(new Bytes("testint"+(1+ ((int) (Math.random()*3)))));
-            sender.sendMessage("§a#1 put a:"+a+", b:"+b+", c:"+c);
+            RInteger a = (RInteger) AbstractData.create(new Bytes("testint" + (1 + ((int) (Math.random() * 3)))));
+            RInteger b = (RInteger) AbstractData.create(new Bytes("testint" + (1 + ((int) (Math.random() * 3)))));
+            RInteger c = (RInteger) AbstractData.create(new Bytes("testint" + (1 + ((int) (Math.random() * 3)))));
+            sender.sendMessage("§a#1 put a:" + a + ", b:" + b + ", c:" + c);
             testmap1.put(new Bytes("a"), a);
             testmap1.put(new Bytes("b"), b);
             testmap1.put(new Bytes("c"), c);
@@ -273,7 +287,7 @@ public class FirecordCommand {
             sender.sendMessage("§atestint++;");
             test.add(1);
             sender.sendMessage("§btestint: §e" + test.get());
-        }  else if (args[0].equalsIgnoreCase("testbool")) {
+        } else if (args[0].equalsIgnoreCase("testbool")) {
             if (testbool == null) {
                 testbool = new RBoolean(new Bytes("testbool"));
             }
@@ -341,11 +355,21 @@ public class FirecordCommand {
             sender.sendMessage("§a.toggleNullt();");
             TestObject.toggleNullt();
             sender.sendMessage("§bnullt: §e" + TestObject.nullt);
+        }  else if (args[0].equalsIgnoreCase("testlisten")) {
+            sender.sendMessage("§bToggle testlistener "+(testlistener_active ? "§cOFF" : "§aON"));
+            if (testlistener_active){
+                AbstractData.listenGlobal(testlistener, JedisCommunicationChannel.ANY);
+            } else {
+                AbstractData.stopListeningGlobal(testlistener, JedisCommunicationChannel.ANY);
+            }
+            testlistener_active = !testlistener_active;
         } else if (args[0].equalsIgnoreCase("testow")) {
-            sender.sendMessage("§boverwrite_field: §e" + TestObject.overwrite_field+" [§a"+TestObject.overwrite_field.getClass().getSimpleName()+"§e]");
+            sender.sendMessage("§boverwrite_field: §e" + TestObject.overwrite_field + " [§a"
+                    + TestObject.overwrite_field.getClass().getSimpleName() + "§e]");
             sender.sendMessage("§a.overwriteField();");
             TestObject.overwriteField();
-            sender.sendMessage("§boverwrite_field: §e" + TestObject.overwrite_field+" [§a"+TestObject.overwrite_field.getClass().getSimpleName()+"§e]");
+            sender.sendMessage("§boverwrite_field: §e" + TestObject.overwrite_field + " [§a"
+                    + TestObject.overwrite_field.getClass().getSimpleName() + "§e]");
         } else if (args[0].equalsIgnoreCase("testchar")) {
             TestObject.testChar();
         } else if (args[0].equalsIgnoreCase("tested")) {
