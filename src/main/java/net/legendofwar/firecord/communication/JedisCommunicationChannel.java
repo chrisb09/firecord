@@ -35,6 +35,8 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     REFERENCE_UPDATE(50),               // Informs about a changed reference in an AbstractObject
     OBJECT_OVERWRITE(51),               // Used when a temp entry creates an object
     CHAT_BROADCAST(100),
+
+    SHOW_ITEM_GLOBAL(99123),
     
     ;
 
