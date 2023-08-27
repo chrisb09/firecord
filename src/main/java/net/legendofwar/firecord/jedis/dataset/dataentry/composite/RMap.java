@@ -21,6 +21,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapClearEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapPutEvent;
 import redis.clients.jedis.Jedis;
 
 @SuppressWarnings("unchecked")
@@ -68,29 +69,28 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                 Bytes key = m.getValue0();
                 Bytes name = m.getValue1();
                 Bytes addedKey = m.getValue2();
-                RMap<AbstractData<?>> l = null;
+                RMap<AbstractData<?>> map = null;
                 synchronized (loaded) {
                     if (loaded.containsKey(key)) {
-                        l = loaded.get(key);
+                        map = loaded.get(key);
                     }
                 }
-                if (l != null) {
+                if (map != null) {
                     AbstractData<?> entry = AbstractData.create(addedKey);
-                    if (entry != null) {
-                        AbstractData<?> removed = null;
-                        synchronized (l.data) {
-                            if (l.data.containsKey(name)) {
-                                removed = l.data.get(name);
-                            }
-                            l.data.put(name, entry);
+                    AbstractData<?> removed = null;
+                    synchronized (map.data) {
+                        if (map.data.containsKey(name)) {
+                            removed = map.data.get(name);
                         }
-                        synchronized (((RMap<?>) (l)).valuesInstance.data) {
-                            if (removed != null) {
-                                ((RMap<?>) (l)).valuesInstance.data.remove(removed);
-                            }
-                            ((ArrayList<AbstractData<?>>) ((RMap<?>) (l)).valuesInstance.data).add(entry);
-                        }
+                        map.data.put(name, entry);
                     }
+                    synchronized (map.valuesInstance.data) {
+                        if (removed != null) {
+                            map.valuesInstance.data.remove(removed);
+                        }
+                        ((ArrayList<AbstractData<?>>) (map.valuesInstance.data)).add(entry);
+                    }
+                    map.notifyListeners(new MapPutEvent<AbstractData<?>>(sender, map, name, removed, entry));
                 }
             }
 
@@ -243,10 +243,11 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
         if (arg0 == null || arg1 == null) {
             throw new NullPointerException();
         }
-        AbstractData<?> removed = null;
+        T replaced = null;
+        T result;
         synchronized (this.data) {
             if (this.data.containsKey(arg0)) {
-                removed = this.data.get(arg0);
+                replaced = this.data.get(arg0);
             }
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 j.hset(this.key.getData(), arg0.getData(), arg1.getKey().getData());
@@ -254,14 +255,16 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
             JedisCommunication.broadcast(JedisCommunicationChannel.MAP_PUT,
                     ByteMessage.write(this.key, arg0.getBytes(), arg1.getKey()));
             synchronized (this.valuesInstance.data) {
-                if (removed != null) {
-                    this.valuesInstance.data.remove(removed);
+                if (replaced != null) {
+                    this.valuesInstance.data.remove(replaced);
                 }
                 this.valuesInstance.data.add(arg1);
             }
-            return this.data.put(arg0, arg1);
+            
+            result = this.data.put(arg0, arg1);
         }
-
+        this.notifyListeners(new MapPutEvent<AbstractData<?>>(Firecord.getId(), this, arg0.getBytes(), replaced, arg1));
+        return result;
     }
 
     @Override
