@@ -21,6 +21,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapClearEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapPutAllEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapPutEvent;
 import redis.clients.jedis.Jedis;
 
@@ -109,31 +110,36 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                 for (int i = 0; i < mapAsArray.length; i += 2) {
                     receivedMap.put(mapAsArray[i], mapAsArray[i + 1]);
                 }
-                RMap<AbstractData<?>> l = null;
+                RMap<AbstractData<?>> map = null;
                 synchronized (loaded) {
                     if (loaded.containsKey(key)) {
-                        l = loaded.get(key);
+                        map = loaded.get(key);
                     }
                 }
-                if (l != null) {
+                if (map != null) {
+                    Map<Bytes, AbstractData<?>> entriesRemoved = new HashMap<>();
+                    Map<Bytes, AbstractData<?>> entriesReceived = new HashMap<>();
                     for (Map.Entry<Bytes, Bytes> en : receivedMap.entrySet()) {
                         AbstractData<?> entry = AbstractData.create(en.getValue());
-                        if (entry != null) {
-                            AbstractData<?> removed = null;
-                            synchronized (l.data) {
-                                if (l.data.containsKey(en.getKey())) {
-                                    removed = l.data.get(en.getKey());
-                                }
-                                l.data.put(en.getKey(), entry);
+                        AbstractData<?> removed = null;
+                        synchronized (map.data) {
+                            if (map.data.containsKey(en.getKey())) {
+                                removed = map.data.get(en.getKey());
+                                entriesRemoved.put(en.getKey(), removed);
                             }
-                            synchronized (((RMap<?>) (l)).valuesInstance.data) {
-                                if (removed != null) {
-                                    ((RMap<?>) (l)).valuesInstance.data.remove(removed);
-                                }
-                                ((ArrayList<AbstractData<?>>) ((RMap<?>) (l)).valuesInstance.data).add(entry);
+                            map.data.put(en.getKey(), entry);
+                            if (map.hasListeners()){
+                                entriesReceived.put(en.getKey(), entry);
                             }
                         }
+                        synchronized (map.valuesInstance.data) {
+                            if (removed != null) {
+                                map.valuesInstance.data.remove(removed);
+                            }
+                            ((ArrayList<AbstractData<?>>) ((RMap<?>) (map)).valuesInstance.data).add(entry);
+                        }
                     }
+                    map.notifyListeners(new MapPutAllEvent<AbstractData<?>>(Firecord.getId(), map, entriesRemoved, entriesReceived));
                 }
             }
 
@@ -274,7 +280,7 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
         }
         Map<byte[], byte[]> tempMap = new HashMap<byte[], byte[]>();
         Bytes[] mapAsArray = new Bytes[arg0.size() * 2];
-        ArrayList<AbstractData<?>> removed = new ArrayList<AbstractData<?>>();
+        Map<Bytes, AbstractData<?>> removed = new HashMap<Bytes, AbstractData<?>>();
         List<T> addedValues = new ArrayList<>(arg0.size());
         int index = 0;
         synchronized (this.data) {
@@ -283,7 +289,7 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                 mapAsArray[index++] = en.getValue().getKey();
                 tempMap.put(en.getKey().getData(), en.getValue().getKey().getData());
                 if (this.data.containsKey(en.getKey())) {
-                    removed.add(this.data.get(en.getKey()));
+                    removed.put(en.getKey(), this.data.get(en.getKey()));
                 }
                 addedValues.add(en.getValue());
             }
@@ -294,12 +300,13 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
             JedisCommunication.broadcast(JedisCommunicationChannel.MAP_PUT_ALL,
                     ByteMessage.write(this.key, mapAsArray));
             synchronized (this.valuesInstance.data) {
-                for (AbstractData<?> ad : removed) {
+                for (AbstractData<?> ad : removed.values()) {
                     this.valuesInstance.data.remove(ad);
                 }
                 this.valuesInstance.data.addAll(addedValues);
             }
             this.data.putAll(arg0);
+            this.notifyListeners(new MapPutAllEvent<AbstractData<?>>(Firecord.getId(), this, removed, (Map<Bytes, ?>) arg0));
         }
     }
 
