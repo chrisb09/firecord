@@ -6,7 +6,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 
 public class MapPutEvent<T extends AbstractData<?>> extends DataEvent<T> {
     
-    final static JedisCommunicationChannel channel = JedisCommunicationChannel.MAP_CLEAR;
+    final static JedisCommunicationChannel channel = JedisCommunicationChannel.MAP_PUT;
 
     final Bytes key;
     final T oldValue;
