@@ -20,8 +20,8 @@ public final class RItemStack extends DynamicLargeData<ItemStack> {
         this(key, DEFAULT_VALUE);
     }
 
-    public RItemStack(@NotNull Bytes key, ItemStack value) {
-        super(key, value == null ? DEFAULT_VALUE : value);
+    public RItemStack(@NotNull Bytes key, @NotNull ItemStack value) {
+        super(key, value);
     }
 
     @Override
