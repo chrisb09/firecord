@@ -13,7 +13,7 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     LOG(4),                             // Write to log of other node
     PING(5),                            // Ping another node
     PONG(6),                            // Answer to ping
-    DEL_KEY(7),                         // signal a key is deleted
+    DEL_KEY(7),                         // signal a key is deleted, only for automatically generated entries
     UPDATE_SMALL_KEY(8),
     UPDATE_LARGE_KEY(9),
     DEL_KEY_VALUE(10),
