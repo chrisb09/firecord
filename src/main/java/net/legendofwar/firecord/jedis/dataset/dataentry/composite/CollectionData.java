@@ -1,10 +1,12 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.composite;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
@@ -12,6 +14,7 @@ import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.CollectionClearEvent;
 import redis.clients.jedis.Jedis;
 
 public abstract class CollectionData<T extends AbstractData<?>, E extends Collection<T>> extends CompositeData<T>
@@ -32,9 +35,13 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
                 }
                 if (l != null) {
                     if (l instanceof CollectionData) {
-                        synchronized (((CollectionData<?, ?>) (l)).data) {
-                            ((CollectionData<?, ?>) (l)).data.clear();
+                        CollectionData<?, ?> cl = ((CollectionData<?, ?>) (l));
+                        Collection<?> oldValue;
+                        synchronized (cl.data) {
+                            oldValue = new ArrayList<>(cl.data);
+                            cl.data.clear();
                         }
+                        cl.notifyListeners(new CollectionClearEvent<AbstractData<?>>(sender, cl, oldValue));
                     }
                 }
             }
@@ -102,9 +109,12 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
             j.del(key.getData());
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.COLLECTION_CLEAR, key);
+        Collection<?> oldValue;
         synchronized (this.data) {
+            oldValue = new ArrayList<>(this.data);
             this.data.clear();
         }
+        this.notifyListeners(new CollectionClearEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
     }
 
     @Override
