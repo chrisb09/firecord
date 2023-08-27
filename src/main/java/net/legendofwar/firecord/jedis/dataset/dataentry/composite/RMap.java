@@ -11,6 +11,7 @@ import org.javatuples.Pair;
 import org.javatuples.Triplet;
 import org.jetbrains.annotations.NotNull;
 
+import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.ByteMessage;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
@@ -19,6 +20,7 @@ import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapClearEvent;
 import redis.clients.jedis.Jedis;
 
 @SuppressWarnings("unchecked")
@@ -41,12 +43,16 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                 }
                 if (l != null) {
                     if (l instanceof RMap<?>) {
-                        synchronized (((RMap<?>) (l)).data) {
-                            ((RMap<?>) (l)).data.clear();
+                        RMap<?> map = ((RMap<?>) (l));
+                        Map<Bytes, AbstractData<?>> oldValue;
+                        synchronized (map.data) {
+                            oldValue = new HashMap<>(map.data);
+                            map.data.clear();
                         }
-                        synchronized (((RMap<?>) (l)).valuesInstance.data) {
-                            ((RMap<?>) (l)).valuesInstance.data.clear();
+                        synchronized (map.valuesInstance.data) {
+                            map.valuesInstance.data.clear();
                         }
+                        map.notifyListeners(new MapClearEvent<AbstractData<?>>(sender, l, oldValue));
                     }
                 }
             }
@@ -179,12 +185,15 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
             j.del(key.getData());
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.MAP_CLEAR, key);
+        Map<Bytes, AbstractData<?>> oldValue;
         synchronized (this.data) {
+            oldValue = new HashMap<>(this.data);
             this.data.clear();
         }
         synchronized (this.valuesInstance.data) {
             this.valuesInstance.data.clear();
         }
+        this.notifyListeners(new MapClearEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
     }
 
     @Override
