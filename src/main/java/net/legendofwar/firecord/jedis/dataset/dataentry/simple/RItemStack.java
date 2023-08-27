@@ -59,7 +59,7 @@ public final class RItemStack extends DynamicLargeData<ItemStack> {
 
     @Override
     public String toString() {
-        if(this.value == null) return "null";
+        get();
         return this.value.toString();
     }
 

@@ -28,6 +28,7 @@ public final class RByteArray extends LargeData<byte[]> {
 
     @Override
     public String toString() {
+        get();
         return new Bytes(this.value).toString();
     }
 

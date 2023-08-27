@@ -29,6 +29,7 @@ public final class RJson extends LargeData<JSONObject> {
 
     @Override
     public String toString() {
+        get();
         return this.value.toString();
     }
 
