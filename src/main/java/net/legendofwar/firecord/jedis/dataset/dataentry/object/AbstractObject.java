@@ -200,14 +200,12 @@ public abstract class AbstractObject extends AbstractData<Object> {
                 if (AbstractData.class.isAssignableFrom(field.getType())) {
                     // only populate non-final fields
                     if (!Modifier.isFinal(field.getModifiers())) {
-                        // only populate fields whose type is final (RInteger, RList, etc. as opposed to
-                        // AbstractData or SmallData)
+                        // only populate fields whose type is not abstract (RInteger, RList, etc. as
+                        // opposed to AbstractData or SmallData)
                         // the user needs to init those fields themselves, preferably using tempEntries,
-                        // which
-                        // essentially means calling the constructor with a null key and assigning those
-                        // to
-                        // the field of the AbstractObject-subclass
-                        if (Modifier.isFinal(field.getClass().getModifiers())) {
+                        // which essentially means calling the constructor with a null key and assigning
+                        // those to the field of the AbstractObject-subclass
+                        if (!Modifier.isAbstract(field.getClass().getModifiers())) {
                             // only populate static fields for the static call(object=null) or non-static
                             // fields for the object call (object!=null)
                             if (Modifier.isStatic(field.getModifiers()) == (object == null)) {
@@ -409,7 +407,8 @@ public abstract class AbstractObject extends AbstractData<Object> {
             @Override
             public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
                 // How do we deal with old references ?!?
-                // Currently: just set the key to null, which will cause errors if the object will be
+                // Currently: just set the key to null, which will cause errors if the object
+                // will be
                 // used for get/set
                 AbstractData<?> ad = null;
                 synchronized (AbstractData.loaded) {
@@ -459,7 +458,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
             field.setAccessible(true);
             if (HashMap.class.isAssignableFrom(field.getType()) && Modifier.isStatic(field.getModifiers())) {
                 HashMap<?, ?> map = ((HashMap<?, ?>) (field.get(null)));
-                synchronized(map) {
+                synchronized (map) {
                     if (map.containsKey(key)) {
                         map.remove(key);
                     }
