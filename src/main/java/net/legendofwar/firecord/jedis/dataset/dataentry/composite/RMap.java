@@ -23,6 +23,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapClearEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapPutAllEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapPutEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.MapRemoveEvent;
 import redis.clients.jedis.Jedis;
 
 @SuppressWarnings("unchecked")
@@ -152,21 +153,23 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                 Pair<Bytes, Bytes> m = ByteMessage.readIn(message, Bytes.class, Bytes.class);
                 Bytes key = m.getValue0();
                 Bytes removedName = m.getValue1();
-                RMap<AbstractData<?>> l = null;
+                RMap<AbstractData<?>> map = null;
                 synchronized (loaded) {
                     if (loaded.containsKey(key)) {
-                        l = loaded.get(key);
+                        map = loaded.get(key);
                     }
                 }
-                if (l != null) {
-                    synchronized (l.data) {
-                        AbstractData<?> removed = l.data.remove(removedName);
+                if (map != null) {
+                    AbstractData<?> removed;
+                    synchronized (map.data) {
+                        removed = map.data.remove(removedName);
                         if (removed != null) {
-                            synchronized (((RMap<?>) (l)).valuesInstance.data) {
-                                ((RMap<?>) (l)).valuesInstance.data.remove(removed);
+                            synchronized (map.valuesInstance.data) {
+                                map.valuesInstance.data.remove(removed);
                             }
                         }
                     }
+                    map.notifyListeners(new MapRemoveEvent<AbstractData<?>>(sender, map, removedName, removed));
                 }
             }
 
@@ -321,19 +324,22 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
         }
         try (Jedis j = ClassicJedisPool.getJedis()) {
             j.hdel(key.getData(), ((Bytes) (arg0)).getData());
-            // j.lrem(key.getData(), 1, ((AbstractData<?>) arg0).getKey().getData());
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.MAP_REMOVE,
                 ByteMessage.write(this.key, (Bytes) (arg0)));
 
+        T result;
+        Bytes removedName = (Bytes) arg0;
         synchronized (this.data) {
             if (this.data.containsKey(arg0)) {
                 synchronized (this.valuesInstance.data) {
                     this.valuesInstance.data.remove(this.data.get(arg0));
                 }
             }
-            return this.data.remove(arg0);
+            result = this.data.remove(arg0);
         }
+        this.notifyListeners(new MapRemoveEvent<AbstractData<?>>(Firecord.getId(), this, removedName, result));
+        return result;
     }
 
     @Override
