@@ -37,6 +37,7 @@ public enum JedisCommunicationChannel implements ByteDataInterface {
     CHAT_BROADCAST(100),
 
     SHOW_ITEM_GLOBAL(12345),
+    SAY_GLOBAL(12346),
     
     ;
 
