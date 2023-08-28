@@ -294,8 +294,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 
     /**
      * Gets byte[] representation of entry
-     * 
-     * @param value
+     *
      */
     abstract protected Bytes toBytes();
 
