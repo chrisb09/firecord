@@ -13,6 +13,7 @@ public enum DataKeyPrefix implements ByteDataInterface {
     GROUP(4),
     PLAYER(5),                  // For saving player-related data
     AUCTION(6),                 // For saving auction-related data
+    CLAIM(7),                   // For saving claim-related data
     LOCK(64),                   // For saving lock-related data
     KEY_LOOKUP_TABLE(65),       // For saving lookuptable-related data
     DATA_GENERATOR(66),         // For saving datagenerator-related data
