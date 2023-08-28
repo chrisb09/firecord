@@ -100,8 +100,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
                     while (element != null) {
                         synchronized (unloadQueue) {
                             if (element.getCacheTime() != 0) {
-                                element.timestamp_unload = (int) ((System.currentTimeMillis() + element.getCacheTime())
-                                        % Integer.MAX_VALUE);
+                                element.timestamp_unload = System.currentTimeMillis() + element.getCacheTime();
                                 if (unloadQueue.contains(element)) {
                                     unloadQueue.remove(element);
                                 }
@@ -217,7 +216,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
 
     // @formatter:off
 
-    int timestamp_unload = 0;       // timestamp in ms
+    long timestamp_unload = 0;       // timestamp in ms
 	int timestamp_update = 0;       // timestamp in ms
 	boolean valid = false;          // determines if we hold a valid copy
     T value;                        // 
