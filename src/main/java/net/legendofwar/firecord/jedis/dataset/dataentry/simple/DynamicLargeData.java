@@ -29,14 +29,13 @@ public abstract class DynamicLargeData<T> extends LargeData<T> {
     @Override
     int getAggregateTime() {
         // Update this key at most 5 min after a change somewhere else happened
-        int tmp = Math.min(5000, getDataSizeEstimate());
-        return 10000 + 280000 * tmp / 5000;
+        return Math.min(5*60*1000, 5000+5*getDataSizeEstimate());
     }
 
     @Override
     int getCacheTime() {
         // Unload after at most 30 min
-        return 60000 + 1740000 / (1 + getDataSizeEstimate());
+        return Math.min(30*60*1000, 60000 + 100 * getDataSizeEstimate());
     }
 
 }
