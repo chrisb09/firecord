@@ -139,8 +139,4 @@ public class KeyLookupTable {
      * 
      */
 
-    // other:
-    // - 1 byte id <-> entry type string
-    // add to DataType
-
 }

@@ -24,6 +24,8 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.SimpleDataDeleteEvent;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
+import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import redis.clients.jedis.Jedis;
 
 public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInterface<T> {
@@ -238,8 +240,15 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
             // make sure the object is NOT a temporary placeholder
             loaded.put(key, this);
             if (this._get(false) == null) {
-                this._setType(dt);
-                this.set(dv);
+                boolean alreadyExist = false;
+                try (Jedis j = ClassicJedisPool.getJedis()){
+                    byte[] t = j.get(ByteFunctions.join(key, DataKeySuffix.TYPE));
+                    alreadyExist = t != null; // if null then this entry does not exist yet
+                }
+                if (!alreadyExist) {
+                    this._setType(dt);
+                    this.set(dv);
+                }
             }
         } else {
             // entry is a temporary placeholder

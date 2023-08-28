@@ -16,6 +16,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
+import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
 
 public class DataGenerator<T extends AbstractData<?>> {
@@ -39,6 +40,9 @@ public class DataGenerator<T extends AbstractData<?>> {
         // actually delete entries in DB
         if (deleteInDB) {
             del(ad.getKey());
+            // TODO: add checks for AbstractObject & CompositeData
+            // TODO: delete subfields
+            // TODO: recursive delete
             // send firecord message to other nodes
             Firecord.broadcast(JedisCommunicationChannel.DEL_KEY, ad.getKey());
         }
@@ -103,6 +107,10 @@ public class DataGenerator<T extends AbstractData<?>> {
         this(key, c, true);
     }
 
+    public DataGenerator(String name, Class<T> c){
+        this(KeyGenerator.getDataGeneratorKey(name), c);
+    }
+    
     /**
      * 
      * @param key
@@ -114,10 +122,15 @@ public class DataGenerator<T extends AbstractData<?>> {
             dataPools.add(this);
         }
         this.key = key;
-        this.type = DataType.getByC(c);
-        if (type == null) {
-            throw new InvalidParameterException("Class " + c + " is not registered in DataType.");
+        DataType t = DataType.getByC(c);
+        if (t == null) {
+            if (AbstractObject.class.isAssignableFrom(c)){
+                t = DataType.OBJECT;
+            } else {
+                throw new InvalidParameterException("Class " + c + " is not registered in DataType.");
+            }
         }
+        this.type = t;
         if (Modifier.isAbstract(c.getModifiers())) {
             throw new InvalidParameterException(
                     "The class " + c + " is abstract. We cannot create objects of an abstract class");
