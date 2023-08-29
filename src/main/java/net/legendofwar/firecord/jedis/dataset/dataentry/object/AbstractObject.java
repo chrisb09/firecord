@@ -236,9 +236,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                             if (entry == null) {
                                                 DataType dt = DataType.getByC(field.getType());
                                                 if (dt != null && dt.canBeLoaded()) {
+                                                    markChild(object, entryKey);
                                                     entry = AbstractData.callConstructor(entryKey, field.getType());
                                                 }
                                                 if (dt == null) {
+                                                    markChild(object, entryKey);
                                                     if (AbstractObject.class.isAssignableFrom(field.getType())) {
                                                         entry = AbstractData.callConstructor(entryKey, field.getType());
                                                     }
@@ -272,9 +274,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                         if (entry == null && entryKey.length != 0) {
                                             DataType dt = DataType.getByC(field.getType());
                                             if (dt != null && dt.canBeLoaded()) {
+                                                markChild(object, entryKey);
                                                 entry = AbstractData.callConstructor(entryKey, field.getType());
                                             }
                                             if (dt == null) {
+                                                markChild(object, entryKey);
                                                 if (AbstractObject.class.isAssignableFrom(field.getType())) {
                                                     entry = AbstractData.callConstructor(entryKey, field.getType());
                                                 }
@@ -303,6 +307,16 @@ public abstract class AbstractObject extends AbstractData<Object> {
                 }
             }
             c = c.getSuperclass();
+        }
+    }
+
+    private static void markChild(AbstractObject object, Bytes childKey){
+        if (object != null){
+            if (object.modifier % 2 == 1){
+                synchronized (AbstractData.markedAsGenerated){
+                    AbstractData.markedAsGenerated.add(childKey);
+                }
+            }
         }
     }
 

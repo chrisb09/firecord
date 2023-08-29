@@ -13,6 +13,9 @@ import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.composite.CollectionData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.composite.CompositeData;
+import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
@@ -25,6 +28,16 @@ public class DataGenerator<T extends AbstractData<?>> {
 
     @SuppressWarnings("unchecked")
     static void delete(AbstractData<?> ad, boolean deleteInDB) {
+
+        // only allow deletion for generated values (1)
+        // don't delete already deleted (2)
+        if ((ad.modifier & 1) == 0 || (ad.modifier & 2) == 1){
+            return;
+        }
+
+        // marks as already deleted
+        ad.modifier = ad.modifier | 2;
+        
         // remove from pools curated list
         synchronized (dataPools) {
             for (DataGenerator<?> dp : dataPools) {
@@ -40,9 +53,6 @@ public class DataGenerator<T extends AbstractData<?>> {
         // actually delete entries in DB
         if (deleteInDB) {
             del(ad.getKey());
-            // TODO: add checks for AbstractObject & CompositeData
-            // TODO: delete subfields
-            // TODO: recursive delete
             // send firecord message to other nodes
             Firecord.broadcast(JedisCommunicationChannel.DEL_KEY, ad.getKey());
         }
@@ -67,6 +77,7 @@ public class DataGenerator<T extends AbstractData<?>> {
                     }
                 } else if (AbstractObject.class.isAssignableFrom(c)) {
                     if (SimpleInterface.class.isAssignableFrom(field.getType())) {
+                        // RWrapper special case i guess
                         AbstractData<?> si = null;
                         try {
                             si = (AbstractData<?>) field.get(ad);
@@ -76,11 +87,40 @@ public class DataGenerator<T extends AbstractData<?>> {
                         if (si != null) {
                             delete(si, deleteInDB);
                         }
+                    } else if (!c.equals(AbstractData.class)){
+                        field.setAccessible(true);
+                        try {
+                            AbstractObject object = (AbstractObject) field.get(ad);
+                            if (object != null){
+                                delete(object, deleteInDB);
+                            }
+                        } catch (IllegalArgumentException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
+                } 
             }
             c = c.getSuperclass();
         }
+
+        if (ad instanceof CompositeData){
+            if (ad instanceof CollectionData){
+                try (AbstractData<?> a = ad.lock()){
+                    for (AbstractData<?> entry : ((CollectionData<?,?>) (ad))){
+                        delete(entry, deleteInDB);
+                    }
+                }
+            } else if (ad instanceof RMap){
+                for (Map.Entry<Bytes,AbstractData<?>> entry : ((RMap<AbstractData<?>>) (ad)).entrySet()){
+                    if (entry.getValue() != null){
+                        delete(entry.getValue(), deleteInDB);
+                    }
+                }
+            }
+        }
+
     }
 
     public static void delete(AbstractData<?> ad) {
@@ -193,7 +233,7 @@ public class DataGenerator<T extends AbstractData<?>> {
                         try {
                             Thread.sleep(5000l + (long) (Math.random() * 20000));
                         } catch (InterruptedException e) {
-                            // does not matter
+                            break;
                         }
                     }
                 }
@@ -212,6 +252,9 @@ public class DataGenerator<T extends AbstractData<?>> {
             return null;
         }
         Bytes k = key.append(new Bytes(getNewId(), 4));
+        synchronized (AbstractData.markedAsGenerated){
+            AbstractData.markedAsGenerated.add(k);
+        }
         T ad;
         ad = (T) AbstractData.callConstructor(k, c);
 

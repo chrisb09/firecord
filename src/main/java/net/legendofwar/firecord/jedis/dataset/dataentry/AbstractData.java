@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -26,6 +27,12 @@ import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
 
 public abstract class AbstractData<T> implements Closeable {
+
+    // contains keys that were marked before constructor call to mark automatic creation by a DataGenerator
+    // relevant for when it's deleted, so we can delete the tree
+    // the permanent marking is part of the object, this set is only
+    // temporary for creation purposes
+    protected final static HashSet<Bytes> markedAsGenerated = new HashSet<>();
 
     public static HashMap<Bytes, AbstractData<?>> loaded = new HashMap<Bytes, AbstractData<?>>();
     protected final static Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> globalListeners = new HashMap<>();
@@ -199,6 +206,7 @@ public abstract class AbstractData<T> implements Closeable {
 
     protected final Bytes key;
     protected final JedisLock lock;
+    protected int modifier; // 1: automatically generated
     protected final Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> listeners;
 
     protected AbstractData(@NotNull Bytes key) {
@@ -210,8 +218,21 @@ public abstract class AbstractData<T> implements Closeable {
             synchronized (loaded) {
                 loaded.put(key, this);
             }
+            try (Jedis j = ClassicJedisPool.getJedis()){
+                byte[] bytes = j.get(key.getBytes().append(DataKeySuffix.MODIFIER).getData());
+                if (bytes == null){
+                    synchronized (markedAsGenerated){
+                        modifier = markedAsGenerated.contains(key) ? 1 : 0;
+                        markedAsGenerated.remove(key);
+                    }
+                    j.set(key.append(DataKeySuffix.MODIFIER).getData(), new Bytes(modifier).getData());
+                } else {
+                    modifier = (int) new Bytes(bytes).decodeNumber();
+                }
+            }
         } else {
             lock = null;
+            modifier = 0;
         }
     }
 
