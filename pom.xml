@@ -6,7 +6,7 @@
 
     <groupId>net.legendofwar.firecord</groupId>
     <artifactId>Firecord</artifactId>
-    <version>${build.version}</version>
+    <version>1.1</version>
     <packaging>jar</packaging>
 
     <name>Firecord</name>
@@ -14,7 +14,6 @@
     <properties>
         <java.version>16</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <build.version>1.1-SNAPSHOT</build.version>
     </properties>
     <profiles>
         <profile>
@@ -25,7 +24,7 @@
                 </property>
             </activation>
             <properties>
-                <build.version>1.1-${env.CI_PIPELINE_IID}</build.version>
+                <project.version>${project.version}-${env.CI_PIPELINE_IID}</project.version>
             </properties>
         </profile>
     </profiles>
