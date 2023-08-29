@@ -1,4 +1,4 @@
-image: maven:3.8-jdk-16
+image: maven:latest
 
 build:
   script:
