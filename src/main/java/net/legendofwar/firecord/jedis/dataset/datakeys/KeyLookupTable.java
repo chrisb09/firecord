@@ -2,7 +2,6 @@ package net.legendofwar.firecord.jedis.dataset.datakeys;
 
 import java.security.InvalidParameterException;
 import java.util.HashMap;
-import java.util.Map;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
