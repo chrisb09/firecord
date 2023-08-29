@@ -1,0 +1,7 @@
+
+build:
+  script:
+    - mvn clean install
+  artifacts:
+    paths:
+      - target/*.jar
