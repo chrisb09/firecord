@@ -2,7 +2,7 @@ image: maven:latest
 
 build:
   script:
-    - mvn clean install
+    - mvn clean install -Pgitlab-ci
   artifacts:
     paths:
       - target/Firecord*.jar
