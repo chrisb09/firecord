@@ -2,7 +2,8 @@ image: maven:latest
 
 build:
   script:
-    - mvn clean install -Pgitlab-ci
+    - mvn versions:set -DnewVersion=${CI_PIPELINE_SOURCE}-${CI_PIPELINE_IID} -DgenerateBackupPoms=false
+    - mvn clean install
   artifacts:
     paths:
       - target/Firecord*.jar
