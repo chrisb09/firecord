@@ -2,7 +2,7 @@ image: maven:latest
 
 build:
   script:
-    - mvn versions:set -DnewVersion=$(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}-${env.CI_PIPELINE_IID}' --non-recursive exec:exec)
+    - mvn versions:set -DnewVersion=$(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}-${env.CI_PIPELINE_IID}' --non-recursive exec:exec) -DgenerateBackupPoms=false
     - mvn clean install
   artifacts:
     paths:
