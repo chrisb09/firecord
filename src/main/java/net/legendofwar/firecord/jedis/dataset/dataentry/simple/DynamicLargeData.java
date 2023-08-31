@@ -23,7 +23,7 @@ public abstract class DynamicLargeData<T> extends LargeData<T> {
         if (this.value == null) {
             return 0;
         }
-        return this.toString().length();
+        return this.toBytes().length;
     }
 
     @Override
