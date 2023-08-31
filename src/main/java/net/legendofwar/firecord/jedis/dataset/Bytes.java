@@ -4,6 +4,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
+import java.util.UUID;
+
+import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;;
 
 /**
  * Bytes is a Wrapper around a byte[], that allows for .equals() to work, and
@@ -39,6 +42,10 @@ public class Bytes implements ByteDataInterface {
     public Bytes(ByteBuffer buffer) {
         buffer.position(0);
         set(buffer.array());
+    }
+
+    public Bytes(UUID uuid){
+        set(KeyGenerator.getBytesFromUUID(uuid));
     }
 
     public Bytes(ByteDataInterface bdi) {
@@ -118,6 +125,10 @@ public class Bytes implements ByteDataInterface {
     @Override
     public Bytes getBytes() {
         return this;
+    }
+
+    public UUID getUUID(){
+        return KeyGenerator.getUUIDfromBytes(this);
     }
 
     @Override
