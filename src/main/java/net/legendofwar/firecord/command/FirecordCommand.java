@@ -68,6 +68,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testint     §e small data sync example");
             sender.sendMessage("§b" + label + " loadis      §e large data sync example");
             sender.sendMessage("§b" + label + " storeis     §e large data sync example");
+            sender.sendMessage("§b" + label + " bytes <key> §e redis access using hex encoding");
             sender.sendMessage("§b" + label + " testfield   §e test a field change of testob");
             sender.sendMessage("§b" + label + " teststatic  §e testfield for static vars");
             sender.sendMessage("§b" + label + " testchar    §e runs RChar related test");
@@ -355,9 +356,9 @@ public class FirecordCommand {
             sender.sendMessage("§a.toggleNullt();");
             TestObject.toggleNullt();
             sender.sendMessage("§bnullt: §e" + TestObject.nullt);
-        }  else if (args[0].equalsIgnoreCase("testlisten")) {
-            sender.sendMessage("§bToggle testlistener "+(testlistener_active ? "§cOFF" : "§aON"));
-            if (testlistener_active){
+        } else if (args[0].equalsIgnoreCase("testlisten")) {
+            sender.sendMessage("§bToggle testlistener " + (testlistener_active ? "§cOFF" : "§aON"));
+            if (testlistener_active) {
                 AbstractData.listenGlobal(testlistener, JedisCommunicationChannel.ANY);
             } else {
                 AbstractData.stopListeningGlobal(testlistener, JedisCommunicationChannel.ANY);
@@ -445,6 +446,15 @@ public class FirecordCommand {
             } else {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
                     sender.sendMessage("§3Get '§e" + args[1] + "§3': §a" + j.get(args[1]));
+                }
+            }
+        } else if (args[0].equalsIgnoreCase("bytes")) {
+            if (args.length == 1) {
+                sender.sendMessage("§3 Please specify a key, like 0x...");
+            } else {
+                try (Jedis j = ClassicJedisPool.getJedis()) {
+                    sender.sendMessage("§3Get '§e" + args[1] + "§3': §a"
+                            + new Bytes(j.get(Bytes.byHexString(args[1]).getData())).toString());
                 }
             }
         } else if (args[0].equalsIgnoreCase("ping")) {
