@@ -6,8 +6,6 @@ import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.UUID;
 
-import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;;
-
 /**
  * Bytes is a Wrapper around a byte[], that allows for .equals() to work, and
  * therefore implements hashCode in a way that relies solely on the values of
@@ -45,7 +43,12 @@ public class Bytes implements ByteDataInterface {
     }
 
     public Bytes(UUID uuid){
-        set(KeyGenerator.getBytesFromUUID(uuid));
+        long l = uuid.getLeastSignificantBits();
+        long m = uuid.getMostSignificantBits();
+        ByteBuffer buffer = ByteBuffer.allocate(2 * Long.BYTES);
+        buffer.putLong(m);
+        buffer.putLong(l);
+        set(buffer.array());
     }
 
     public Bytes(ByteDataInterface bdi) {
@@ -128,7 +131,13 @@ public class Bytes implements ByteDataInterface {
     }
 
     public UUID getUUID(){
-        return KeyGenerator.getUUIDfromBytes(this);
+        if (this.length != 16){
+            return null;
+        }
+        ByteBuffer byteBuffer = ByteBuffer.wrap(this.getData());
+        long mostSignificant = byteBuffer.getLong();
+        long leastSignificant = byteBuffer.getLong();
+        return new UUID(mostSignificant, leastSignificant);
     }
 
     @Override
@@ -230,6 +239,24 @@ public class Bytes implements ByteDataInterface {
         }
         buffer.position(0);
         return buffer.array();
+    }
+
+    public static Bytes byHexString(String hexString) {
+        if (hexString.startsWith("0x") || hexString.startsWith("0X")) {
+            hexString = hexString.substring(2);  // remove the "0x" or "0X" prefix
+        }
+    
+        if (hexString.length() % 2 != 0) {
+            throw new IllegalArgumentException("Invalid hexadecimal string.");
+        }
+    
+        byte[] bytes = new byte[hexString.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            int index = i * 2;
+            int intValue = Integer.parseInt(hexString.substring(index, index + 2), 16);
+            bytes[i] = (byte) intValue;
+        }
+        return new Bytes(bytes);
     }
 
 }
