@@ -29,6 +29,10 @@ public class DataGenerator<T extends AbstractData<?>> {
     @SuppressWarnings("unchecked")
     static void delete(AbstractData<?> ad, boolean deleteInDB) {
 
+        if (ad == null){
+            return;
+        }
+
         // only allow deletion for generated values (1)
         // don't delete already deleted (2)
         if ((ad.modifier & 1) == 0 || (ad.modifier & 2) == 1){
