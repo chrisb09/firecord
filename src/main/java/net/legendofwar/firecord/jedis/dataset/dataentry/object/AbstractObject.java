@@ -38,6 +38,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RUUID;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ClassNameLookup;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeyPrefix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
@@ -50,16 +51,12 @@ public abstract class AbstractObject extends AbstractData<Object> {
     private static final KeyLookupTable fieldKeyLookupTable = new KeyLookupTable(
             DataKeyPrefix.KEY_LOOKUP_TABLE.getBytes().append("fields".getBytes()), 4);
 
-    private static final KeyLookupTable staticClassNameKeyLookupTable = new KeyLookupTable(
-            DataKeyPrefix.KEY_LOOKUP_TABLE.getBytes().append("static".getBytes()), 2);
-
     public static Bytes getFieldKey(Bytes objectKey, String fieldName) {
         return objectKey.append(fieldKeyLookupTable.lookUpId(fieldName));
     }
 
     public static Bytes getStaticClassNameKey(String className) {
-        return DataKeyPrefix.KEY_LOOKUP_TABLE.getBytes().append(new Bytes((byte) 0),
-                staticClassNameKeyLookupTable.lookUpId(className));
+        return DataKeyPrefix.CLASS.getBytes().append(ClassNameLookup.getId(className));
     }
 
     /*
@@ -170,7 +167,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
             if (hadNoEntries) {
                 _setType(DataType.OBJECT);
                 try (Jedis j = ClassicJedisPool.getJedis()) {
-                    j.set(ByteFunctions.join(key, DataKeySuffix.CLASS), this.getClass().getName().getBytes());
+                    j.set(ByteFunctions.join(key, DataKeySuffix.CLASS), ClassNameLookup.getId(this.getClass().getName()).getData());
                 }
             }
         }

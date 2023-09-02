@@ -17,6 +17,7 @@ public enum DataKeyPrefix implements ByteDataInterface {
     LOCK(64),                   // For saving lock-related data
     KEY_LOOKUP_TABLE(65),       // For saving lookuptable-related data
     DATA_GENERATOR(66),         // For saving datagenerator-related data
+    CLASS(67),
     ;
     // @formatter:on
 

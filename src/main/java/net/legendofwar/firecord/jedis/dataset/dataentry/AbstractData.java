@@ -22,6 +22,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.DataEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ClassNameLookup;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
@@ -157,7 +158,7 @@ public abstract class AbstractData<T> implements Closeable {
                         cN = j.get(ByteFunctions.join(key, DataKeySuffix.CLASS));
                     }
                     if (cN != null) {
-                        className = new String(cN);
+                        className = ClassNameLookup.getClassName(new Bytes(cN));
                     }
                     Class<?> c = null;
                     if (className != null) {

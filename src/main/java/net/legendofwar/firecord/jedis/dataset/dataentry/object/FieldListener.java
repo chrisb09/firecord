@@ -23,6 +23,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.SimpleData;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ClassNameLookup;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import redis.clients.jedis.Jedis;
 
@@ -63,9 +64,7 @@ public class FieldListener {
         if (hadNoEntries) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 j.set(ByteFunctions.join(key, DataKeySuffix.TYPE), DataType.CLASS.toString().getBytes());
-            }
-            try (Jedis j = ClassicJedisPool.getJedis()) {
-                j.set(ByteFunctions.join(key, DataKeySuffix.CLASS), clazz.getName().getBytes());
+                j.set(ByteFunctions.join(key, DataKeySuffix.CLASS), ClassNameLookup.getId(clazz.getName()).getData());
             }
         }
     }
