@@ -53,10 +53,21 @@ public final class REnum<T extends Enum<T>> extends SimpleAbstractObject<T> {
     }
 
     public T get() {
+        if (c == null || this.value == null){
+            return null;
+        }
         return Enum.valueOf(c, this.value.get());
     }
 
     public boolean set(T value) {
+        if (value == null){
+            // TODO: allow for setting null
+            return false;
+        }
+        if (c == null){
+            c = (Class<T>) value.getClass();
+            className.set(value.getClass().getName());
+        }
         return this.value.set(value.name());
     }
 
