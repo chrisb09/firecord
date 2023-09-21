@@ -189,6 +189,31 @@ public abstract class AbstractObject extends AbstractData<Object> {
             System.out.println("The loadObject method is not defined for non-AbstractObjects.");
             return;
         }
+        Class<?> temp_c = c;
+        String className = null;
+        if (object == null) { // only check for static call
+            while (className == null && temp_c != AbstractObject.class) {
+                for (Field field : c.getDeclaredFields()) {
+                    if (Modifier.isStatic(field.getModifiers())){
+                        if (field.getName().equals("STATIC_CLASSNAME_OVERWRITE")){
+                            if (String.class.isAssignableFrom(field.getType())){
+                                try {
+                                    className = (String) field.get(null);
+                                } catch (IllegalArgumentException e) {
+                                    e.printStackTrace();
+                                } catch (IllegalAccessException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                }
+                temp_c = temp_c.getSuperclass();
+            }
+        }
+        if (className == null){
+            className = c.getName();
+        }
         // repeat until we reach the AbstractObject superclass
         while (c != AbstractObject.class) {
             // iterate over all fields of the class
@@ -221,7 +246,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                         Bytes entryKey = null;
                                         if (Modifier.isStatic(field.getModifiers())) {
                                             if (object == null) { // init static fields only for the static call
-                                                entryKey = getFieldKey(getStaticClassNameKey(c.getName()),
+                                                entryKey = getFieldKey(getStaticClassNameKey(className),
                                                         field.getName());
                                             }
                                         } else if (object != null) { // init object fields only when an instance is
@@ -257,7 +282,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                             // all DataEntries that don't have a corresponding entry in the underlaying
                                             // hash structure are added
                                             try (Jedis j = ClassicJedisPool.getJedis()) {
-                                                j.hset((object == null) ? getStaticClassNameKey(c.getName()).getData()
+                                                j.hset((object == null) ? getStaticClassNameKey(className).getData()
                                                         : object.key.getData(), new Bytes(field.getName()).getData(),
                                                         entryKey.getData());
                                             }
