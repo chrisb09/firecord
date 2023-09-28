@@ -12,6 +12,7 @@ import java.util.Set;
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.CollectionData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.CompositeData;
@@ -111,7 +112,7 @@ public class DataGenerator<T extends AbstractData<?>> {
 
         if (ad instanceof CompositeData){
             if (ad instanceof CollectionData){
-                try (AbstractData<?> a = ad.lock()){
+                try (JedisLock lock = ad.lock()){
                     for (AbstractData<?> entry : ((CollectionData<?,?>) (ad))){
                         delete(entry, deleteInDB);
                     }

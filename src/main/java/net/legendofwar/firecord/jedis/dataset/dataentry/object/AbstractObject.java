@@ -18,6 +18,7 @@ import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
@@ -153,7 +154,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
             synchronized (loaded) {
                 loaded.put(key, this);
             }
-            try (AbstractData<?> ad = this.lock()) {
+            try (JedisLock lock = this.lock()) {
                 try (Jedis j = ClassicJedisPool.getJedis()) {
                     Map<byte[], byte[]> refs = j.hgetAll(ByteFunctions.join(key.getData()));
                     references = new HashMap<String, Bytes>();

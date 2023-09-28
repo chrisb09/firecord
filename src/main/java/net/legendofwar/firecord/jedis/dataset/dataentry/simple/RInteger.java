@@ -3,8 +3,8 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
-import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import redis.clients.jedis.Jedis;
 
 public final class RInteger extends NumericData<Integer> {
@@ -56,7 +56,7 @@ public final class RInteger extends NumericData<Integer> {
             return null;
         }
         Integer oldValue = this.value;
-        try (AbstractData<Integer> l = lock()) {
+        try (JedisLock lock = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Integer.parseInt(new Bytes(j.get(key.getData())).asString()) * value;
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());
@@ -73,7 +73,7 @@ public final class RInteger extends NumericData<Integer> {
             return null;
         }
         Integer oldValue = this.value;
-        try (AbstractData<Integer> l = lock()) {
+        try (JedisLock lock = lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 this.value = Integer.parseInt(new Bytes(j.get(key.getData())).asString()) / value;
                 j.set(key.getData(), new Bytes(this.value.toString()).getData());

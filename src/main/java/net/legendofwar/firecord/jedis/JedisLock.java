@@ -7,6 +7,7 @@ import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.params.SetParams;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -14,7 +15,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class JedisLock implements Lock {
+public class JedisLock implements Lock, Closeable {
 
     final static long DEFAULT_TIMEOUT = 20000; // 20s
     final static SetParams params;
@@ -146,6 +147,11 @@ public class JedisLock implements Lock {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void close() {
+        this.unlock();
     }
 
 }

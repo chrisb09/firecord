@@ -11,6 +11,7 @@ import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
@@ -62,7 +63,7 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
      * @param data
      */
     public void set(E data) {
-        try (AbstractData<?> ad = lock()) {
+        try (JedisLock lock = lock()) {
             this.clear();
             this.addAll(data);
         }

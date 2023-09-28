@@ -1,6 +1,5 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry;
 
-import java.io.Closeable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -27,7 +26,7 @@ import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
 import redis.clients.jedis.Jedis;
 
-public abstract class AbstractData<T> implements Closeable {
+public abstract class AbstractData<T> {
 
     // contains keys that were marked before constructor call to mark automatic creation by a DataGenerator
     // relevant for when it's deleted, so we can delete the tree
@@ -249,21 +248,15 @@ public abstract class AbstractData<T> implements Closeable {
         this.lock.unlockMultiple(partners);
     }
 
-    @SuppressWarnings("unchecked")
-    public <E extends AbstractData<T>> E lock(E object) {
-        return (E) this.lock();
-    }
-
-    public AbstractData<T> lock() {
+    public JedisLock lock() {
         if (this.key == null) {
             printTempErrorMsg();
             return null;
         }
         this.lock.lock();
-        return this;
+        return this.lock;
     }
 
-    @Override
     public void close() {
         if (this.key == null) {
             printTempErrorMsg();

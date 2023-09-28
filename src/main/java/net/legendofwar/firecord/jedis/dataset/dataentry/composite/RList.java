@@ -17,6 +17,7 @@ import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
@@ -350,7 +351,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
 
     @Override
     void _store() {
-        try (AbstractData<T> ad = this.lock()) {
+        try (JedisLock lock = this.lock()) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 j.del(this.key.getData());
                 j.rpush(this.key.getData(),
