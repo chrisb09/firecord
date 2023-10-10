@@ -48,6 +48,7 @@ public class Firecord {
      */
     public static void disable() {
         JedisCommunication.disable();
+        ClassicJedisPool.destroy();
     }
 
     /**
