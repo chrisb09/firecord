@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import org.javatuples.Triplet;
 
@@ -24,6 +25,7 @@ public class JedisCommunication extends BinaryJedisPubSub {
     private static Thread thread = null;
     private static Thread nodeThread = null;
     private static JedisCommunication handler = null;
+    private static CountDownLatch latch = new CountDownLatch(1);
     private static final HashMap<Bytes, MessageReceiver> receivers = new HashMap<Bytes, MessageReceiver>();
     private static final HashSet<Bytes> nodes = new HashSet<Bytes>();
     private static final byte nodeIdSize = 1; // how many bytes are used for name encodings
@@ -49,6 +51,7 @@ public class JedisCommunication extends BinaryJedisPubSub {
         System.out.println("BroadcastMessageChannel: " + getBroadcastMessageChannel());
         System.out.println("BroadcastMessageChannel.length: " + getBroadcastMessageChannel().length);
         handler = new JedisCommunication(new Bytes[] { getServerMessageChannel(name), getBroadcastMessageChannel() });
+        latch = new CountDownLatch(1);
         thread = new Thread(new Runnable() {
 
             public void run() {
@@ -58,6 +61,7 @@ public class JedisCommunication extends BinaryJedisPubSub {
                     j.subscribe(handler, Arrays.stream(handler.channels)
                             .map(bytearray -> bytearray.getData()).toArray(byte[][]::new));
                 }
+                latch.countDown();
             }
         });
         thread.start();
@@ -129,30 +133,37 @@ public class JedisCommunication extends BinaryJedisPubSub {
         if (handler != null) {
             handler.unsubscribe();
         }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void updateNodes() {
         synchronized (nodes) {
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                nodesLock.lock();
-                try {
-                    nodes.clear();
-                    Set<byte[]> found = j.smembers(nodes_key.getData());
-                    for (byte[] s : found) {
-                        if (j.get(DataKeyPrefix.NODE.getBytes().append(s).getData()) != null) {
-                            nodes.add(new Bytes(s));
-                        } else {
-                            j.srem(nodes_key.getData(), s);
+                if (j != null){
+                    nodesLock.lock();
+                    try {
+                        nodes.clear();
+                        Set<byte[]> found = j.smembers(nodes_key.getData());
+                        for (byte[] s : found) {
+                            if (j.get(DataKeyPrefix.NODE.getBytes().append(s).getData()) != null) {
+                                nodes.add(new Bytes(s));
+                            } else {
+                                j.srem(nodes_key.getData(), s);
+                            }
                         }
+                        if (!nodes.contains(name)) {
+                            nodes.add(name);
+                            j.sadd(nodes_key.getData(), name.getData());
+                        }
+                        // continuosly keep entry
+                        j.setex(DataKeyPrefix.NODE.getBytes().append(name).getData(), 10, new Bytes(1).getData());
+                    } finally {
+                        nodesLock.unlock();
                     }
-                    if (!nodes.contains(name)) {
-                        nodes.add(name);
-                        j.sadd(nodes_key.getData(), name.getData());
-                    }
-                    // continuosly keep entry
-                    j.setex(DataKeyPrefix.NODE.getBytes().append(name).getData(), 10, new Bytes(1).getData());
-                } finally {
-                    nodesLock.unlock();
                 }
             }
         }

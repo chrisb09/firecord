@@ -19,6 +19,7 @@ public class ClassicJedisPool {
 
     private static Object staticLock = new Object();
     private static JedisPool pool = null;
+    private static boolean created = false;
     static HashMap<Jedis, String> last_requested_by = new HashMap<Jedis, String>();
 
     public static CustomJedisPoolConfig<Jedis> buildPoolConfig() {
@@ -27,15 +28,31 @@ public class ClassicJedisPool {
 
     public static void destroy() {
         if (pool != null) {
+            System.out.println("Closing Pool...");
             pool.close();
+            int counter = 0;
+            while (!pool.isClosed() && ++counter < 150) {
+                System.out.println("...not fully closed yet, waiting 0.1s...");
+                try {
+                    Thread.sleep(100l);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (counter == 150) {
+                System.out.println("Waiting stopped prematurely.");
+            }
+            System.out.println("Open connections: " + pool.getNumActive());
         }
         pool = null;
     }
 
-    private static boolean createUser(String host, String port, String username, String password) {
+    private static long createUser(String host, String port, String username_prefix, String password) {
         // Connect to Redis (assuming local server with no password)
         try (Jedis jedis = new Jedis(host, Integer.parseInt(port), 3000)) {
             if (jedis.auth(password).equalsIgnoreCase("OK")) {
+                long userId = jedis.incr("firecord:id:" + Firecord.getIdName());
+                String username = Firecord.getIdName() + "_" + userId;
                 // Check if user exists
                 List<String> userList = jedis.aclList();
                 boolean userExists = userList.stream().anyMatch(u -> u.contains("user " + username + " "));
@@ -55,13 +72,13 @@ public class ClassicJedisPool {
                     // Test a command
                     userJedis.set("test", "okay");
                     System.out.println("Value set by '" + username + "': " + userJedis.get("test"));
-                    return true;
+                    return userId;
                 } catch (JedisAccessControlException e) {
                     System.err.println("Permission denied: " + e.getMessage());
                 }
             }
         }
-        return false;
+        return 0;
     }
 
     private static void createPool() {
@@ -80,12 +97,14 @@ public class ClassicJedisPool {
             System.out.println("Port: " + properties[1]);
             System.out.println("Password: " + properties[2].subSequence(0, 2) + "...");
             GenericObjectPoolConfig<Jedis> config = buildPoolConfig();
-            if (!createUser(properties[0], properties[1], Firecord.getIdName(), properties[2])) {
+            System.out.println("Creating pool...");
+            long userId = createUser(properties[0], properties[1], Firecord.getIdName(), properties[2]);
+            if (userId == 0) {
                 pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000, properties[2]);
             } else {
-                pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000, Firecord.getIdName(),
+                pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000,
+                        Firecord.getIdName() + "_" + userId,
                         properties[2]);
-
             }
         }
 
@@ -100,8 +119,13 @@ public class ClassicJedisPool {
     public static Jedis getJedis() {
         if (pool == null) {
             synchronized (staticLock) {
-                if (pool == null) { // repeat in sync
+                if (!created) { // repeat in sync
+                    created = true;
                     createPool();
+                } else {
+                    // if the pool has been created once but is null now then it got destroyed
+                    // already, meaning we're shutting down
+                    return null;
                 }
             }
         }
