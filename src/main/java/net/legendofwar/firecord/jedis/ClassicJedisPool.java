@@ -47,12 +47,10 @@ public class ClassicJedisPool {
         pool = null;
     }
 
-    private static long createUser(String host, String port, String username_prefix, String password) {
+    private static long createUser(String host, String port, String username, String password) {
         // Connect to Redis (assuming local server with no password)
         try (Jedis jedis = new Jedis(host, Integer.parseInt(port), 3000)) {
             if (jedis.auth(password).equalsIgnoreCase("OK")) {
-                long userId = jedis.incr("firecord:id:" + Firecord.getIdName());
-                String username = Firecord.getIdName() + "_" + userId;
                 // Check if user exists
                 List<String> userList = jedis.aclList();
                 boolean userExists = userList.stream().anyMatch(u -> u.contains("user " + username + " "));
@@ -72,7 +70,7 @@ public class ClassicJedisPool {
                     // Test a command
                     userJedis.set("test", "okay");
                     System.out.println("Value set by '" + username + "': " + userJedis.get("test"));
-                    return userId;
+                    return 1l;
                 } catch (JedisAccessControlException e) {
                     System.err.println("Permission denied: " + e.getMessage());
                 }
@@ -103,7 +101,7 @@ public class ClassicJedisPool {
                 pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000, properties[2]);
             } else {
                 pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000,
-                        Firecord.getIdName() + "_" + userId,
+                        Firecord.getIdName(),
                         properties[2]);
             }
         }
