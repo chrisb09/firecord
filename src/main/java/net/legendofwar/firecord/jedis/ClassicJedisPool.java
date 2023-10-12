@@ -6,6 +6,7 @@ import redis.clients.jedis.exceptions.JedisAccessControlException;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -136,17 +137,36 @@ public class ClassicJedisPool {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new JedisWrapper(res);
+        return res;
     }
 
     public static HashMap<String, Integer> getRessourceOwner() {
         HashMap<String, Integer> used = new HashMap<String, Integer>();
-        for (Map.Entry<Jedis, String> entry : last_requested_by.entrySet()) {
-            if (!used.containsKey(entry.getValue()))
-                used.put(entry.getValue(), 0);
-            used.put(entry.getValue(), used.get(entry.getValue()) + 1);
+        HashSet<Jedis> idleJedis = new HashSet<>();
+        for (int i=0;i<getIdleClients();i++){
+            idleJedis.add(pool.getResource());
+        }
+        try {
+            for (Map.Entry<Jedis, String> entry : last_requested_by.entrySet()) {
+                if (!idleJedis.contains(entry.getKey())){
+                    if (!used.containsKey(entry.getValue()))
+                        used.put(entry.getValue(), 0);
+                    used.put(entry.getValue(), used.get(entry.getValue()) + 1);
+                }
+            }
+        }  finally {
+            for (Jedis j : idleJedis){
+                j.close();
+            }
         }
         return used;
+    }
+
+    public static int getIdleClients() {
+        if (pool == null) {
+            return 0;
+        }
+        return pool.getNumIdle();
     }
 
     public static String getPoolCurrentUsage() {
