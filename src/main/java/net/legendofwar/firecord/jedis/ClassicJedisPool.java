@@ -57,7 +57,7 @@ public class ClassicJedisPool {
                 boolean userExists = userList.stream().anyMatch(u -> u.contains("user " + username + " "));
 
                 // If user doesn't exist, create it
-                jedis.aclSetUser(username, "on", ">" + password, "+@all", "~*");
+                jedis.aclSetUser(username, "on", ">" + password, "+@all", "&*", "~*");
                 if (!userExists) {
                     System.out.println("User '" + username + "' created.");
                 } else {
