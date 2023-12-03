@@ -4,6 +4,7 @@ public enum NodeType {
 
     SPIGOT,
     BUNGEE,
+    VELOCITY,
     STANDALONE;
 
 }
