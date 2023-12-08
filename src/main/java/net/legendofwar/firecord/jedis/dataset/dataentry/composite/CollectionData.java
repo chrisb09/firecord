@@ -134,15 +134,15 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
 
     public abstract boolean containsKey(Bytes key);
 
-    public abstract boolean containsValue(T value);
+    public abstract boolean containsValue(Object value);
 
     public abstract E getByKey(Bytes key);
 
-    public abstract E getByValue(T value);
+    public abstract E getByValue(Object value);
 
     public abstract void removeByKey(Bytes key);
 
-    public abstract void removeByValue(T value);
+    public abstract void removeByValue(Object value);
 
     @Override
     public boolean containsAll(Collection<?> arg0) {
