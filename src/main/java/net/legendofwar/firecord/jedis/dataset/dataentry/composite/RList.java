@@ -663,7 +663,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
     }
 
     @Override
-    public boolean containsValue(Object value) {
+    public boolean containsValue(T value) {
         synchronized (this.data) {
             for (T entry : this.data) {
                 if (entry instanceof SimpleInterface) {
@@ -673,7 +673,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                 } else if (entry instanceof CollectionData) {
                     CollectionData<AbstractData<?>, ?> e = (CollectionData<AbstractData<?>, ?>) entry;
-                    if (e.data.equals(value)) {
+                    if (e.data.equals( ((CollectionData<?,?>) (entry)).data)) {
                         return true;
                     }
                 } else if (entry instanceof AbstractObject) {
