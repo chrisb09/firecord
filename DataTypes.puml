@@ -128,8 +128,11 @@ class RJson extends LargeData {
     + void putEnum()
 }
 
+abstract OwnerData<T> extends AbstractData {
+    + void deleteChild();
+}
 
-abstract CompositeData <T extends AbstractData> extends AbstractData {
+abstract CompositeData <T extends AbstractData> extends OwnerData {
     + {static} HashMap<Bytes, CompositeData<?,?>> loaded
     + void clear()
     + boolean isEmpty()
@@ -140,9 +143,13 @@ abstract CollectionData <T extends AbstractData,\nE extends Collection<T>> exten
     + void set()
     + boolean removeKey()
     + boolean contains()
+    + boolean containsAll()
     + boolean containsKey()
     + boolean containsValue()
-    + boolean containsAll()
+    + getByKey()
+    + getByValue()
+    + removeByKey()
+    + removeByValue()
     + Iterator<T> iterator()
     + Object[] toArray()
     + F[] toArray()
