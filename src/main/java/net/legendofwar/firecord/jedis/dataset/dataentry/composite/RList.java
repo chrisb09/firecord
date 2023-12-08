@@ -735,13 +735,13 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
     }
 
     @Override
-    public void removeByKey(Bytes key) {
-        this.removeAll(getByKey(key));
+    public boolean removeByKey(Bytes key) {
+        return this.removeAll(getByKey(key));
     }
 
     @Override
-    public void removeByValue(Object value) {
-        this.removeAll(getByValue(value));
+    public boolean removeByValue(Object value) {
+        return this.removeAll(getByValue(value));
     }
 
 

@@ -140,9 +140,22 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
 
     public abstract E getByValue(Object value);
 
-    public abstract void removeByKey(Bytes key);
+    /*
+     * Removes an Element of this Collection by its key
+     * 
+     * @param key Bytes instead of RString/String
+     * 
+     * @return true if element was found and removed
+     */
+    public abstract boolean removeByKey(Bytes key);
 
-    public abstract void removeByValue(Object value);
+    /*
+     * Removes an Element of this Collection by its value
+     * 
+     * @param value Value of this Collection (String, Byte,...)
+     * @return true if element was found and removed
+     */
+    public abstract boolean removeByValue(Object value);
 
     @Override
     public boolean containsAll(Collection<?> arg0) {
