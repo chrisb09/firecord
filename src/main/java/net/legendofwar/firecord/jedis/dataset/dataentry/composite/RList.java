@@ -663,7 +663,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
     }
 
     @Override
-    public boolean containsValue(T value) {
+    public boolean containsValue(Object value) {
         synchronized (this.data) {
             for (T entry : this.data) {
                 if (entry instanceof SimpleInterface) {
@@ -673,7 +673,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                 } else if (entry instanceof CollectionData) {
                     CollectionData<AbstractData<?>, ?> e = (CollectionData<AbstractData<?>, ?>) entry;
-                    if (e.data.equals( ((CollectionData<?,?>) (entry)).data)) {
+                    if (e.data.equals(value)) {
                         return true;
                     }
                 } else if (entry instanceof AbstractObject) {
@@ -710,7 +710,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
     }
 
     @Override
-    public List<T> getByValue(T value) {
+    public List<T> getByValue(Object value) {
         List<T> result = new ArrayList<>();
         synchronized (this.data) {
             for (T entry : this.data) {
@@ -721,7 +721,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                 } else if (entry instanceof CollectionData) {
                     CollectionData<AbstractData<?>, ?> e = (CollectionData<AbstractData<?>, ?>) entry;
-                    if (e.data.equals( ((CollectionData<?,?>) (entry)).data)) {
+                    if (e.data.equals(value)) {
                         result.add(entry);
                     }
                 } else if (entry instanceof AbstractObject) {
@@ -740,7 +740,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
     }
 
     @Override
-    public void removeByValue(T value) {
+    public void removeByValue(Object value) {
         this.removeAll(getByValue(value));
     }
 
