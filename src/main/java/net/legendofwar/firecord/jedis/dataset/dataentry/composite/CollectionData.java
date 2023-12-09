@@ -40,6 +40,16 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
                         Collection<?> oldValue;
                         synchronized (cl.data) {
                             oldValue = new ArrayList<>(cl.data);
+                            for (Object object : cl.data){
+                                ArrayList<AbstractData<?>> childOwners = ((AbstractData<?>) object).owners;
+                                // the owners/parents of the child
+                                synchronized (childOwners) {
+                                    if (childOwners.contains(object)){
+                                        childOwners.remove(object);
+                                    }
+                                    ((AbstractData<?>) object).lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                                }
+                            }
                             cl.data.clear();
                         }
                         cl.notifyListeners(new CollectionClearEvent<AbstractData<?>>(sender, cl, oldValue));
@@ -110,9 +120,19 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
             j.del(key.getData());
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.COLLECTION_CLEAR, key);
-        Collection<?> oldValue;
+        Collection<T> oldValue;
         synchronized (this.data) {
             oldValue = new ArrayList<>(this.data);
+            for (Object object : this.data){
+                ArrayList<AbstractData<?>> childOwners = ((AbstractData<?>) object).owners;
+                // the owners/parents of the child
+                synchronized (childOwners) {
+                    if (childOwners.contains(object)){
+                        childOwners.remove(object);
+                    }
+                    ((AbstractData<?>) object).lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                }
+            }
             this.data.clear();
         }
         this.notifyListeners(new CollectionClearEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
@@ -196,6 +216,16 @@ public abstract class CollectionData<T extends AbstractData<?>, E extends Collec
     public <F> F[] toArray(F[] arg0) {
         synchronized (this.data) {
             return this.data.toArray(arg0);
+        }
+    }
+
+    @Override
+    public void deleteChild(AbstractData<?> ad) {
+        try (JedisLock lock = this.lock()){
+            // remove all instances of ad in this list
+            while (this.contains(ad)){
+                this.remove(ad);
+            }
         }
     }
 
