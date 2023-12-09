@@ -60,6 +60,10 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                         synchronized (l.data) {
                             l.data.add(entry);
                         }
+                        ArrayList<AbstractData<?>> childOwners = l.owners;
+                        synchronized (childOwners) {
+                            childOwners.add(entry);
+                        }
                         l.notifyListeners(new ListAddEvent<AbstractData<?>>(sender, l, entry));
                     }
                 }
@@ -87,6 +91,10 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                         if (entry != null) {
                             synchronized (l.data) {
                                 l.data.add(entry);
+                            }
+                            ArrayList<AbstractData<?>> childOwners = l.owners;
+                            synchronized (childOwners) {
+                                childOwners.add(entry);
                             }
                             entries.add(entry);
                         }
@@ -116,6 +124,10 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     if (entry != null) {
                         synchronized (l.data) {
                             l.data.add(index, entry);
+                        }
+                        ArrayList<AbstractData<?>> childOwners = l.owners;
+                        synchronized (childOwners) {
+                            childOwners.add(entry);
                         }
                         l.notifyListeners(new ListAddIndexEvent<AbstractData<?>>(sender, l, entry, index));
                     }
@@ -148,6 +160,10 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                             synchronized (l.data) {
                                 l.data.add(index + (i++), entry);
                             }
+                            ArrayList<AbstractData<?>> childOwners = l.owners;
+                            synchronized (childOwners) {
+                                childOwners.add(entry);
+                            }
                             entries.add(entry);
                         }
                     }
@@ -172,6 +188,18 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                 }
                 if (l != null) {
                     AbstractData<?> removed = l._removeKey(removedKey);
+                    if (removed != null) {
+                        ArrayList<AbstractData<?>> childOwners = removed.owners;
+                        // the owners/parents of the child
+                        synchronized (childOwners) {
+                            if (childOwners.contains(l)){
+                                childOwners.remove(l);
+                                if (childOwners.size()==0){
+                                    removed.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                                }
+                            }
+                        }
+                    }
                     l.notifyListeners(new ListRemoveEvent<AbstractData<?>>(sender, l, removed));
                 }
             }
@@ -196,6 +224,18 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     synchronized (l.data) {
                         removed = l.data.remove(index);
                     }
+                    if (removed != null) {
+                        ArrayList<AbstractData<?>> childOwners = removed.owners;
+                        // the owners/parents of the child
+                        synchronized (childOwners) {
+                            if (childOwners.contains(l)){
+                                childOwners.remove(l);
+                                if (childOwners.size()==0){
+                                    removed.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                                }
+                            }
+                        }
+                    }
                     l.notifyListeners(new ListRemoveIndexEvent<AbstractData<?>>(sender, l, removed, index));
                 }
             }
@@ -218,9 +258,19 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                 if (l != null) {
                     List<Object> removed = new ArrayList<>(removedKeys.length);
                     for (Bytes removedKey : removedKeys) {
-                        Object r = l._removeKey(removedKey);
+                        AbstractData<?> r = l._removeKey(removedKey);
                         if (r != null) {
                             removed.add(r);
+                            ArrayList<AbstractData<?>> childOwners = r.owners;
+                            // the owners/parents of the child
+                            synchronized (childOwners) {
+                                if (childOwners.contains(l)){
+                                    childOwners.remove(l);
+                                    if (childOwners.size()==0){
+                                        r.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                                    }
+                                }
+                            }
                         }
                     }
                     l.notifyListeners(new ListRemoveAllEvent<AbstractData<?>>(sender, l, removed));
@@ -249,19 +299,29 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                     Collection<AbstractData<?>> removed = new ArrayList<>(l.size() - toRetain.size());
                     synchronized (l.data) {
-                        if (l.hasListeners()) {
-                            if (toRetain.size() > 0) {
-                                HashSet<AbstractData<?>> tr = new HashSet<>(toRetain);
-                                for (AbstractData<?> ad : l) {
-                                    if (!tr.contains(ad)) {
-                                        removed.add(ad);
-                                    }
+                        if (toRetain.size() > 0) {
+                            HashSet<AbstractData<?>> tr = new HashSet<>(toRetain);
+                            for (AbstractData<?> ad : l) {
+                                if (!tr.contains(ad)) {
+                                    removed.add(ad);
                                 }
-                            } else {
-                                removed.addAll(l.data);
                             }
+                        } else {
+                            removed.addAll(l.data);
                         }
                         l.data.retainAll(toRetain);
+                    }
+                    for (AbstractData<?> r : removed){
+                        ArrayList<AbstractData<?>> childOwners = r.owners;
+                        // the owners/parents of the child
+                        synchronized (childOwners) {
+                            if (childOwners.contains(l)){
+                                childOwners.remove(l);
+                                if (childOwners.size()==0){
+                                    r.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                                }
+                            }
+                        }
                     }
                     l.notifyListeners(new ListRetainAllEvent<AbstractData<?>>(sender, l, removed));
                 }
@@ -288,6 +348,11 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     if (entry != null) {
                         synchronized (l.data) {
                             l.data.set(index, entry);
+                        }
+                        ArrayList<AbstractData<?>> childOwners = entry.owners;
+                        // the owners/parents of the child
+                        synchronized (childOwners) {
+                            childOwners.add(entry);
                         }
                     }
                 }
@@ -371,6 +436,10 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
             JedisCommunication.broadcast(JedisCommunicationChannel.LIST_ADD,
                     ByteMessage.write(this.key, arg0.getKey()));
             boolean result = this.data.add(arg0);
+            ArrayList<AbstractData<?>> childOwners = arg0.owners;
+            synchronized (childOwners) {
+                childOwners.add(this);
+            }
             this.notifyListeners(new ListAddEvent<AbstractData<?>>(Firecord.getId(),
                     this, arg0));
             return result;
@@ -395,6 +464,10 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
         JedisCommunication.broadcast(JedisCommunicationChannel.LIST_ADD_INDEX,
                 ByteMessage.write(this.key, arg0, arg1.getKey()));
 
+        ArrayList<AbstractData<?>> childOwners = arg1.owners;
+        synchronized (childOwners) {
+            childOwners.add(this);
+        }
         this.notifyListeners(new ListAddIndexEvent<AbstractData<?>>(Firecord.getId(), this, arg1, arg0));
         synchronized (this.data) {
             this.data.add(arg0, arg1);
@@ -419,6 +492,12 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
             boolean result;
             synchronized (this.data) {
                 result = this.data.addAll(arg0);
+            }
+            for (T entry : arg0){
+                ArrayList<AbstractData<?>> childOwners = entry.owners;
+                synchronized (childOwners) {
+                    childOwners.add(this);
+                }
             }
             this.notifyListeners(new ListAddAllEvent<AbstractData<?>>(Firecord.getId(), this, arg0));
             return result;
@@ -461,6 +540,12 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
             boolean result;
             synchronized (this.data) {
                 result = this.data.addAll(arg0, arg1);
+            }
+            for (T entry : arg1){
+                ArrayList<AbstractData<?>> childOwners = entry.owners;
+                synchronized (childOwners) {
+                    childOwners.add(this);
+                }
             }
             this.notifyListeners(new ListAddAllIndexEvent<AbstractData<?>>(Firecord.getId(), this, arg1, index));
             return result;
@@ -514,6 +599,18 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
         synchronized (this.data) {
             result = this.data.remove(arg0);
         }
+        if (result) {
+            ArrayList<AbstractData<?>> childOwners = ((AbstractData<?>) (arg0)).owners;
+            // the owners/parents of the child
+            synchronized (childOwners) {
+                if (childOwners.contains(this)){
+                    childOwners.remove(this);
+                    if (childOwners.size()==0){
+                        ((AbstractData<?>) (arg0)).lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                    }
+                }
+            }
+        }
         this.notifyListeners(new ListRemoveEvent<AbstractData<?>>(Firecord.getId(), this, arg0));
         return result;
     }
@@ -557,6 +654,18 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
         synchronized (this.data) {
             removed = this.data.remove(arg0);
         }
+        if (removed != null) {
+            ArrayList<AbstractData<?>> childOwners = removed.owners;
+            // the owners/parents of the child
+            synchronized (childOwners) {
+                if (childOwners.contains(this)){
+                    childOwners.remove(this);
+                    if (childOwners.size()==0){
+                        removed.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                    }
+                }
+            }
+        }
         this.notifyListeners(new ListRemoveIndexEvent<AbstractData<?>>(Firecord.getId(), this, removed, arg0));
         return removed;
     }
@@ -584,12 +693,27 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
         }
         boolean result;
         synchronized (arg0) {
+            synchronized (this.data) {
+                result = this.data.removeAll(arg0);
+            }
             JedisCommunication.broadcast(JedisCommunicationChannel.LIST_REMOVE_ALL,
                     ByteMessage.write(this.key,
                             arg0.stream().map(entry -> entry instanceof AbstractData ? ((T) (entry)).getKey() : null)
                                     .toArray(Bytes[]::new)));
-            synchronized (this.data) {
-                result = this.data.removeAll(arg0);
+            for (Object obj : arg0){
+                if (obj != null && obj instanceof AbstractData) {
+                    AbstractData<?> ad = (AbstractData<?>) obj;
+                    ArrayList<AbstractData<?>> childOwners = ad.owners;
+                    // the owners/parents of the child
+                    synchronized (childOwners) {
+                        if (childOwners.contains(this)){
+                            childOwners.remove(this);
+                            if (childOwners.size()==0){
+                                ad.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                            }
+                        }
+                    }
+                }
             }
         }
         this.notifyListeners(new ListRemoveAllEvent<AbstractData<?>>(Firecord.getId(), this, arg0));

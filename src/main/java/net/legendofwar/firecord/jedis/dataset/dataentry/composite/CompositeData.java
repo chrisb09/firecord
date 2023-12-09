@@ -7,8 +7,9 @@ import org.jetbrains.annotations.NotNull;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
+import net.legendofwar.firecord.jedis.dataset.dataentry.OwnerData;
 
-public abstract class CompositeData<T extends AbstractData<?>> extends AbstractData<T> {
+public abstract class CompositeData<T extends AbstractData<?>> extends OwnerData<T> {
 
     // Map of all (once) loaded Composite entries
     static HashMap<Bytes, CompositeData<?>> loaded = new HashMap<Bytes, CompositeData<?>>();

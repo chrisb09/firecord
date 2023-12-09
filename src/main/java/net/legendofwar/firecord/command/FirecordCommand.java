@@ -100,7 +100,6 @@ public class FirecordCommand {
                 test.setIfEmpty(0);
             }
         } else if (args[0].equalsIgnoreCase("testmap")) {
-
             if (testmap1 == null) {
                 testmap1 = new RMap<RInteger>(new Bytes("testmap1"));
             }
@@ -131,6 +130,9 @@ public class FirecordCommand {
                     test3.setIfEmpty(3);
                 }
             }
+            sender.sendMessage("test1-owners: "+String.join(",", test1.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test2-owners: "+String.join(",", test2.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test3-owners: "+String.join(",", test3.owners.stream().map(owner -> owner.getKey().asString()).toList()));
             sender.sendMessage("§btestmap1: §e" + String.join(",", Arrays.toString(testmap1.entrySet().stream()
                     .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
             sender.sendMessage("§btestmap2: §e" + String.join(",", Arrays.toString(testmap2.entrySet().stream()
@@ -141,6 +143,9 @@ public class FirecordCommand {
             testmap1.clear();
             testmap2.clear();
             testmap3.clear();
+            sender.sendMessage("test1-owners: "+String.join(",", test1.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test2-owners: "+String.join(",", test2.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test3-owners: "+String.join(",", test3.owners.stream().map(owner -> owner.getKey().asString()).toList()));
             RInteger a = (RInteger) AbstractData.create(new Bytes("testint" + (1 + ((int) (Math.random() * 3)))));
             RInteger b = (RInteger) AbstractData.create(new Bytes("testint" + (1 + ((int) (Math.random() * 3)))));
             RInteger c = (RInteger) AbstractData.create(new Bytes("testint" + (1 + ((int) (Math.random() * 3)))));
@@ -152,13 +157,24 @@ public class FirecordCommand {
             sender.sendMessage("§btestmap1: §e" + String.join(",", Arrays.toString(testmap1.entrySet().stream()
                     .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
 
+            sender.sendMessage("test1-owners: "+String.join(",", test1.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test2-owners: "+String.join(",", test2.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test3-owners: "+String.join(",", test3.owners.stream().map(owner -> owner.getKey().asString()).toList()));
             sender.sendMessage("§a#2 put a:3, d:3");
-            sender.sendMessage("§a#2 putAll #1");
             testmap2.put(new Bytes("a"), test3);
             testmap2.put(new Bytes("d"), test3);
+
+            sender.sendMessage("test1-owners: "+String.join(",", test1.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test2-owners: "+String.join(",", test2.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test3-owners: "+String.join(",", test3.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            
+            sender.sendMessage("§a#2 putAll #1");
             testmap2.putAll(testmap1);
+            sender.sendMessage("test1-owners: "+String.join(",", test1.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test2-owners: "+String.join(",", test2.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test3-owners: "+String.join(",", test3.owners.stream().map(owner -> owner.getKey().asString()).toList()));
             sender.sendMessage("§btestmap2: §e" + testmap2.size());
-            sender.sendMessage("§btestmap1: §e" + String.join(",", Arrays.toString(testmap2.entrySet().stream()
+            sender.sendMessage("§btestmap2: §e" + String.join(",", Arrays.toString(testmap2.entrySet().stream()
                     .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
 
             sender.sendMessage("§a#2 remove b");
@@ -166,6 +182,9 @@ public class FirecordCommand {
             sender.sendMessage("§btestmap2: §e" + testmap2.size());
             sender.sendMessage("§btestmap2: §e" + String.join(",", Arrays.toString(testmap2.entrySet().stream()
                     .map(entry -> entry.getKey().asString() + ": " + entry.getValue().toString()).toArray())));
+            sender.sendMessage("test1-owners: "+String.join(",", test1.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test2-owners: "+String.join(",", test2.owners.stream().map(owner -> owner.getKey().asString()).toList()));
+            sender.sendMessage("test3-owners: "+String.join(",", test3.owners.stream().map(owner -> owner.getKey().asString()).toList()));
         } else if (args[0].equalsIgnoreCase("testlist")) {
             if (testlist1 == null) {
                 testlist1 = new RList<RInteger>(new Bytes("testlist1"));
@@ -472,7 +491,7 @@ public class FirecordCommand {
                 }
             }
         } else {
-            sender.sendMessage("§3This subcommand isn't known...");
+            sender.sendMessage("§3This subcommand isn't known... try "+label+" help");
             return false;
         }
         return true;
