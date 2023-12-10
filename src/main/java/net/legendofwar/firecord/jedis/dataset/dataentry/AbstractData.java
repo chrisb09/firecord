@@ -208,6 +208,22 @@ public abstract class AbstractData<T> {
     protected final JedisLock lock;
     protected int modifier; // 1: automatically generated
     protected final Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> listeners;
+    public ArrayList<AbstractData<?>> owners = new ArrayList<>();
+    public long lastTimeOwnerBecameEmpty = 0l;
+
+    /*
+     * Notes related to owners (of this object)
+     * 
+     * Maybe RWrapper
+     * 
+     * RComposite
+     *   RCollection
+     *     RList [missing]
+     * RMap [implemented-not_tested]
+     * 
+     * AbstractObject [missing]
+     * 
+     */
 
     protected AbstractData(@NotNull Bytes key) {
         this.key = key;
@@ -228,6 +244,19 @@ public abstract class AbstractData<T> {
                     j.set(key.append(DataKeySuffix.MODIFIER).getData(), new Bytes(modifier).getData());
                 } else {
                     modifier = (int) new Bytes(bytes).decodeNumber();
+                }
+                // load the owners, not sure if this is prudent as it causes other completely 
+                // different reference trees to be loaded as well
+                List<byte[]> owner_keys = j.lrange(key.getBytes().append(DataKeySuffix.OWNERS).getData(), 0, -1);
+                for (byte[] owner_key : owner_keys){
+                    Bytes b = new Bytes(owner_key);
+                    AbstractData<?> ad = AbstractData.create(b);
+                    if (ad != null){
+                        owners.add(ad);
+                    }
+                    if (owners.size()==0){
+                        lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                    }
                 }
             }
         } else {

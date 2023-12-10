@@ -10,7 +10,8 @@ public enum DataKeySuffix implements ByteDataInterface {
     TYPE(0x01),             // Specifies the type of entry
     CLASS(0x02),            // Specifies the class, used for OBJECTs
     UPDATED(0x03),          // Specifies the last time this entry was cared for by a DataGenerator
-    MODIFIER(0x04);         // Specifies modifiers such as if it was created by a DataGenerator (1)
+    MODIFIER(0x04),         // Specifies modifiers such as if it was created by a DataGenerator (1)
+    OWNERS(0x05);           // Specifies which objects hold a reference to this object
 
     // @formatter:on
 

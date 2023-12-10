@@ -50,6 +50,18 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                         RMap<?> map = ((RMap<?>) (l));
                         Map<Bytes, AbstractData<?>> oldValue;
                         synchronized (map.data) {
+                            for (Map.Entry<Bytes, ?> en : map.data.entrySet()){
+                                if (en.getValue() != null && en.getValue() instanceof AbstractData<?>){
+                                    ArrayList<AbstractData<?>> childOwners = ((AbstractData<?>) en.getValue()).owners;
+                                    // the owners/parents of the child
+                                    synchronized (childOwners) {
+                                        if (childOwners.contains(map)){
+                                            childOwners.remove(map);
+                                        }
+                                        ((AbstractData<?>) en.getValue()).lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                                    }
+                                }
+                            }
                             oldValue = new HashMap<>(map.data);
                             map.data.clear();
                         }
@@ -86,9 +98,20 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                             removed = map.data.get(name);
                         }
                         map.data.put(name, entry);
+                        synchronized (entry.owners) {
+                            entry.owners.add(map);
+                        }
                     }
                     synchronized (map.valuesInstance.data) {
                         if (removed != null) {
+                            int previousSize;
+                            synchronized (removed.owners) {
+                                previousSize = removed.owners.size();
+                                removed.owners.remove(map);
+                            }
+                            if (previousSize>0 && removed.owners.size()==0){
+                                removed.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                            }
                             map.valuesInstance.data.remove(removed);
                         }
                         ((ArrayList<AbstractData<?>>) (map.valuesInstance.data)).add(entry);
@@ -132,10 +155,21 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                             map.data.put(en.getKey(), entry);
                             if (map.hasListeners()){
                                 entriesReceived.put(en.getKey(), entry);
+                                synchronized (entry.owners) {
+                                    entry.owners.add(map);
+                                }
                             }
                         }
                         synchronized (map.valuesInstance.data) {
                             if (removed != null) {
+                                int previousSize;
+                                synchronized (removed.owners) {
+                                    previousSize = removed.owners.size();
+                                    removed.owners.remove(map);
+                                }
+                                if (previousSize>0 && removed.owners.size()==0){
+                                    removed.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                                }
                                 map.valuesInstance.data.remove(removed);
                             }
                             ((ArrayList<AbstractData<?>>) ((RMap<?>) (map)).valuesInstance.data).add(entry);
@@ -165,6 +199,13 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                     synchronized (map.data) {
                         removed = map.data.remove(removedName);
                         if (removed != null) {
+                            synchronized (removed.owners) {
+                                int previousSize = removed.owners.size();
+                                removed.owners.remove(map);
+                                if (previousSize>0 && removed.owners.size()==0){
+                                    removed.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                                }
+                            }
                             synchronized (map.valuesInstance.data) {
                                 map.valuesInstance.data.remove(removed);
                             }
@@ -198,6 +239,18 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
         Map<Bytes, AbstractData<?>> oldValue;
         synchronized (this.data) {
             oldValue = new HashMap<>(this.data);
+            for (Map.Entry<Bytes, ?> en : data.entrySet()){
+                if (en.getValue() != null && en.getValue() instanceof AbstractData<?>){
+                    ArrayList<AbstractData<?>> childOwners = ((AbstractData<?>) en.getValue()).owners;
+                    // the owners/parents of the child
+                    synchronized (childOwners) {
+                        if (childOwners.contains(this)){
+                            childOwners.remove(this);
+                        }
+                        ((AbstractData<?>)(en.getValue())).lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                    }
+                }
+            }
             this.data.clear();
         }
         synchronized (this.valuesInstance.data) {
@@ -258,9 +311,20 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
         synchronized (this.data) {
             if (this.data.containsKey(arg0)) {
                 replaced = this.data.get(arg0);
+                int previousSize;
+                synchronized (replaced.owners){
+                    previousSize = replaced.owners.size();
+                    replaced.owners.remove(this);
+                }
+                if (previousSize>0 && replaced.owners.size()==0){
+                    replaced.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                }
             }
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 j.hset(this.key.getData(), arg0.getData(), arg1.getKey().getData());
+            }
+            synchronized (owners) {
+                arg1.owners.add(this);
             }
             JedisCommunication.broadcast(JedisCommunicationChannel.MAP_PUT,
                     ByteMessage.write(this.key, arg0.getBytes(), arg1.getKey()));
@@ -294,8 +358,17 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                 tempMap.put(en.getKey().getData(), en.getValue().getKey().getData());
                 if (this.data.containsKey(en.getKey())) {
                     removed.put(en.getKey(), this.data.get(en.getKey()));
+                    if (this.data.size() == 1) {
+                        this.data.get(en.getKey()).lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                    }
+                    synchronized (this.data.get(en.getKey()).owners) {
+                        this.data.get(en.getKey()).owners.remove(this);
+                    }
                 }
                 addedValues.add(en.getValue());
+                synchronized (en.getValue().owners) {
+                    en.getValue().owners.add(this);
+                }
             }
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 j.hset(this.key.getData(), tempMap);
@@ -315,29 +388,32 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
     }
 
     @Override
-    public T remove(Object arg0) {
-        if (arg0 == null) {
+    public T remove(Object key) {
+        if (key == null) {
             throw new NullPointerException();
         }
-        if (!(arg0 instanceof Bytes)) {
+        if (!(key instanceof Bytes)) {
             throw new ClassCastException(
-                    arg0.getClass().getName() + " is not an instance of " + Bytes.class.getName());
+                    key.getClass().getName() + " is not an instance of " + Bytes.class.getName());
         }
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.hdel(key.getData(), ((Bytes) (arg0)).getData());
+            j.hdel(this.key.getData(), ((Bytes) (key)).getData());
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.MAP_REMOVE,
-                ByteMessage.write(this.key, (Bytes) (arg0)));
+                ByteMessage.write(this.key, (Bytes) (key)));
 
         T result;
-        Bytes removedName = (Bytes) arg0;
+        Bytes removedName = (Bytes) key;
         synchronized (this.data) {
-            if (this.data.containsKey(arg0)) {
+            if (this.data.containsKey(key)) {
                 synchronized (this.valuesInstance.data) {
-                    this.valuesInstance.data.remove(this.data.get(arg0));
+                    this.valuesInstance.data.remove(this.data.get(key));
                 }
             }
-            result = this.data.remove(arg0);
+            result = this.data.remove(key);
+        }
+        synchronized (result.owners) {
+            result.owners.remove(this);
         }
         this.notifyListeners(new MapRemoveEvent<AbstractData<?>>(Firecord.getId(), this, removedName, result));
         return result;
@@ -370,7 +446,6 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
         }
         try (Jedis j = ClassicJedisPool.getJedis()) {
             Map<byte[], byte[]> keyMap = j.hgetAll(this.key.getData()); // entry-name, entry-key
-            // List<byte[]> keys = j.lrange(this.key.getData(), 0, -1);
             synchronized (this.data) {
                 this.data.clear();
                 for (byte[] entryName : keyMap.keySet()) {
@@ -394,9 +469,17 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                 HashMap<byte[], byte[]> byteMap = new HashMap<>(0);
                 this.data.forEach((name, obj) -> byteMap.put(name.getData(), obj.getKey().getData()));
                 j.hset(this.key.getData(), byteMap);
-                // j.rpush(this.key.getData(),
-                // this.data.stream().map(element ->
-                // element.getKey().getData()).toArray(byte[][]::new));
+            }
+        }
+    }
+
+    @Override
+    public void deleteChild(AbstractData<?> ad) {
+        try (JedisLock lock = this.lock()){
+            for (Map.Entry<Bytes, T> en : this.data.entrySet()){
+                if (en.getValue().equals(ad)){
+                    this.remove(en.getKey());
+                }
             }
         }
     }
