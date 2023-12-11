@@ -6,5 +6,6 @@ load: STARTUP
 authors: [ FreeSoccerHDX, tobi20, Moritzwied ]
 commands:
   firecord:
+    permission: firecord.command.firecord
     description: Firecord utils
     aliases: [fc, fcord]
