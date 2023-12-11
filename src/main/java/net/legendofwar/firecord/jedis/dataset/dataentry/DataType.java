@@ -81,7 +81,7 @@ public enum DataType {
     Object defaultValue;
 
     private DataType(Class<?> c) {
-        this(c, null);
+        this(c, NodeType.ANY);
     }
 
     private DataType(Class<?> c, NodeType exclusive) {
@@ -90,7 +90,7 @@ public enum DataType {
     }
 
     public boolean canBeLoaded() {
-        return this.exclusive == null || this.exclusive == Firecord.getNodeType();
+        return this.exclusive.includes(Firecord.getNodeType());
     }
 
     public final Class<?> getC() {
