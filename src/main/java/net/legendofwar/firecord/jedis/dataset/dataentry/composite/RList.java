@@ -30,6 +30,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListRemoveAllEvent
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListRemoveEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListRemoveIndexEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListRetainAllEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ListSetEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.args.ListPosition;
@@ -345,6 +346,7 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                 }
                 if (l != null) {
                     AbstractData<?> entry = AbstractData.create(newKey);
+                    AbstractData<?> oldEntry = l.get(index);
                     if (entry != null) {
                         synchronized (l.data) {
                             l.data.set(index, entry);
@@ -352,8 +354,10 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                         ArrayList<AbstractData<?>> childOwners = entry.owners;
                         // the owners/parents of the child
                         synchronized (childOwners) {
+                            childOwners.remove(oldEntry);
                             childOwners.add(entry);
                         }
+                        l.notifyListeners(new ListSetEvent<AbstractData<?>,AbstractData<?>>(sender, l, index, oldEntry));
                     }
                 }
             }
@@ -732,15 +736,15 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     toRem.add(element);
                 }
             }
-            JedisCommunication.broadcast(JedisCommunicationChannel.LIST_RETAIN_ALL,
-                    ByteMessage.write(this.key,
-                            arg0.stream().map(entry -> entry instanceof AbstractData ? ((T) (entry)).getKey() : null)
-                                    .toArray(Bytes[]::new)));
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 for (T element : toRem) {
                     j.lrem(key.getData(), 0, element.getKey().getData());
                 }
             }
+            JedisCommunication.broadcast(JedisCommunicationChannel.LIST_RETAIN_ALL,
+                    ByteMessage.write(this.key,
+                            arg0.stream().map(entry -> entry instanceof AbstractData ? ((T) (entry)).getKey() : null)
+                                    .toArray(Bytes[]::new)));
         }
         boolean result;
         Collection<AbstractData<?>> removed = new ArrayList<>(this.size() - arg0.size());
@@ -756,6 +760,20 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
                     }
                 } else {
                     removed.addAll(this.data);
+                }
+            }
+        }
+        for (AbstractData<?> obj : removed){
+            if (obj != null && obj instanceof AbstractData) {
+                ArrayList<AbstractData<?>> childOwners = obj.owners;
+                // the owners/parents of the child
+                synchronized (childOwners) {
+                    if (childOwners.contains(this)){
+                        childOwners.remove(this);
+                        if (childOwners.size()==0){
+                            obj.lastTimeOwnerBecameEmpty = System.currentTimeMillis();
+                        }
+                    }
                 }
             }
         }
@@ -775,9 +793,19 @@ public final class RList<T extends AbstractData<?>> extends CollectionData<T, Li
         }
         JedisCommunication.broadcast(JedisCommunicationChannel.LIST_SET,
                 ByteMessage.write(this.key, arg0, arg1.getKey()));
+        T oldEntry;
         synchronized (this.data) {
-            return this.data.set(arg0, arg1);
+            oldEntry = this.data.set(arg0, arg1);
         }
+        ArrayList<AbstractData<?>> childOwners = arg1.owners;
+        
+        // the owners/parents of the child
+        synchronized (childOwners) {
+            childOwners.remove(oldEntry);
+            childOwners.add(arg1);
+        }
+        this.notifyListeners(new ListSetEvent<AbstractData<?>,AbstractData<?>>(Firecord.getId(), this, arg0, oldEntry));
+        return oldEntry;
     }
 
     public List<T> subList(int fromIndex, int toIndex) {
