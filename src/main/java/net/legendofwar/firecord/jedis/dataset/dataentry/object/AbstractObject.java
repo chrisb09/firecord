@@ -221,42 +221,81 @@ public abstract class AbstractObject extends AbstractData<Object> {
             for (Field field : c.getDeclaredFields()) {
                 // only populate fields that are derived from AbstractData (have a key)
                 if (AbstractData.class.isAssignableFrom(field.getType())) {
-                    // only populate non-final fields
-                    if (!Modifier.isFinal(field.getModifiers())) {
-                        // only populate fields whose type is not abstract (RInteger, RList, etc. as
-                        // opposed to AbstractData or SmallData)
-                        // the user needs to init those fields themselves, preferably using tempEntries,
-                        // which essentially means calling the constructor with a null key and assigning
-                        // those to the field of the AbstractObject-subclass
-                        if (!Modifier.isAbstract(field.getClass().getModifiers())) {
-                            // only populate static fields for the static call(object=null) or non-static
-                            // fields for the object call (object!=null)
-                            if (Modifier.isStatic(field.getModifiers()) == (object == null)) {
-                                field.setAccessible(true);
-                                Object existingValue = null;
-                                try {
-                                    existingValue = field.get(object);
-                                } catch (IllegalArgumentException e) {
-                                    e.printStackTrace();
-                                } catch (IllegalAccessException e) {
-                                    e.printStackTrace();
-                                }
-                                if (!references.containsKey(field.getName())) {
-                                    // this field has no existing entry (in the object)
-                                    if (existingValue == null) {
-                                        Bytes entryKey = null;
-                                        if (Modifier.isStatic(field.getModifiers())) {
-                                            if (object == null) { // init static fields only for the static call
-                                                entryKey = getFieldKey(getStaticClassNameKey(className),
-                                                        field.getName());
+                    if (!AnnotationChecker.isFieldRestricted(field)){
+                        // only populate non-final fields
+                        if (!Modifier.isFinal(field.getModifiers())) {
+                            // only populate fields whose type is not abstract (RInteger, RList, etc. as
+                            // opposed to AbstractData or SmallData)
+                            // the user needs to init those fields themselves, preferably using tempEntries,
+                            // which essentially means calling the constructor with a null key and assigning
+                            // those to the field of the AbstractObject-subclass
+                            if (!Modifier.isAbstract(field.getClass().getModifiers())) {
+                                // only populate static fields for the static call(object=null) or non-static
+                                // fields for the object call (object!=null)
+                                if (Modifier.isStatic(field.getModifiers()) == (object == null)) {
+                                    field.setAccessible(true);
+                                    Object existingValue = null;
+                                    try {
+                                        existingValue = field.get(object);
+                                    } catch (IllegalArgumentException e) {
+                                        e.printStackTrace();
+                                    } catch (IllegalAccessException e) {
+                                        e.printStackTrace();
+                                    }
+                                    if (!references.containsKey(field.getName())) {
+                                        // this field has no existing entry (in the object)
+                                        if (existingValue == null) {
+                                            Bytes entryKey = null;
+                                            if (Modifier.isStatic(field.getModifiers())) {
+                                                if (object == null) { // init static fields only for the static call
+                                                    entryKey = getFieldKey(getStaticClassNameKey(className),
+                                                            field.getName());
+                                                }
+                                            } else if (object != null) { // init object fields only when an instance is
+                                                                        // passed
+                                                entryKey = getFieldKey(object.key, field.getName());
                                             }
-                                        } else if (object != null) { // init object fields only when an instance is
-                                                                     // passed
-                                            entryKey = getFieldKey(object.key, field.getName());
+                                            if (entryKey != null) {
+                                                AbstractData<?> entry = AbstractData.create(entryKey);
+                                                if (entry == null) {
+                                                    DataType dt = DataType.getByC(field.getType());
+                                                    if (dt != null && dt.canBeLoaded()) {
+                                                        markChild(object, entryKey);
+                                                        entry = AbstractData.callConstructor(entryKey, field.getType());
+                                                    }
+                                                    if (dt == null) {
+                                                        markChild(object, entryKey);
+                                                        if (AbstractObject.class.isAssignableFrom(field.getType())) {
+                                                            entry = AbstractData.callConstructor(entryKey, field.getType());
+                                                        }
+                                                    }
+                                                }
+                                                if (entry != null) {
+                                                    if (!(entry instanceof Invalid)) {
+                                                        try {
+                                                            field.set(object, entry);
+                                                        } catch (IllegalArgumentException e) {
+                                                            e.printStackTrace();
+                                                        } catch (IllegalAccessException e) {
+                                                            e.printStackTrace();
+                                                        }
+                                                    }
+                                                }
+                                                // all DataEntries that don't have a corresponding entry in the underlaying
+                                                // hash structure are added
+                                                try (Jedis j = ClassicJedisPool.getJedis()) {
+                                                    j.hset((object == null) ? getStaticClassNameKey(className).getData()
+                                                            : object.key.getData(), new Bytes(field.getName()).getData(),
+                                                            entryKey.getData());
+                                                }
+                                                references.put(field.getName(), entryKey);
+                                            }
                                         }
-                                        if (entryKey != null) {
+                                    } else { // reference exists
+                                        if (existingValue == null) {
+                                            Bytes entryKey = references.get(field.getName());
                                             AbstractData<?> entry = AbstractData.create(entryKey);
-                                            if (entry == null) {
+                                            if (entry == null && entryKey.length != 0) {
                                                 DataType dt = DataType.getByC(field.getType());
                                                 if (dt != null && dt.canBeLoaded()) {
                                                     markChild(object, entryKey);
@@ -269,8 +308,8 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                                     }
                                                 }
                                             }
-                                            if (entry != null) {
-                                                if (!(entry instanceof Invalid)) {
+                                            if (!(entry instanceof Invalid)) {
+                                                if (entry == null || field.getType().isAssignableFrom(entry.getClass())) {
                                                     try {
                                                         field.set(object, entry);
                                                     } catch (IllegalArgumentException e) {
@@ -278,48 +317,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                                     } catch (IllegalAccessException e) {
                                                         e.printStackTrace();
                                                     }
+                                                } else {
+                                                    System.out.println("Error! Trying to assign field " + field.getName()
+                                                            + "(" + field.getType().getName() + ") with an object of type "
+                                                            + entry.getClass().getName());
                                                 }
-                                            }
-                                            // all DataEntries that don't have a corresponding entry in the underlaying
-                                            // hash structure are added
-                                            try (Jedis j = ClassicJedisPool.getJedis()) {
-                                                j.hset((object == null) ? getStaticClassNameKey(className).getData()
-                                                        : object.key.getData(), new Bytes(field.getName()).getData(),
-                                                        entryKey.getData());
-                                            }
-                                            references.put(field.getName(), entryKey);
-                                        }
-                                    }
-                                } else { // reference exists
-                                    if (existingValue == null) {
-                                        Bytes entryKey = references.get(field.getName());
-                                        AbstractData<?> entry = AbstractData.create(entryKey);
-                                        if (entry == null && entryKey.length != 0) {
-                                            DataType dt = DataType.getByC(field.getType());
-                                            if (dt != null && dt.canBeLoaded()) {
-                                                markChild(object, entryKey);
-                                                entry = AbstractData.callConstructor(entryKey, field.getType());
-                                            }
-                                            if (dt == null) {
-                                                markChild(object, entryKey);
-                                                if (AbstractObject.class.isAssignableFrom(field.getType())) {
-                                                    entry = AbstractData.callConstructor(entryKey, field.getType());
-                                                }
-                                            }
-                                        }
-                                        if (!(entry instanceof Invalid)) {
-                                            if (entry == null || field.getType().isAssignableFrom(entry.getClass())) {
-                                                try {
-                                                    field.set(object, entry);
-                                                } catch (IllegalArgumentException e) {
-                                                    e.printStackTrace();
-                                                } catch (IllegalAccessException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            } else {
-                                                System.out.println("Error! Trying to assign field " + field.getName()
-                                                        + "(" + field.getType().getName() + ") with an object of type "
-                                                        + entry.getClass().getName());
                                             }
                                         }
                                     }
