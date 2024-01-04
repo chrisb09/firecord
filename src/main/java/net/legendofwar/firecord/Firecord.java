@@ -9,6 +9,7 @@ import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
+import net.legendofwar.firecord.jedis.PartialResource;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.tool.FileIO;
 import net.legendofwar.firecord.tool.NodeType;
@@ -18,6 +19,16 @@ public class Firecord {
 
     private static Bytes id = null;
     private static NodeType nodeType = NodeType.STANDALONE;
+    public static PartialResource partialResource;
+
+
+    public static boolean init(Bytes id, NodeType nodeType, PartialResource partialResource) {
+        Firecord.id = id;
+        Firecord.nodeType = nodeType;
+        Firecord.partialResource = partialResource;
+        JedisCommunication.init(id);
+        return id != null && id.length != 0;
+    }
 
     /**
      * Initialize the Firecord instance. ID's are not allowed to container ":".
@@ -27,10 +38,11 @@ public class Firecord {
      * @return boolean returns if the initialization is valid or not
      */
     public static boolean init(Bytes id, NodeType nodeType) {
-        Firecord.id = id;
-        Firecord.nodeType = nodeType;
-        JedisCommunication.init(id);
-        return id != null && id.length != 0;
+        return init(id, nodeType, new PartialResource());
+    }
+
+    public static boolean init(NodeType nodeType, PartialResource partialResource) {
+        return init(new Bytes(loadId(new File("id"))), nodeType, partialResource);
     }
 
     /**
@@ -40,7 +52,7 @@ public class Firecord {
      * @return boolean returns if the initialization is valid or not
      */
     public static boolean init(NodeType nodeType) {
-        return init(new Bytes(loadId(new File("id"))), nodeType);
+        return init(nodeType, new PartialResource());
     }
 
     /**

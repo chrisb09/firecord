@@ -165,11 +165,14 @@ public abstract class AbstractData<T> {
                             c = Class.forName(className);
                         } catch (ClassNotFoundException e) {
                             e.printStackTrace();
+                            Firecord.partialResource.registerUnavailableLoad(className, key);
                         }
                     }
                     if (c != null && AbstractObject.class.isAssignableFrom(c)
                             && !Modifier.isAbstract(c.getModifiers())) {
-                        return callConstructor(key, c);
+                        AbstractData<?> ad = callConstructor(key, c);
+                        Firecord.partialResource.registerLoad(c, ad);
+                        return ad;
                     }
                 }
             }
@@ -368,9 +371,9 @@ public abstract class AbstractData<T> {
         }
     }
 
-    protected void _setType(Enum<?> dt) {
+    protected void _setType(DataType dt) {
         try (Jedis j = ClassicJedisPool.getJedis()) {
-            j.set(ByteFunctions.join(key, DataKeySuffix.TYPE), dt.toString().getBytes());
+            j.set(ByteFunctions.join(key, DataKeySuffix.TYPE), dt.name().getBytes());
         }
     }
 

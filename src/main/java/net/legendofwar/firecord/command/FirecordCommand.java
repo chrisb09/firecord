@@ -15,7 +15,6 @@ import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.DataEvent;
@@ -24,6 +23,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RLong;
+import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeyPrefix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
 import net.legendofwar.firecord.tool.NodeType;
 import redis.clients.jedis.Jedis;
@@ -40,7 +40,7 @@ public class FirecordCommand {
     static RInteger test3 = null;
     static Object testis = null;
     static TestObject testob = null;
-    static REnum<DataType> testenum = null;
+    static REnum<DataKeyPrefix> testenum = null;
     static RList<RInteger> testlist1 = null;
     static RList<RInteger> testlist2 = null;
     static RList<AbstractData<?>> testlist3 = null;
@@ -412,10 +412,10 @@ public class FirecordCommand {
             sender.sendMessage("§btestob: §e" + testob);
         } else if (args[0].equalsIgnoreCase("testenum")) {
             if (testenum == null) {
-                testenum = new REnum<DataType>(new Bytes("testenum"), DataType.STRING);
+                testenum = new REnum<DataKeyPrefix>(new Bytes("testenum"), DataKeyPrefix.PLAYER);
             }
             sender.sendMessage("§btestenum.toString(): §e" + testenum.toString());
-            DataType newValue = DataType.values()[(int) (Math.random() * DataType.values().length)];
+            DataKeyPrefix newValue = DataKeyPrefix.values()[(int) (Math.random() * DataKeyPrefix.values().length)];
             sender.sendMessage("§atestenum rand. new Value: " + newValue.name());
             testenum.set(newValue);
             sender.sendMessage("§btestenum: §e" + testenum);

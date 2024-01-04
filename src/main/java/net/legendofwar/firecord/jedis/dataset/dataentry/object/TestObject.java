@@ -2,7 +2,6 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.object;
 
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
-import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.DataEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.SimpleDataSetEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
@@ -12,6 +11,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RItemStack;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RString;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RVector;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
+import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeyPrefix;
 
 import java.lang.Math;
 import java.util.function.Consumer;
@@ -52,7 +52,7 @@ public final class TestObject extends AbstractObject {
 
     RVector h;
 
-    REnum<DataType> i;
+    REnum<DataKeyPrefix> i;
 
     RItemStack j;
 
@@ -195,7 +195,7 @@ public final class TestObject extends AbstractObject {
     }
 
     public void selectRandomDatatype() {
-        i.set(DataType.values()[(int) (Math.random() * DataType.values().length)]);
+        i.set(DataKeyPrefix.values()[(int) (Math.random() * DataKeyPrefix.values().length)]);
     }
 
 }
