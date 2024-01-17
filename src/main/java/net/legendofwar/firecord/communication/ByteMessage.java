@@ -7,6 +7,8 @@ import java.util.Arrays;
 
 import org.javatuples.Pair;
 import org.javatuples.Quartet;
+import org.javatuples.Quintet;
+import org.javatuples.Sextet;
 import org.javatuples.Triplet;
 import org.javatuples.Unit;
 
@@ -165,6 +167,19 @@ public enum ByteMessage {
             Class<?> d) {
         Object[] results = _readIn(message.getData(), a, b, c, d);
         return new Quartet<A, B, C, D>((A) results[0], (B) results[1], (C) results[2], (D) results[3]);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <A, B, C, D, E> Quintet<A, B, C, D, E> readIn(Bytes message, Class<A> a, Class<B> b, Class<C> c,
+            Class<?> d, Class<?> e) {
+        Object[] results = _readIn(message.getData(), a, b, c, d, e);
+        return new Quintet<A, B, C, D, E>((A) results[0], (B) results[1], (C) results[2], (D) results[3], (E) results[4]);
+    }
+    @SuppressWarnings("unchecked")
+    public static <A, B, C, D, E, F> Sextet<A, B, C, D, E, F> readIn(Bytes message, Class<A> a, Class<B> b, Class<C> c,
+            Class<?> d, Class<?> e, Class<?> f) {
+        Object[] results = _readIn(message.getData(), a, b, c, d, e, f);
+        return new Sextet<A, B, C, D, E, F>((A) results[0], (B) results[1], (C) results[2], (D) results[3], (E) results[4], (F) results[4]);
     }
 
     public static Bytes write(Object... objects) {
