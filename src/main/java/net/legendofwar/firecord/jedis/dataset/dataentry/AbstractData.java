@@ -36,6 +36,7 @@ public abstract class AbstractData<T> {
 
     public static HashMap<Bytes, AbstractData<?>> loaded = new HashMap<Bytes, AbstractData<?>>();
     protected final static Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> globalListeners = new HashMap<>();
+    protected final static Map<Class<? extends AbstractData<?>>, List<Consumer<AbstractData<?>>>> objectCreationListener = new HashMap<>();
 
     static {
 
@@ -146,7 +147,9 @@ public abstract class AbstractData<T> {
             if (dt != null) {
                 if (dt != DataType.OBJECT) {
                     if (dt.canBeLoaded()) {
-                        return callConstructor(key, dt.getC());
+                        AbstractData<?> object = callConstructor(key, dt.getC());
+                        noteObjectCreation(object);
+                        return object;
                     } else {
                         return new Invalid(key);
                     }
@@ -171,6 +174,7 @@ public abstract class AbstractData<T> {
                     if (c != null && AbstractObject.class.isAssignableFrom(c)
                             && !Modifier.isAbstract(c.getModifiers())) {
                         AbstractData<?> ad = callConstructor(key, c);
+                        noteObjectCreation(ad);
                         Firecord.partialResource.registerLoad(c, ad);
                         return ad;
                     }
@@ -180,6 +184,7 @@ public abstract class AbstractData<T> {
         return null;
 
     }
+
     public static void listenGlobal(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
         synchronized(globalListeners){
             for (JedisCommunicationChannel channel : channels) {
@@ -202,6 +207,25 @@ public abstract class AbstractData<T> {
                     if (list.size() == 0){
                         globalListeners.remove(channel.getBytes());
                     }
+                }
+            }
+        }
+    }
+
+    public static void onObjectCreation(Consumer<AbstractData<?>> listener, Class<? extends AbstractData<?>> clazz){
+        synchronized(AbstractData.objectCreationListener){
+            if (!AbstractData.objectCreationListener.containsKey(clazz)){
+                AbstractData.objectCreationListener.put(clazz, new ArrayList<Consumer<AbstractData<?>>>());
+            }
+            AbstractData.objectCreationListener.get(clazz).add(listener);
+        }
+    }
+
+    private static void noteObjectCreation(AbstractData<?> object){
+        synchronized(AbstractData.objectCreationListener){
+            if (AbstractData.objectCreationListener.containsKey(object.getClass())){
+                for (Consumer<AbstractData<?>> consumer : AbstractData.objectCreationListener.get(object.getClass())){
+                    consumer.accept(object);
                 }
             }
         }
