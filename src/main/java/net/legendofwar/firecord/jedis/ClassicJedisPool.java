@@ -21,6 +21,7 @@ public class ClassicJedisPool {
     private static Object staticLock = new Object();
     private static JedisPool pool = null;
     private static boolean created = false;
+    private static boolean closed = false;
     static HashMap<Jedis, String> last_requested_by = new HashMap<Jedis, String>();
 
     public static CustomJedisPoolConfig<Jedis> buildPoolConfig() {
@@ -30,6 +31,7 @@ public class ClassicJedisPool {
     public static void destroy() {
         if (pool != null) {
             System.out.println("Closing Pool...");
+            closed = true;
             pool.close();
             int counter = 0;
             while (!pool.isClosed() && ++counter < 150) {
@@ -78,6 +80,10 @@ public class ClassicJedisPool {
             }
         }
         return 0;
+    }
+
+    public static boolean isConnected(){
+        return created && !closed && !pool.isClosed();
     }
 
     private static void createPool() {
