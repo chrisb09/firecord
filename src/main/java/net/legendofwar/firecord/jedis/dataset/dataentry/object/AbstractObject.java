@@ -383,36 +383,50 @@ public abstract class AbstractObject extends AbstractData<Object> {
                         if (clazz != null) {
                             if (referencedKey.length == 0) {
                                 // null reference
-                                try {
-                                    Field field = clazz.getDeclaredField(fieldName);
-                                    field.setAccessible(true);
-                                    field.set(obj, null);
-                                } catch (NoSuchFieldException e) {
-                                    System.out.println("No such Field: " + fieldName + " [static=" + isStatic + "] in "
-                                            + clazz.getName());
-                                    System.out.println("Known fields: "+String.join(",", Arrays.stream(clazz.getDeclaredFields()).map(field -> field.getName()).toList()));
+                                Class<?> c = clazz;
+                                while (!c.equals(Object.class) && !c.equals(AbstractData.class)){
+                                    try {
+                                        Field field = clazz.getDeclaredField(fieldName);
+                                        field.setAccessible(true);
+                                        field.set(obj, null);
+                                        c = Object.class;
+                                    } catch (NoSuchFieldException e) {
+                                        if (c.equals(Object.class) || c.equals(AbstractData.class)){
+                                            System.out.println("No such Field: " + fieldName + " [static=" + isStatic + "] in "
+                                            + clazz.getName()+" or its subclasses");
+                                            System.out.println("Known fields: "+String.join(",", Arrays.stream(c.getDeclaredFields()).map(field -> field.getName()).toList()));
+                                        }
+                                        c = c.getSuperclass();                                                
+                                    }
                                 }
                             } else {
                                 AbstractData<?> referencedObject = AbstractData.create(referencedKey);
-                                try {
-                                    Field field = clazz.getDeclaredField(fieldName);
-                                    field.setAccessible(true);
+                                Class<?> c = clazz;
+                                while (!c.equals(Object.class) && !c.equals(AbstractData.class)){
+                                    try {
+                                        Field field = c.getDeclaredField(fieldName);
+                                        field.setAccessible(true);
 
-                                    // static entries use null in reflection as the object
+                                        // static entries use null in reflection as the object
 
-                                    // if no change occurs we do not need to update the field
-                                    if (referencedObject != field.get(obj)) {
-                                        if (obj != null) {
-                                            obj.references.put(field.getName(), referencedKey);
+                                        // if no change occurs we do not need to update the field
+                                        if (referencedObject != field.get(obj)) {
+                                            if (obj != null) {
+                                                obj.references.put(field.getName(), referencedKey);
+                                            }
+                                            if (field.getType().isAssignableFrom(referencedObject.getClass())) {
+                                                field.set(obj, referencedObject);
+                                            }
                                         }
-                                        if (field.getType().isAssignableFrom(referencedObject.getClass())) {
-                                            field.set(obj, referencedObject);
+                                        c = Object.class;
+                                    } catch (NoSuchFieldException e) {
+                                        if (c.equals(Object.class) || c.equals(AbstractData.class)){
+                                            System.out.println("No such Field: " + fieldName + " [static=" + isStatic + "] in "
+                                            + clazz.getName()+" or its subclasses");
+                                            System.out.println("Known fields: "+String.join(",", Arrays.stream(c.getDeclaredFields()).map(field -> field.getName()).toList()));
                                         }
+                                        c = c.getSuperclass();                                                
                                     }
-                                } catch (NoSuchFieldException e) {
-                                    System.out.println("No such Field: " + fieldName + " [static=" + isStatic + "] in "
-                                            + clazz.getName());
-                                            System.out.println("Known fields: "+String.join(",", Arrays.stream(clazz.getDeclaredFields()).map(field -> field.getName()).toList()));
                                 }
                             }
                         }
