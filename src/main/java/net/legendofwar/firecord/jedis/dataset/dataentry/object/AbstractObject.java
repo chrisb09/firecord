@@ -2,6 +2,7 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.object;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -389,6 +390,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                 } catch (NoSuchFieldException e) {
                                     System.out.println("No such Field: " + fieldName + " [static=" + isStatic + "] in "
                                             + clazz.getName());
+                                    System.out.println("Known fields: "+String.join(",", Arrays.stream(clazz.getDeclaredFields()).map(field -> field.getName()).toList()));
                                 }
                             } else {
                                 AbstractData<?> referencedObject = AbstractData.create(referencedKey);
@@ -410,6 +412,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                 } catch (NoSuchFieldException e) {
                                     System.out.println("No such Field: " + fieldName + " [static=" + isStatic + "] in "
                                             + clazz.getName());
+                                            System.out.println("Known fields: "+String.join(",", Arrays.stream(clazz.getDeclaredFields()).map(field -> field.getName()).toList()));
                                 }
                             }
                         }
