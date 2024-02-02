@@ -2,11 +2,20 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.object;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -191,16 +200,18 @@ public abstract class AbstractObject extends AbstractData<Object> {
             System.out.println("The loadObject method is not defined for non-AbstractObjects.");
             return;
         }
+        ArrayList<Future<?>> asyncLoads = new ArrayList<>();
         Class<?> temp_c = c;
-        String className = null;
+        Class<?> c_orig = c;
+        String cN = null;
         if (object == null) { // only check for static call
-            while (className == null && temp_c != AbstractObject.class) {
+            while (cN == null && temp_c != AbstractObject.class) {
                 for (Field field : c.getDeclaredFields()) {
                     if (Modifier.isStatic(field.getModifiers())){
                         if (field.getName().equals("STATIC_CLASSNAME_OVERWRITE")){
                             if (String.class.isAssignableFrom(field.getType())){
                                 try {
-                                    className = (String) field.get(null);
+                                    cN = (String) field.get(null);
                                 } catch (IllegalArgumentException e) {
                                     e.printStackTrace();
                                 } catch (IllegalAccessException e) {
@@ -213,13 +224,37 @@ public abstract class AbstractObject extends AbstractData<Object> {
                 temp_c = temp_c.getSuperclass();
             }
         }
-        if (className == null){
-            className = c.getName();
+        if (cN == null){
+            cN = c.getName();
         }
+        final String className = cN;
         // repeat until we reach the AbstractObject superclass
         while (c != AbstractObject.class) {
             // iterate over all fields of the class
-            for (Field field : c.getDeclaredFields()) {
+            final String _className = c.getName();
+            for (final Field fi : c.getDeclaredFields()) {
+
+                String fieldName = fi.getName();
+
+                asyncLoads.add(ParallelWorkers.submit(_className, fieldName, new Runnable() {
+
+                //populateField(fi, object, new Callable<Object>() {
+                    
+                    @Override
+                    public void run() {
+                    //public Object call() {
+                        Field field = null;
+                        try {
+                            field = Class.forName(_className).getDeclaredField(fieldName);
+                        } catch (NoSuchFieldException e) {
+                            e.printStackTrace();
+                        } catch (SecurityException e) {
+                            e.printStackTrace();
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println("fi: "+fi.getClass()+" "+fi.getName());
+                        System.out.println("fielld: "+field.getClass()+" "+field.getName());
                 // only populate fields that are derived from AbstractData (have a key)
                 if (AbstractData.class.isAssignableFrom(field.getType())) {
                     if (!AnnotationChecker.isFieldRestricted(field)){
@@ -234,54 +269,83 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                 // only populate static fields for the static call(object=null) or non-static
                                 // fields for the object call (object!=null)
                                 if (Modifier.isStatic(field.getModifiers()) == (object == null)) {
+
                                     field.setAccessible(true);
+
                                     Object existingValue = null;
                                     try {
+                                        if (AnnotationChecker.isParallelLoadAllowed(c_orig) || AnnotationChecker.isParallelLoadAllowed(field)) {
+                                            System.out.println("Before get "+field.getName()+" "+field.isAccessible());
+                                            System.out.flush();
+                                        }
                                         existingValue = field.get(object);
+                                        if (AnnotationChecker.isParallelLoadAllowed(c_orig) || AnnotationChecker.isParallelLoadAllowed(field)) {
+                                            System.out.println("After get");
+                                            System.out.flush();
+                                        }
                                     } catch (IllegalArgumentException e) {
                                         e.printStackTrace();
                                     } catch (IllegalAccessException e) {
                                         e.printStackTrace();
                                     }
+                                    if (AnnotationChecker.isParallelLoadAllowed(c_orig) || AnnotationChecker.isParallelLoadAllowed(field)) {
+                                        System.out.println("A");
+                                        System.out.flush();
+                                    }
                                     if (!references.containsKey(field.getName())) {
+
+                                        if (AnnotationChecker.isParallelLoadAllowed(c_orig) || AnnotationChecker.isParallelLoadAllowed(field)) {
+                                            System.out.println("B");
+                                            System.out.flush();
+                                        }
                                         // this field has no existing entry (in the object)
                                         if (existingValue == null) {
-                                            Bytes entryKey = null;
+
+
+                                            if (AnnotationChecker.isParallelLoadAllowed(c_orig) || AnnotationChecker.isParallelLoadAllowed(field)) {
+                                                System.out.println("C");
+                                                System.out.flush();
+                                            }
+                                            final Bytes entryKey;
                                             if (Modifier.isStatic(field.getModifiers())) {
                                                 if (object == null) { // init static fields only for the static call
                                                     entryKey = getFieldKey(getStaticClassNameKey(className),
                                                             field.getName());
+                                                } else {
+                                                    entryKey = null;
                                                 }
                                             } else if (object != null) { // init object fields only when an instance is
                                                                         // passed
                                                 entryKey = getFieldKey(object.key, field.getName());
+                                            } else {
+                                                entryKey = null;
                                             }
                                             if (entryKey != null) {
-                                                AbstractData<?> entry = AbstractData.create(entryKey);
-                                                if (entry == null) {
-                                                    DataType dt = DataType.getByC(field.getType());
-                                                    if (dt != null && dt.canBeLoaded()) {
-                                                        markChild(object, entryKey);
-                                                        entry = AbstractData.callConstructor(entryKey, field.getType());
-                                                    }
-                                                    if (dt == null) {
-                                                        markChild(object, entryKey);
-                                                        if (AbstractObject.class.isAssignableFrom(field.getType())) {
-                                                            entry = AbstractData.callConstructor(entryKey, field.getType());
-                                                        }
-                                                    }
+
+
+                                                if (AnnotationChecker.isParallelLoadAllowed(c_orig) || AnnotationChecker.isParallelLoadAllowed(field)) {
+                                                    System.out.println("D");
+                                                    System.out.flush();
                                                 }
-                                                if (entry != null) {
-                                                    if (!(entry instanceof Invalid)) {
-                                                        try {
-                                                            field.set(object, entry);
-                                                        } catch (IllegalArgumentException e) {
-                                                            e.printStackTrace();
-                                                        } catch (IllegalAccessException e) {
-                                                            e.printStackTrace();
+
+                                                //populateField(field, object, new Callable<Object>() {
+                                                        
+                                                        AbstractData<?> entry = AbstractData.create(entryKey);
+                                                        if (entry == null) {
+                                                            DataType dt = DataType.getByC(field.getType());
+                                                            if (dt != null && dt.canBeLoaded()) {
+                                                                markChild(object, entryKey);
+                                                                entry = AbstractData.callConstructor(entryKey, field.getType());
+                                                            }
+                                                            if (dt == null) {
+                                                                markChild(object, entryKey);
+                                                                if (AbstractObject.class.isAssignableFrom(field.getType())) {
+                                                                    entry = AbstractData.callConstructor(entryKey, field.getType());
+                                                                }
+                                                            }
                                                         }
-                                                    }
-                                                }
+                                                        //return entry;
+
                                                 // all DataEntries that don't have a corresponding entry in the underlaying
                                                 // hash structure are added
                                                 try (Jedis j = ClassicJedisPool.getJedis()) {
@@ -293,8 +357,14 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                             }
                                         }
                                     } else { // reference exists
+
                                         if (existingValue == null) {
                                             Bytes entryKey = references.get(field.getName());
+
+                                            if (AnnotationChecker.isParallelLoadAllowed(c_orig) || AnnotationChecker.isParallelLoadAllowed(field)) {
+                                                System.out.println("Create..."+entryKey);
+                                                System.out.flush();
+                                            }
                                             AbstractData<?> entry = AbstractData.create(entryKey);
                                             if (entry == null && entryKey.length != 0) {
                                                 DataType dt = DataType.getByC(field.getType());
@@ -326,14 +396,109 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                             }
                                         }
                                     }
+
                                 }
                             }
                         }
                     }
                 }
+                    }
+                }));
             }
             c = c.getSuperclass();
         }
+
+        /*if (Thread.currentThread().getId() == mainThread && setFields.size() > 0){
+            waitOnCompletion(setFields);
+        }*/
+        waitOnCompletion(asyncLoads);
+
+        if (AnnotationChecker.isParallelLoadAllowed(c_orig)) {
+            System.out.println("Success");
+        }
+
+    }
+
+    /*
+     * Notes
+     * 
+     * 
+     * It seems like reflecion doesnt "work" in parallel, at least if the field and such stems from the parent thread
+     * but is accessed from the child...
+     * 
+     * Appraoches:
+     * - Try if the field is created in the thread...
+     * - only do the load async, not the setting
+     * 
+     * the latter approach has the issue that loading happens in the create(), which is supposed to return
+     * the object we just loaded as it effectively just calls the constructor of the object.
+     * 
+     * essentially, the prudent approach would be to create a createAsnyc() function that returns a future, but
+     * assuming reflection doesnt work outside the main thread at all it would mean that when this creates an object
+     * then we'd be quite fkd ...
+     * 
+     * 
+     * Or in other words: we need further testing to working changes
+     * 
+     */
+
+    final static long mainThread = Thread.currentThread().getId();
+
+    static BlockingQueue<SetField> setFields = new LinkedBlockingQueue<>();
+
+    static void populateField(Field field, Object parent, Callable<Object> callable){
+        setFields.add(new SetField(field, parent, ParallelWorkers.submit(parent.getClass().getName(), field.getName(), callable)));
+    }
+
+    record SetField(Field field, Object parent, Future<Object> future){
+
+    };
+
+
+    public static void waitOnCompletion(List<Future<?>> list) {
+        if (list.size() > 1){
+            System.out.println("Wait on " + list.size() + " Futures: "
+                    + String.join(",", list.stream().map(x -> (x.isDone() + "")).toList()));
+        }
+        for (Future<?> f : list){
+            try {
+                f.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (list.size() > 1){
+            System.out.println("Wait done.");
+        }
+    }
+
+    public static void waitOnCompletion(BlockingQueue<SetField> queue) {
+        System.out.println("Wait on " + queue.size() + " Futures: "
+                + String.join(",", queue.stream().map(x -> (x.future.isDone() + "")).toList()));
+        while (!queue.isEmpty()){
+            try {
+                SetField sf = queue.take();
+                Object entry = sf.future.get();
+                if (entry != null) {
+                    if (!(entry instanceof Invalid)) {
+                        try {
+                            sf.field.set(sf.parent, entry);
+                        } catch (IllegalArgumentException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        System.out.println("Wait done.");
     }
 
     private static void markChild(AbstractObject object, Bytes childKey){

@@ -11,6 +11,7 @@ import net.legendofwar.firecord.communication.MessageReceiver;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.PartialResource;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.ParallelWorkers;
 import net.legendofwar.firecord.tool.FileIO;
 import net.legendofwar.firecord.tool.NodeType;
 import redis.clients.jedis.Jedis;
@@ -59,6 +60,7 @@ public class Firecord {
      * This method should be called on disable to clean up open threads.
      */
     public static void disable() {
+        ParallelWorkers.disable();
         JedisCommunication.disable();
         ClassicJedisPool.destroy();
     }
