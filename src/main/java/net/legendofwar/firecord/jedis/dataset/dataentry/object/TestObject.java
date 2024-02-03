@@ -81,7 +81,7 @@ public final class TestObject extends AbstractObject {
     public String toString() {
         System.out.println(b);
         return a + ":" + b + ":" + c + ":" + d + ":" + e + ":" + f + ":" + g + ":" + h + ":" + i + ":"
-                + ((j != null) ? "length " + j.toString().length() : "not-loaded");
+                + ((j != null) ? "<j length " + j.toString().length() : "not-loaded") + ">";
     }
 
     public RInteger getTestInt() {

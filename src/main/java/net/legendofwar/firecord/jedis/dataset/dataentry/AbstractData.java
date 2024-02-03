@@ -145,6 +145,7 @@ public abstract class AbstractData<T> {
                 e.printStackTrace();
             }
             if (dt != null) {
+                System.out.flush();
                 if (dt != DataType.OBJECT) {
                     if (dt.canBeLoaded()) {
                         AbstractData<?> object = callConstructor(key, dt.getC());
@@ -223,7 +224,7 @@ public abstract class AbstractData<T> {
 
     private static void noteObjectCreation(AbstractData<?> object){
         synchronized(AbstractData.objectCreationListener){
-            if (AbstractData.objectCreationListener.containsKey(object.getClass())){
+            if (object != null && AbstractData.objectCreationListener.containsKey(object.getClass())){
                 for (Consumer<AbstractData<?>> consumer : AbstractData.objectCreationListener.get(object.getClass())){
                     consumer.accept(object);
                 }

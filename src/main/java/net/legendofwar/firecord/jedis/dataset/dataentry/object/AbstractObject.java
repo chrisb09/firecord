@@ -320,8 +320,9 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                                     }
                                                 } else {
                                                     System.out.println("Error! Trying to assign field " + field.getName()
-                                                            + "(" + field.getType().getName() + ") with an object of type "
-                                                            + entry.getClass().getName());
+                                                            + "(" + field.getType().getName() + ") of object of type "+
+                                                            object.getClass().getSimpleName()+" with an object of type "
+                                                            + (entry != null ? entry.getClass().getName() : "null"));
                                                 }
                                             }
                                         }
