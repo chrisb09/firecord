@@ -1,6 +1,7 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.object;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -46,6 +47,28 @@ public class FieldListener {
                 .toArray(Field[]::new);
     }
 
+
+    @Before("staticinitialization(net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject+)")
+    public void beforeStaticInitialization(JoinPoint jp) {
+        Class<?> clazz = jp.getSignature().getDeclaringType();
+        if (clazz != null){
+            if (TestObject.class.isAssignableFrom(clazz)){
+                try {
+                    System.out.println("@Before: "+(String.join(",", Arrays.stream(clazz.getDeclaredFields()).map(field -> field.getName()).toList())));
+                    System.out.println("  f: "+clazz.getDeclaredField("f").get(null));
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (NoSuchFieldException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     @After("staticinitialization(net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject+)")
     public void afterStaticInitialization(JoinPoint jp) {
         Class<?> clazz = jp.getSignature().getDeclaringType();
@@ -65,6 +88,15 @@ public class FieldListener {
             try (Jedis j = ClassicJedisPool.getJedis()) {
                 j.set(ByteFunctions.join(key, DataKeySuffix.TYPE), DataType.CLASS.toString().getBytes());
                 j.set(ByteFunctions.join(key, DataKeySuffix.CLASS), ClassNameLookup.getId(clazz.getName()).getData());
+            }
+        }
+        for (Method m : clazz.getMethods()){
+            if (m != null && AnnotationChecker.isStaticInitFunction(m) && m.getParameterTypes().length == 0){
+                try {
+                    m.invoke(null, new Object[0]);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
