@@ -21,20 +21,14 @@ public class AnnotationChecker {
 
     public static boolean isFieldRestricted(Field field){
         RestrictedTo r = field.getAnnotation(RestrictedTo.class);
-        if (r == null){
-            return false;
+        if (r != null && !r.type().includes(Firecord.getNodeType())){
+            return true;
         }
-        if (!r.type().includes(Firecord.getNodeType())){
-            return false;
+        r = field.getType().getAnnotation(RestrictedTo.class);
+        if (r != null && !r.type().includes(Firecord.getNodeType())){
+            return true;
         }
-        r = field.getClass().getAnnotation(RestrictedTo.class);
-        if (r == null){
-            return false;
-        }
-        if (!r.type().includes(Firecord.getNodeType())){
-            return false;
-        }
-        return true;
+        return false;
     }
 
     public static boolean isStaticInitFunction(Method method){
