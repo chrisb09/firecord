@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import net.legendofwar.firecord.tool.NodeType;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD})
+@Target({ElementType.FIELD, ElementType.METHOD})
 public @interface RestrictedTo {
     NodeType type() default NodeType.ANY;
 }
