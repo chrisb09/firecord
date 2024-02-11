@@ -44,7 +44,7 @@ public final class TestObject extends AbstractObject {
     RWrapper d;
     final RBoolean e = new RBoolean(new Bytes("exampleboolean"));
 
-    static RDouble f;
+    static RDouble f = new RDouble(new Bytes("testdouble"), 5.0);
 
     // This creates a new RDouble every time the class is initialized, meaning
     // they're also different on different nodes running at the same time
@@ -55,6 +55,15 @@ public final class TestObject extends AbstractObject {
     REnum<DataKeyPrefix> i;
 
     RItemStack j;
+
+    static {
+        System.out.println("static{} f"+f);
+    }
+
+    @StaticInit
+    static void staticInit() {
+        System.out.println("staticInit f"+f);
+    }
 
     public TestObject(@NotNull Bytes key) {
         super(key);
