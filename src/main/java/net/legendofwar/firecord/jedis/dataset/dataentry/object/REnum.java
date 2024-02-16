@@ -79,6 +79,11 @@ public final class REnum<T extends Enum<T>> extends SimpleAbstractObject<T> {
         return false;
     }
 
+    @Override
+    public boolean isEmpty(){
+        return this.value.get() == null;
+    }
+
     // should NOT care about being a temp value
     @Override
     public T getTempValue() {

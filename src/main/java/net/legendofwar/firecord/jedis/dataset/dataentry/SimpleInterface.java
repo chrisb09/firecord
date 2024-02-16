@@ -8,4 +8,6 @@ public interface SimpleInterface<T> {
 
     public boolean setIfEmpty(T defaultValue);
 
+    public boolean isEmpty();
+
 }

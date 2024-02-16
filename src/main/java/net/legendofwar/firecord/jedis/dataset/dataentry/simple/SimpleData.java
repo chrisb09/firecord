@@ -365,6 +365,16 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         return false;
     }
 
+    public boolean isEmpty(){
+        if (this.key == null) {
+            printTempErrorMsg();
+            return false;
+        }
+        T v = get();
+        T defaultValue = getDefaultValue();
+        return v == null || (defaultValue != null && defaultValue.equals(v));
+    }
+
     private T _get(boolean modify) {
         byte[] byteValue;
         try (Jedis j = ClassicJedisPool.getJedis()) {
