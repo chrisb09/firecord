@@ -126,7 +126,7 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
                             toRem.add(element);
                             element.valid = false;
                             element.value = null;
-                            System.out.println("Unloaded " + element.key);
+                            //System.out.println("Unloaded " + element.key);
                             element = unloadQueue.peek();
                         }
                         synchronized (updateQueue) {

@@ -47,15 +47,15 @@ public class FieldListener {
                 .toArray(Field[]::new);
     }
 
-
+    /*
     @Before("staticinitialization(net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject+)")
     public void beforeStaticInitialization(JoinPoint jp) {
         Class<?> clazz = jp.getSignature().getDeclaringType();
         if (clazz != null){
             if (TestObject.class.isAssignableFrom(clazz)){
                 try {
-                    System.out.println("@Before: "+(String.join(",", Arrays.stream(clazz.getDeclaredFields()).map(field -> field.getName()).toList())));
-                    System.out.println("  f: "+clazz.getDeclaredField("f").get(null));
+                    //System.out.println("@Before: "+(String.join(",", Arrays.stream(clazz.getDeclaredFields()).map(field -> field.getName()).toList())));
+                    //System.out.println("  f: "+clazz.getDeclaredField("f").get(null));
                 } catch (SecurityException e) {
                     e.printStackTrace();
                 } catch (IllegalArgumentException e) {
@@ -67,7 +67,7 @@ public class FieldListener {
                 }
             }
         }
-    }
+    }*/
 
     @After("staticinitialization(net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject+)")
     public void afterStaticInitialization(JoinPoint jp) {
