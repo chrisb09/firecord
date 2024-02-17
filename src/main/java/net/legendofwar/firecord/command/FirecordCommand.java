@@ -376,13 +376,13 @@ public class FirecordCommand {
             TestObject.toggleNullt();
             sender.sendMessage("§bnullt: §e" + TestObject.nullt);
         } else if (args[0].equalsIgnoreCase("testlisten")) {
-            sender.sendMessage("§bToggle testlistener " + (testlistener_active ? "§cOFF" : "§aON"));
+            testlistener_active = !testlistener_active;
+            sender.sendMessage("§bToggle testlistener " + (!testlistener_active ? "§cOFF" : "§aON"));
             if (testlistener_active) {
                 AbstractData.listenGlobal(testlistener, JedisCommunicationChannel.ANY);
             } else {
                 AbstractData.stopListeningGlobal(testlistener, JedisCommunicationChannel.ANY);
             }
-            testlistener_active = !testlistener_active;
         } else if (args[0].equalsIgnoreCase("testow")) {
             sender.sendMessage("§boverwrite_field: §e" + TestObject.overwrite_field + " [§a"
                     + TestObject.overwrite_field.getClass().getSimpleName() + "§e]");
