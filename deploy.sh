@@ -19,7 +19,7 @@ ssh legendofwar@legendofwar.net 'find /minecraft/staging/ -type f \
  -exec echo {} \; \
  -exec cp {} /minecraft/server/paper/lobby/custom_plugins/ \; \
  -exec cp {} /minecraft/server/paper/construct/custom_plugins/ \; \
- -exec cp {} /minecraft/server/bungeecord/master/plugins/ \; \
+ -exec cp {} /minecraft/server/velocity/master/plugins/ \; \
  -exec cp {} /minecraft/server/multipaper/alpha/plugins/ \; \
  -exec cp {} /minecraft/server/multipaper/bravo/plugins/ \; \
  -delete'
@@ -36,7 +36,7 @@ find target/ -type f -regex '.*/[A-Za-z]+-[0-9]+\.[0-9]+\(\.[0-9]+\)?\(\.[0-9]+\
  -exec echo {} \; \
  -exec cp {} /minecraft/server/paper/lobby/custom_plugins/ \; \
  -exec cp {} /minecraft/server/paper/construct/custom_plugins/ \; \
- -exec cp {} /minecraft/server/bungeecord/master/plugins/ \; \
+ -exec cp {} /minecraft/server/velocity/master/plugins/ \; \
  -exec cp {} /minecraft/server/multipaper/alpha/plugins/ \; \
  -exec cp {} /minecraft/server/multipaper/bravo/plugins/ \;
 
