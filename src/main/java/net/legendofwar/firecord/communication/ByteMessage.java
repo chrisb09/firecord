@@ -8,6 +8,7 @@ import java.util.Arrays;
 import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Quintet;
+import org.javatuples.Septet;
 import org.javatuples.Sextet;
 import org.javatuples.Triplet;
 import org.javatuples.Unit;
@@ -175,11 +176,19 @@ public enum ByteMessage {
         Object[] results = _readIn(message.getData(), a, b, c, d, e);
         return new Quintet<A, B, C, D, E>((A) results[0], (B) results[1], (C) results[2], (D) results[3], (E) results[4]);
     }
+
     @SuppressWarnings("unchecked")
     public static <A, B, C, D, E, F> Sextet<A, B, C, D, E, F> readIn(Bytes message, Class<A> a, Class<B> b, Class<C> c,
             Class<D> d, Class<E> e, Class<F> f) {
         Object[] results = _readIn(message.getData(), a, b, c, d, e, f);
-        return new Sextet<A, B, C, D, E, F>((A) results[0], (B) results[1], (C) results[2], (D) results[3], (E) results[4], (F) results[4]);
+        return new Sextet<A, B, C, D, E, F>((A) results[0], (B) results[1], (C) results[2], (D) results[3], (E) results[4], (F) results[5]);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <A, B, C, D, E, F, G> Septet<A, B, C, D, E, F, G> readIn(Bytes message, Class<A> a, Class<B> b, Class<C> c,
+            Class<D> d, Class<E> e, Class<F> f, Class<G> g) {
+        Object[] results = _readIn(message.getData(), a, b, c, d, e, f, g);
+        return new Septet<A, B, C, D, E, F, G>((A) results[0], (B) results[1], (C) results[2], (D) results[3], (E) results[4], (F) results[5], (G) results[5]);
     }
 
     public static Bytes write(Object... objects) {
