@@ -3,8 +3,23 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 
 public final class RString extends SmallData<String> {
+
+    final static DataGenerator<RString> GENERATOR = new DataGenerator<>(new Bytes("rstring"), RString.class);
+
+    public final static RString create() {
+        return GENERATOR.create();
+    }
+
+    public final static RString create(String defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    public final static void delete(RString object) {
+        DataGenerator.delete(object);
+    }
 
     final static String DEFAULT_VALUE = "";
 
