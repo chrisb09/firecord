@@ -5,6 +5,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisAccessControlException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,7 +20,7 @@ import net.legendofwar.firecord.tool.ReadProperties;
 public class ClassicJedisPool {
 
     private static Object staticLock = new Object();
-    private static JedisPool pool = null;
+    private static List<JedisPool> pools = new ArrayList<>();
     private static boolean created = false;
     private static boolean closed = false;
     static HashMap<Jedis, String> last_requested_by = new HashMap<Jedis, String>();
@@ -28,26 +29,47 @@ public class ClassicJedisPool {
         return new CustomJedisPoolConfig<Jedis>();
     }
 
+    public static boolean any(Iterable<Boolean> list) {
+        for (boolean b : list) {
+            if (b) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean doesPoolExist() {
+        return pools.size() > 0 && any(pools.stream().map(pool -> pool != null).toList());
+    }
+
+    public static boolean doesPoolExist(int database) {
+        return pools.size() > database && pools.get(database) != null;
+    }
+
     public static void destroy() {
-        if (pool != null) {
-            System.out.println("Closing Pool...");
+        if (doesPoolExist()) {
+            System.out.println("Closing Pools...");
             closed = true;
-            pool.close();
-            int counter = 0;
-            while (!pool.isClosed() && ++counter < 150) {
-                System.out.println("...not fully closed yet, waiting 0.1s...");
-                try {
-                    Thread.sleep(100l);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            for (JedisPool pool : pools) {
+                if (pool != null) {
+                    pool.close();
+                    int counter = 0;
+                    while (!pool.isClosed() && ++counter < 150) {
+                        System.out.println("...not fully closed yet, waiting 0.1s...");
+                        try {
+                            Thread.sleep(100l);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (counter == 150) {
+                        System.out.println("Waiting stopped prematurely.");
+                    }
+                    System.out.println("Open connections: " + pool.getNumActive());
                 }
             }
-            if (counter == 150) {
-                System.out.println("Waiting stopped prematurely.");
-            }
-            System.out.println("Open connections: " + pool.getNumActive());
         }
-        pool = null;
+        pools.clear();
     }
 
     private static long createUser(String host, String port, String username, String password) {
@@ -82,11 +104,15 @@ public class ClassicJedisPool {
         return 0;
     }
 
-    public static boolean isConnected(){
-        return created && !closed && !pool.isClosed();
+    public static boolean isConnected() {
+        return isConnected(0);
     }
 
-    private static void createPool() {
+    public static boolean isConnected(int database) {
+        return created && !closed && doesPoolExist(database) && !pools.get(database).isClosed();
+    }
+
+    private static void createPool(int database) {
 
         String[] properties = null;
         try {
@@ -104,15 +130,25 @@ public class ClassicJedisPool {
             GenericObjectPoolConfig<Jedis> config = buildPoolConfig();
             System.out.println("Creating pool...");
             long userId = createUser(properties[0], properties[1], Firecord.getIdName(), properties[2]);
+            JedisPool pool;
             if (userId == 0) {
-                pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000, properties[2]);
+                pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000, properties[2],
+                        database);
             } else {
                 pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000,
                         Firecord.getIdName(),
-                        properties[2]);
+                        properties[2], database);
             }
+            while (pools.size() <= database) {
+                pools.add(null);
+            }
+            pools.set(database, pool);
         }
 
+    }
+
+    public static Jedis getJedis() {
+        return getJedis(0);
     }
 
     /*
@@ -121,12 +157,12 @@ public class ClassicJedisPool {
      * leaks
      */
 
-    public static Jedis getJedis() {
-        if (pool == null) {
+    public static Jedis getJedis(int database) {
+        if (!doesPoolExist(database)) {
             synchronized (staticLock) {
                 if (!created) { // repeat in sync
                     created = true;
-                    createPool();
+                    createPool(database);
                 } else {
                     // if the pool has been created once but is null now then it got destroyed
                     // already, meaning we're shutting down
@@ -134,7 +170,7 @@ public class ClassicJedisPool {
                 }
             }
         }
-        Jedis res = pool.getResource();
+        Jedis res = pools.get(database).getResource();
         try {
             String caller = Thread.currentThread().getStackTrace()[2].getClassName() + "."
                     + Thread.currentThread().getStackTrace()[2].getMethodName() + " in "
@@ -147,21 +183,25 @@ public class ClassicJedisPool {
     }
 
     public static HashMap<String, Integer> getRessourceOwner() {
+        return getRessourceOwner(0);
+    }
+
+    public static HashMap<String, Integer> getRessourceOwner(int database) {
         HashMap<String, Integer> used = new HashMap<String, Integer>();
         HashSet<Jedis> idleJedis = new HashSet<>();
-        for (int i=0;i<getIdleClients();i++){
-            idleJedis.add(pool.getResource());
+        for (int i = 0; i < getIdleClients(); i++) {
+            idleJedis.add(pools.get(database).getResource());
         }
         try {
             for (Map.Entry<Jedis, String> entry : last_requested_by.entrySet()) {
-                if (!idleJedis.contains(entry.getKey())){
+                if (!idleJedis.contains(entry.getKey())) {
                     if (!used.containsKey(entry.getValue()))
                         used.put(entry.getValue(), 0);
                     used.put(entry.getValue(), used.get(entry.getValue()) + 1);
                 }
             }
-        }  finally {
-            for (Jedis j : idleJedis){
+        } finally {
+            for (Jedis j : idleJedis) {
                 j.close();
             }
         }
@@ -169,28 +209,36 @@ public class ClassicJedisPool {
     }
 
     public static int getIdleClients() {
-        if (pool == null) {
+        return getIdleClients(0);
+    }
+
+    public static int getIdleClients(int database) {
+        if (!doesPoolExist(database)) {
             return 0;
         }
-        return pool.getNumIdle();
+        return pools.get(database).getNumIdle();
     }
 
     public static String getPoolCurrentUsage() {
+        return getPoolCurrentUsage(0);
+    }
 
-        if (pool == null) {
+    public static String getPoolCurrentUsage(int database) {
+
+        if (!doesPoolExist(database)) {
             return "not initiated.";
         }
 
         CustomJedisPoolConfig<Jedis> poolConfig = buildPoolConfig();
 
-        int active = pool.getNumActive();
-        int idle = pool.getNumIdle();
+        int active = pools.get(database).getNumActive();
+        int idle = pools.get(database).getNumIdle();
         int total = active + idle;
         String log = String.format(
                 "JedisPool: Active=%d, Idle=%d, Waiters=%d, total=%d, maxTotal=%d, minIdle=%d, maxIdle=%d",
                 active,
                 idle,
-                pool.getNumWaiters(),
+                pools.get(database).getNumWaiters(),
                 total,
                 poolConfig.getMaxTotal(),
                 poolConfig.getMinIdle(),
