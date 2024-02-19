@@ -21,8 +21,8 @@ public class ClassicJedisPool {
 
     private static Object staticLock = new Object();
     private static List<JedisPool> pools = new ArrayList<>();
-    private static boolean created = false;
-    private static boolean closed = false;
+    private static List<Boolean> created = new ArrayList<>();
+    private static List<Boolean> closed = new ArrayList<>();
     static HashMap<Jedis, String> last_requested_by = new HashMap<Jedis, String>();
 
     public static CustomJedisPoolConfig<Jedis> buildPoolConfig() {
@@ -49,8 +49,11 @@ public class ClassicJedisPool {
     public static void destroy() {
         if (doesPoolExist()) {
             System.out.println("Closing Pools...");
-            closed = true;
             for (JedisPool pool : pools) {
+                while (closed.size() <= pools.indexOf(pool)){
+                    closed.add(false);
+                }
+                closed.set(pools.indexOf(pool),true);
                 if (pool != null) {
                     pool.close();
                     int counter = 0;
@@ -109,7 +112,7 @@ public class ClassicJedisPool {
     }
 
     public static boolean isConnected(int database) {
-        return created && !closed && doesPoolExist(database) && !pools.get(database).isClosed();
+        return created.size() > database && created.get(database) && (closed.size() <= database || !closed.get(database)) && doesPoolExist(database) && !pools.get(database).isClosed();
     }
 
     private static void createPool(int database) {
@@ -160,8 +163,11 @@ public class ClassicJedisPool {
     public static Jedis getJedis(int database) {
         if (!doesPoolExist(database)) {
             synchronized (staticLock) {
-                if (!created) { // repeat in sync
-                    created = true;
+                if (created.size() <= database || !created.get(database)) { // repeat in sync
+                    while (created.size() <= database){
+                        created.add(false);
+                    }
+                    created.set(database, true);
                     createPool(database);
                 } else {
                     // if the pool has been created once but is null now then it got destroyed
