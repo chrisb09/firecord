@@ -2,11 +2,27 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import java.util.UUID;
 
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 
 public final class RUUID extends SmallData<UUID> {
+
+    final static DataGenerator<RUUID> GENERATOR = new DataGenerator<>(new Bytes("ruuid"), RUUID.class);
+
+    final static RUUID create() {
+        return GENERATOR.create();
+    }
+
+    final static RUUID create(Vector defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    final static void delete(RUUID object) {
+        DataGenerator.delete(object);
+    }
 
     final static UUID DEFAULT_VALUE = new UUID(0, 0);
 

@@ -1,13 +1,29 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import redis.clients.jedis.Jedis;
 
 public final class RByte extends NumericData<Byte> {
+
+    final static DataGenerator<RByte> GENERATOR = new DataGenerator<>(new Bytes("rbyte"), RByte.class);
+
+    final static RByte create() {
+        return GENERATOR.create();
+    }
+
+    final static RByte create(Vector defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    final static void delete(RByte object) {
+        DataGenerator.delete(object);
+    }
 
     /*
      * For redis, these entries are "strings", hence to use

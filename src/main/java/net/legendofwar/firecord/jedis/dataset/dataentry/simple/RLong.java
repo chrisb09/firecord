@@ -1,13 +1,29 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import redis.clients.jedis.Jedis;
 
 public final class RLong extends NumericData<Long> {
+
+    final static DataGenerator<RLong> GENERATOR = new DataGenerator<>(new Bytes("rlong"), RLong.class);
+
+    final static RLong create() {
+        return GENERATOR.create();
+    }
+
+    final static RLong create(Vector defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    final static void delete(RLong object) {
+        DataGenerator.delete(object);
+    }
 
     final static Long DEFAULT_VALUE = 0l;
 

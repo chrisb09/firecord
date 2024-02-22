@@ -6,8 +6,23 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 
 public final class RVector extends SmallData<Vector> {
+
+    final static DataGenerator<RVector> GENERATOR = new DataGenerator<>(new Bytes("rvector"), RVector.class);
+
+    final static RVector create() {
+        return GENERATOR.create();
+    }
+
+    final static RVector create(Vector defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    final static void delete(RVector object) {
+        DataGenerator.delete(object);
+    }
 
     final static Vector DEFAULT_VALUE = new Vector();
 

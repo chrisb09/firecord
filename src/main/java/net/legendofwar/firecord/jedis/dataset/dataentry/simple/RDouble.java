@@ -1,13 +1,29 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
 import net.legendofwar.firecord.jedis.JedisLock;
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import redis.clients.jedis.Jedis;
 
 public final class RDouble extends NumericData<Double> {
+
+    final static DataGenerator<RDouble> GENERATOR = new DataGenerator<>(new Bytes("rdouble"), RDouble.class);
+
+    final static RDouble create() {
+        return GENERATOR.create();
+    }
+
+    final static RDouble create(Vector defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    final static void delete(RDouble object) {
+        DataGenerator.delete(object);
+    }
 
     final static Double DEFAULT_VALUE = 0.0;
 

@@ -6,13 +6,29 @@ import java.io.IOException;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 
 public final class RItemStack extends DynamicLargeData<ItemStack> {
+
+    final static DataGenerator<RItemStack> GENERATOR = new DataGenerator<>(new Bytes("ritemstack"), RItemStack.class);
+
+    final static RItemStack create() {
+        return GENERATOR.create();
+    }
+
+    final static RItemStack create(Vector defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    final static void delete(RItemStack object) {
+        DataGenerator.delete(object);
+    }
 
     final static ItemStack DEFAULT_VALUE = new ItemStack(Material.AIR, 1);
 

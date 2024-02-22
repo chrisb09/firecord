@@ -1,11 +1,27 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 
 public final class RJson extends LargeData<JSONObject> {
+
+    final static DataGenerator<RJson> GENERATOR = new DataGenerator<>(new Bytes("rjson"), RJson.class);
+
+    final static RJson create() {
+        return GENERATOR.create();
+    }
+
+    final static RJson create(Vector defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    final static void delete(RJson object) {
+        DataGenerator.delete(object);
+    }
 
     final static JSONObject DEFAULT_VALUE = new JSONObject();
 

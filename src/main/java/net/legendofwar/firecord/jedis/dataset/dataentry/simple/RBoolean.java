@@ -1,11 +1,27 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
+import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
 
 public final class RBoolean extends SmallData<Boolean> {
+
+    final static DataGenerator<RBoolean> GENERATOR = new DataGenerator<>(new Bytes("rboolean"), RBoolean.class);
+
+    final static RBoolean create() {
+        return GENERATOR.create();
+    }
+
+    final static RBoolean create(Vector defaultValue) {
+        return GENERATOR.create(defaultValue);
+    }
+
+    final static void delete(RBoolean object) {
+        DataGenerator.delete(object);
+    }
 
     final static Boolean DEFAULT_VALUE = false;
 
