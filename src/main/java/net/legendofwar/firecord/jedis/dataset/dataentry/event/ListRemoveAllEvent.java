@@ -8,7 +8,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 
 public class ListRemoveAllEvent<T extends AbstractData<?>> extends DataEvent<T> {
     
-    final static JedisCommunicationChannel channel = JedisCommunicationChannel.LIST_REMOVE;
+    final static JedisCommunicationChannel channel = JedisCommunicationChannel.LIST_REMOVE_ALL;
 
     final Collection<?> removed;
 
