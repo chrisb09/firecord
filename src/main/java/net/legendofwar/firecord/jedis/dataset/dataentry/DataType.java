@@ -8,6 +8,7 @@ import java.util.HashMap;
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
+import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RSet;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByte;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByteArray;
@@ -61,7 +62,7 @@ public class DataType {
 
     // corresponds to a native redis type
     public final static DataType LIST = new DataType(RList.class);
-    public final static DataType SET = new DataType(null);
+    public final static DataType SET = new DataType(RSet.class);
     public final static DataType SORTEDSET = new DataType(null);
     public final static DataType MAP = new DataType(RMap.class);
 
