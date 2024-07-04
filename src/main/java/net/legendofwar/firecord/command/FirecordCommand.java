@@ -336,7 +336,6 @@ public class FirecordCommand {
                     test3.setIfEmpty(3);
                 }
             }
-            Bytes logKey = testset2.getKey();
             sender.sendMessage("§btestset1: §e" + String.join(",", Arrays.toString(testset1.toArray())));
             sender.sendMessage("§btestset2: §e" + String.join(",", Arrays.toString(testset2.toArray())));
             sender.sendMessage("§btestset3: §e" + String.join(",", Arrays.toString(testset3.toArray())));
@@ -408,6 +407,9 @@ public class FirecordCommand {
                 sender.sendMessage("§bRedis: §c"
                         + String.join(",", (j.smembers(testset3.getKey().getData())).stream()
                                 .map(bytearray -> new Bytes(bytearray).asString()).toList()));
+                sender.sendMessage("§bContains 1,2,3: "+String.join("§b,", Arrays.stream(new RInteger[]{test1, test2, test3}).map(element -> "§e"+(testset3.contains(element))).toList()));
+                sender.sendMessage("§bContainsKey 1,2,3: "+String.join("§b,", Arrays.stream(new RInteger[]{test1, test2, test3}).map(element -> "§e"+(testset3.containsKey(element.getKey()))).toList()));
+                sender.sendMessage("§bContainsValue 1,2,3: "+String.join("§b,", Arrays.stream(new RInteger[]{test1, test2, test3}).map(element -> "§e"+(testset3.containsValue(element))).toList()));
             }
         } else if (args[0].equalsIgnoreCase("testint")) {
             if (test == null) {
