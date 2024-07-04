@@ -17,6 +17,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
+import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RSet;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.DataEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
@@ -44,6 +45,10 @@ public class FirecordCommand {
     static RList<RInteger> testlist1 = null;
     static RList<RInteger> testlist2 = null;
     static RList<AbstractData<?>> testlist3 = null;
+    static RSet<RInteger> testset1 = null;
+    static RSet<RInteger> testset2 = null;
+    static RSet<AbstractData<?>> testset3 = null;
+    
     static RMap<RInteger> testmap1 = null;
     static RMap<RInteger> testmap2 = null;
     static RMap<AbstractData<?>> testmap3 = null;
@@ -79,6 +84,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testasync   §e test setAsync");
             sender.sendMessage("§b" + label + " tested      §e test encode-decode");
             sender.sendMessage("§b" + label + " testlist    §e list test command");
+            sender.sendMessage("§b" + label + " testset     §e set test command");
             sender.sendMessage("§b" + label + " testmap     §e map test command");
             sender.sendMessage("§b" + label + " testanon    §e anonymous type test command");
             sender.sendMessage("§b" + label + " testmessage §e write&read to a test-byte[]");
@@ -297,6 +303,110 @@ public class FirecordCommand {
                 sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testlist3.toArray())));
                 sender.sendMessage("§bRedis: §c"
                         + String.join(",", (j.lrange(testlist3.getKey().getData(), 0, -1)).stream()
+                                .map(bytearray -> new Bytes(bytearray).asString()).toList()));
+            }
+        } else if (args[0].equalsIgnoreCase("testset")) {
+            if (testset1 == null) {
+                testset1 = new RSet<RInteger>(new Bytes("testset1"));
+            }
+            if (testset2 == null) {
+                testset2 = new RSet<RInteger>(new Bytes("testset2"));
+            }
+            if (testset3 == null) {
+                testset3 = new RSet<AbstractData<?>>(new Bytes("testset3"));
+            }
+            if (test1 == null) {
+                test1 = (RInteger) AbstractData.create(new Bytes("testint1"));
+                if (test1 == null) {
+                    test1 = new RInteger(new Bytes("testint1"));
+                    test1.set(1);
+                }
+            }
+            if (test2 == null) {
+                test2 = (RInteger) AbstractData.create(new Bytes("testint2"));
+                if (test2 == null) {
+                    test2 = new RInteger(new Bytes("testint2"));
+                    test2.setIfEmpty(2);
+                }
+            }
+            if (test3 == null) {
+                test3 = (RInteger) AbstractData.create(new Bytes("testint3"));
+                if (test3 == null) {
+                    test3 = new RInteger(new Bytes("testint3"));
+                    test3.setIfEmpty(3);
+                }
+            }
+            Bytes logKey = testset2.getKey();
+            sender.sendMessage("§btestset1: §e" + String.join(",", Arrays.toString(testset1.toArray())));
+            sender.sendMessage("§btestset2: §e" + String.join(",", Arrays.toString(testset2.toArray())));
+            sender.sendMessage("§btestset3: §e" + String.join(",", Arrays.toString(testset3.toArray())));
+            sender.sendMessage("§a#1,#2,#3 clear");
+            testset1.clear();
+            testset2.clear();
+            testset3.clear();
+            sender.sendMessage("§btestset1: §e" + testset1.size());
+            sender.sendMessage("§a#1 add Elements 1,2,3");
+            testset1.add(test1);
+            testset1.add(test2);
+            testset1.add(test3);
+            sender.sendMessage("§btestset1: §e" + testset1.size());
+            sender.sendMessage("§btestset1: §e" + String.join(",", Arrays.toString(testset1.toArray())));
+            sender.sendMessage("§a#2 add Elements of set #1");
+            testset2.addAll(testset1);
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG, new Bytes("After first add: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testset2.toArray()))));
+            sender.sendMessage("§a#2 add Elements of set #1");
+            testset2.addAll(testset1);
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG, new Bytes("After second add: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testset2.toArray()))));
+            sender.sendMessage("§a#2 add Elements of set #1");
+            testset2.addAll(testset1);
+            sender.sendMessage("§btestset2: §e" + testset2.size());
+            sender.sendMessage("§btestset2: §e" + String.join(",", Arrays.toString(testset2.toArray())));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG, new Bytes("After adding: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testset2.toArray()))));
+            sender.sendMessage("§a#3 add Element 3");
+            testset3.add(test3);
+            sender.sendMessage("§btestset3: §e" + testset3.size());
+            sender.sendMessage("§btestset3: §e" + String.join(",", Arrays.toString(testset3.toArray())));
+            sender.sendMessage("§a#1 remove all elements found in set #3");
+            testset1.removeAll(testset3);
+            sender.sendMessage("§btestset1: §e" + testset1.size());
+            sender.sendMessage("§btestset1: §e" + String.join(",", Arrays.toString(testset1.toArray())));
+            sender.sendMessage("§a#2 remove element 3");
+            testset2.remove(test3);
+            sender.sendMessage("§btestset2: §e" + testset2.size());
+            sender.sendMessage("§btestset2: §e" + String.join(",", Arrays.toString(testset2.toArray())));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG, new Bytes("After remove of element nr 4: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testset2.toArray()))));
+            sender.sendMessage("§a#2 retain all elements found in set #3");
+            testset2.retainAll(testset3);
+            sender.sendMessage("§btestset2: §e" + testset2.size());
+            sender.sendMessage("§btestset2: §e" + String.join(",", Arrays.toString(testset2.toArray())));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("After retaining all elements found in #3: "));
+            JedisCommunication.broadcast(JedisCommunicationChannel.LOG,
+                    new Bytes("#2 " + String.join(",", Arrays.toString(testset2.toArray()))));
+            try (Jedis j = ClassicJedisPool.getJedis()) {
+                sender.sendMessage("§bFinal values: ");
+                sender.sendMessage("§btestset1:");
+                sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testset1.toArray())));
+                sender.sendMessage("§bRedis: §c"
+                        + String.join(",", (j.smembers(testset1.getKey().getData())).stream()
+                                .map(bytearray -> new Bytes(bytearray).asString()).toList()));
+                sender.sendMessage("§btestset2:");
+                sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testset2.toArray())));
+                sender.sendMessage("§bRedis: §c"
+                        + String.join(",", (j.smembers(testset2.getKey().getData())).stream()
+                                .map(bytearray -> new Bytes(bytearray).asString()).toList()));
+                sender.sendMessage("§btestset3:");
+                sender.sendMessage("§bCache: §a" + String.join(",", Arrays.toString(testset3.toArray())));
+                sender.sendMessage("§bRedis: §c"
+                        + String.join(",", (j.smembers(testset3.getKey().getData())).stream()
                                 .map(bytearray -> new Bytes(bytearray).asString()).toList()));
             }
         } else if (args[0].equalsIgnoreCase("testint")) {
