@@ -1,7 +1,5 @@
 @startuml DataType
 
-abstract AbstractData
-
 interface SimpleInterface<T> {
     + T get()
     + boolean set()
@@ -32,6 +30,7 @@ abstract AbstractData <T> {
     + void unlockMultiple()
     + Bytes getKey()
     + String asString()
+    + double getSortScore()
 }
 
 abstract SmallData <T> extends SimpleData {
