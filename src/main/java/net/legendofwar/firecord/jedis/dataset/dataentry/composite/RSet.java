@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.javatuples.Pair;
-import org.javatuples.Triplet;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.Firecord;
@@ -30,13 +29,9 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.event.SetRetainAllEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
 import redis.clients.jedis.Jedis;
 
-public final class RSet<T extends AbstractData<?>> extends CollectionData<T, Set<T>> implements Set<T> {
-
+public class RSet<T extends AbstractData<?>> extends CollectionData<T, Set<T>> implements Set<T> {
 
     static HashMap<Bytes, RSet<AbstractData<?>>> loaded = new HashMap<Bytes, RSet<AbstractData<?>>>();
-
-    //TODO: add the code dealing with messages we receive for changes...
-
 
     static {
 
@@ -243,6 +238,14 @@ public final class RSet<T extends AbstractData<?>> extends CollectionData<T, Set
     }
 
     @SuppressWarnings("unchecked")
+    public RSet(@NotNull Bytes key, DataType dataType) {
+        super(key, dataType);
+        synchronized (loaded) {
+            loaded.put(key, (RSet<AbstractData<?>>) this);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     void _load() {
         if (this.data == null) {
@@ -400,10 +403,10 @@ public final class RSet<T extends AbstractData<?>> extends CollectionData<T, Set
                     AbstractData<?> entry = (AbstractData<?>) element;
                     keys[index++] = entry.getKey().getData();
                 }
-                try (Jedis j = ClassicJedisPool.getJedis()) {
-                    j.srem(key.getData(), ((T) (element)).getKey().getData());
-                }
             }
+        }
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            j.srem(key.getData(), keys);
         }
         boolean result;
         synchronized (arg0) {
@@ -452,9 +455,7 @@ public final class RSet<T extends AbstractData<?>> extends CollectionData<T, Set
                 }
             }
             try (Jedis j = ClassicJedisPool.getJedis()) {
-                for (T element : toRem) {
-                    j.srem(key.getData(), element.getKey().getData());
-                }
+                j.srem(key.getData(), toRem.stream().map(element -> element.getKey().getData()).toArray(byte[][]::new));
             }
             JedisCommunication.broadcast(JedisCommunicationChannel.SET_RETAIN_ALL,
                     ByteMessage.write(this.key,
