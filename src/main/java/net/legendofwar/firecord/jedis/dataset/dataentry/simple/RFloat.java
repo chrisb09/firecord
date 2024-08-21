@@ -118,4 +118,8 @@ public final class RFloat extends NumericData<Float> {
         return this.value.toString();
     }
 
+    public double getSortScore(){
+        return this.value;
+    }
+
 }

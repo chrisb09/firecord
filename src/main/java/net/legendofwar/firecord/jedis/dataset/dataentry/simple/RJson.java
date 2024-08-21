@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
+import net.legendofwar.firecord.tool.SortHelper;
 
 public final class RJson extends LargeData<JSONObject> {
 
@@ -124,6 +125,11 @@ public final class RJson extends LargeData<JSONObject> {
 
     public void putEnum(String key, Enum<?> value) {
         set(get().put(key, value.name()));
+    }
+
+
+    public double getSortScore() {
+        return SortHelper.getSortScore(this.toString());
     }
 
 }

@@ -114,4 +114,8 @@ public final class RInteger extends NumericData<Integer> {
         return this.value.toString();
     }
 
+    public double getSortScore(){
+        return this.value;
+    }
+
 }

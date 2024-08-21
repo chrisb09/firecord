@@ -55,4 +55,8 @@ public final class RVector extends SmallData<Vector> {
         return "(" + value.getX() + "," + value.getY() + "," + value.getZ() + ")";
     }
 
+    public double getSortScore(){
+        return this.value.getX();
+    }
+
 }

@@ -121,4 +121,8 @@ public final class RByte extends NumericData<Byte> {
         return this.value.toString();
     }
 
+    public double getSortScore(){
+        return this.value;
+    }
+
 }

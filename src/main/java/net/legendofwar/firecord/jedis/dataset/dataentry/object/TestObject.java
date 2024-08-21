@@ -207,4 +207,10 @@ public final class TestObject extends AbstractObject {
         i.set(DataKeyPrefix.values()[(int) (Math.random() * DataKeyPrefix.values().length)]);
     }
 
+
+
+    public double getSortScore(){
+        return this.g.get();
+    }
+
 }

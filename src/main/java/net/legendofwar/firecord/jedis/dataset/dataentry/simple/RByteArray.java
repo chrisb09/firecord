@@ -1,5 +1,7 @@
 package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
+import java.util.Arrays;
+
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,6 +48,18 @@ public final class RByteArray extends LargeData<byte[]> {
     public String toString() {
         get();
         return new Bytes(this.value).toString();
+    }
+
+    public double getSortScore(){
+        if (this.value == null){
+            return 0.0d;
+        }
+        byte[] subArray = Arrays.copyOfRange(this.value, 0, Math.min(16, this.value.length));
+        double total = 0.0d;
+        for (int i = 0; i < subArray.length; i++){
+            total += Math.pow(256.0, subArray.length-i-1) * subArray[i];
+        }
+        return total;
     }
 
 }

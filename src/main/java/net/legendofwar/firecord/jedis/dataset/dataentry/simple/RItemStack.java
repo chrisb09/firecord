@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
+import net.legendofwar.firecord.tool.SortHelper;
 
 public final class RItemStack extends DynamicLargeData<ItemStack> {
 
@@ -77,6 +78,11 @@ public final class RItemStack extends DynamicLargeData<ItemStack> {
     public String toString() {
         get();
         return this.value.toString();
+    }
+
+
+    public double getSortScore() {
+        return SortHelper.getSortScore(this.toString());
     }
 
 }

@@ -114,4 +114,8 @@ public final class RShort extends NumericData<Short> {
         return this.value.toString();
     }
 
+    public double getSortScore(){
+        return this.value;
+    }
+
 }

@@ -114,4 +114,8 @@ public final class RLong extends NumericData<Long> {
         return this.value.toString();
     }
 
+    public double getSortScore(){
+        return this.value;
+    }
+
 }

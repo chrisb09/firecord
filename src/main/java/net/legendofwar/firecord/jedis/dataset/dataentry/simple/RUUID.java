@@ -49,4 +49,8 @@ public final class RUUID extends SmallData<UUID> {
         return this.value.toString();
     }
 
+    public double getSortScore(){
+        return ((double) (this.value.getMostSignificantBits())) * Long.MAX_VALUE + this.value.getLeastSignificantBits();
+    }
+
 }

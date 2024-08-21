@@ -48,4 +48,8 @@ public final class RBoolean extends SmallData<Boolean> {
         return this.value.toString();
     }
 
+    public double getSortScore(){
+        return this.value ? 1 : 0;
+    }
+
 }

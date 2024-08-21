@@ -118,4 +118,8 @@ public final class RDouble extends NumericData<Double> {
         return this.value.toString();
     }
 
+    public double getSortScore(){
+        return this.value;
+    }
+
 }

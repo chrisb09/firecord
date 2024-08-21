@@ -47,4 +47,8 @@ public final class RCharacter extends SmallData<Character> {
         return "" + this.value;
     }
 
+    public double getSortScore(){
+        return this.value;
+    }
+
 }

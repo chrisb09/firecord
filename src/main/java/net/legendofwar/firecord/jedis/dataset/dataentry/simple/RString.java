@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataGenerator;
+import net.legendofwar.firecord.tool.SortHelper;
 
 public final class RString extends SmallData<String> {
 
@@ -44,6 +45,10 @@ public final class RString extends SmallData<String> {
     @Override
     public String toString() {
         return this.value;
+    }
+
+    public double getSortScore() {
+        return SortHelper.getSortScore(this.value);
     }
 
 }
