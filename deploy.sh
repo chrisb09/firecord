@@ -20,8 +20,7 @@ ssh legendofwar@legendofwar.net 'find /minecraft/staging/ -type f \
  -exec cp {} /minecraft/server/paper/lobby/custom_plugins/ \; \
  -exec cp {} /minecraft/server/paper/construct/custom_plugins/ \; \
  -exec cp {} /minecraft/server/velocity/master/plugins/ \; \
- -exec cp {} /minecraft/server/multipaper/alpha/plugins/ \; \
- -exec cp {} /minecraft/server/multipaper/bravo/plugins/ \; \
+ -exec cp {} /minecraft/server/paper/main/custom_plugins/ \; \
  -delete'
 
 echo "Done"
@@ -37,8 +36,7 @@ find target/ -type f -regex '.*/[A-Za-z]+-[0-9]+\.[0-9]+\(\.[0-9]+\)?\(\.[0-9]+\
  -exec cp {} /minecraft/server/paper/lobby/custom_plugins/ \; \
  -exec cp {} /minecraft/server/paper/construct/custom_plugins/ \; \
  -exec cp {} /minecraft/server/velocity/master/plugins/ \; \
- -exec cp {} /minecraft/server/multipaper/alpha/plugins/ \; \
- -exec cp {} /minecraft/server/multipaper/bravo/plugins/ \;
+ -exec cp {} /minecraft/server/paper/main/custom_plugins/ \;
 
 else
   echo "User $current_user is not know."
