@@ -92,6 +92,9 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                 }
                 if (map != null) {
                     AbstractData<?> entry = AbstractData.create(addedKey);
+                    if (entry == null) {
+                        System.out.println("Map put receive message got key "+addedKey.toString()+" which doesnt seem to have to have data in the db.");
+                    }
                     AbstractData<?> removed = null;
                     synchronized (map.data) {
                         if (map.data.containsKey(name)) {
