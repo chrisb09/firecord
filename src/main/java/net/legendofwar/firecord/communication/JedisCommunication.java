@@ -272,6 +272,7 @@ public class JedisCommunication extends BinaryJedisPubSub {
             e.printStackTrace();
             System.out.println("Error in message on redis_channel " + new Bytes(redis_channel));
             System.out.println("Message: " + new Bytes(message));
+            System.out.println("Channel decoded: "+JedisCommunicationChannel.byBytes(new Bytes(redis_channel)));
         }
     }
 
