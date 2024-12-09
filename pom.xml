@@ -4,25 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <properties>
-        <java.version>21</java.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <mc.api.version>1.21.3</mc.api.version>
-        <velocity.api.version>3.4.0</velocity.api.version>
-        <net.md-5.bungeecord-api.version>1.21</net.md-5.bungeecord-api.version>
-        <maven.shade.plugin.version>3.6.0</maven.shade.plugin.version>
-        <aspectj.plugin.version>1.15.0</aspectj.plugin.version>
-        <aspectjtools.plugin.version>1.9.21.2</aspectjtools.plugin.version>
-        <specialsource.version>2.0.3</specialsource.version>
-        <net.legendofwar.firecord.version>1.1</net.legendofwar.firecord.version>
-        <net.legendofwar.minilib.version>1.2</net.legendofwar.minilib.version>
-        <net.legendofwar.cinder.version>1.0</net.legendofwar.cinder.version>
-        <net.legendofwar.mklib.version>1.0</net.legendofwar.mklib.version>
-        <net.legendofwar.npclib.version>1.0</net.legendofwar.npclib.version>
-        <net.legendofwar.phoenix.version>1.0</net.legendofwar.phoenix.version>
-        <net.legendofwar.aurim.version>1.0</net.legendofwar.aurim.version>
-        <net.legendofwar.pvpgameplaytest.version>1.0</net.legendofwar.pvpgameplaytest.version>
-    </properties>
+    <parent>
+        <groupId>net.legendofwar.properties</groupId>
+        <artifactId>Properties</artifactId>
+        <version>1.0</version>
+    </parent>
 
     <groupId>net.legendofwar.firecord</groupId>
     <artifactId>Firecord</artifactId>
@@ -30,13 +16,6 @@
     <packaging>jar</packaging>
 
     <name>Firecord</name>
-
-    <scm>
-        <connection>scm:svn:http://127.0.0.1/dummy</connection>
-        <developerConnection>scm:svn:https://127.0.0.1/dummy</developerConnection>
-        <tag>HEAD</tag>
-        <url>http://127.0.0.1/dummy</url>
-    </scm>
 
     <build>
         <plugins>
@@ -48,7 +27,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>${build.helper.maven.plugin.version}</version>
             </plugin>
              <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -208,14 +187,14 @@
         <dependency>
             <groupId>net.md-5</groupId>
             <artifactId>bungeecord-api</artifactId>
-            <version>${net.md-5.bungeecord-api.version}-R0.1-SNAPSHOT</version>
+            <version>${net.md-5.bungeecord-api.version}-SNAPSHOT</version>
             <type>jar</type>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.md-5</groupId>
             <artifactId>bungeecord-api</artifactId>
-            <version>${net.md-5.bungeecord-api.version}-R0.1-SNAPSHOT</version>
+            <version>${net.md-5.bungeecord-api.version}-SNAPSHOT</version>
             <type>javadoc</type>
             <scope>provided</scope>
         </dependency>
