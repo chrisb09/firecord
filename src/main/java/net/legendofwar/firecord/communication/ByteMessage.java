@@ -188,7 +188,7 @@ public enum ByteMessage {
     public static <A, B, C, D, E, F, G> Septet<A, B, C, D, E, F, G> readIn(Bytes message, Class<A> a, Class<B> b, Class<C> c,
             Class<D> d, Class<E> e, Class<F> f, Class<G> g) {
         Object[] results = _readIn(message.getData(), a, b, c, d, e, f, g);
-        return new Septet<A, B, C, D, E, F, G>((A) results[0], (B) results[1], (C) results[2], (D) results[3], (E) results[4], (F) results[5], (G) results[5]);
+        return new Septet<A, B, C, D, E, F, G>((A) results[0], (B) results[1], (C) results[2], (D) results[3], (E) results[4], (F) results[5], (G) results[6]);
     }
 
     public static Bytes write(Object... objects) {
