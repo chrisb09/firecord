@@ -154,6 +154,21 @@ public class Bytes implements ByteDataInterface {
         return "0x" + new String(hexDigits);
     }
 
+    public String toRedisString() {
+        if (data == null) {
+            return null;
+        }
+        char[] hexDigits = new char[data.length * 4];
+        for (int i = 0; i < data.length; i++) {
+            byte num = data[i];
+            hexDigits[i * 4 + 0] = '\\';
+            hexDigits[i * 4 + 1] = 'x';
+            hexDigits[i * 4 + 2] = Character.forDigit((num >> 4) & 0xF, 16);
+            hexDigits[i * 4 + 3] = Character.forDigit((num & 0xF), 16);
+        }
+        return new String(hexDigits);
+    }
+
     public String asString() {
         return new String(data);
     }
