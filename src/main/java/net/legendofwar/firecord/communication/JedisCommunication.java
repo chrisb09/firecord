@@ -273,6 +273,32 @@ public class JedisCommunication extends BinaryJedisPubSub {
             System.out.println("Error in message on redis_channel " + new Bytes(redis_channel));
             System.out.println("Message: " + new Bytes(message));
             System.out.println("Channel decoded: "+JedisCommunicationChannel.byBytes(new Bytes(redis_channel)));
+            try {
+                System.out.println("Try decoding message for debugging.");
+                boolean broadcast = Arrays.equals(redis_channel, JedisCommunicationChannel.SERVER_MESSAGE_BROADCAST.getData());
+                Triplet<Bytes, Bytes, Bytes> m = ByteMessage.readIn(new Bytes(message), Bytes.class, Bytes.class, Bytes.class);
+                Bytes channel = m.getValue0();
+                Bytes sender_id = m.getValue1();
+                Bytes sender_name = nodeKeyLookUpTable.lookUpName(sender_id);
+                Bytes content = m.getValue2();
+                System.out.println("(Sub)Channel: "+channel);
+                System.out.println("Sender_id: "+sender_id);
+                System.out.println("Sender_name: "+nodeKeyLookUpTable.lookUpName(sender_id).asString());
+                System.out.println("Content: "+content);
+                System.out.println("Broadcast: "+broadcast);
+                
+                if (sender_name.equals(name) && broadcast) {
+                    System.out.println("  the broadcast originated from this node (it will be ignored here).");
+                }
+                synchronized (nodes) {
+                    if (!nodes.contains(sender_name)) {
+                        // in case a new node sends a message immediately we need to be able to answer
+                        nodes.add(sender_name);
+                    }
+                }
+            } catch(Exception e2){
+                e2.printStackTrace();
+            }
         }
     }
 
