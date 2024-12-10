@@ -166,7 +166,7 @@ public class Bytes implements ByteDataInterface {
             hexDigits[i * 4 + 2] = Character.forDigit((num >> 4) & 0xF, 16);
             hexDigits[i * 4 + 3] = Character.forDigit((num & 0xF), 16);
         }
-        return new String(hexDigits);
+        return '"'+new String(hexDigits)+'"';
     }
 
     public String asString() {
