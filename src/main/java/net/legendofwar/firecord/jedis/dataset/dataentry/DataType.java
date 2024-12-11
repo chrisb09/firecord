@@ -75,6 +75,9 @@ public class DataType {
     public final static DataType OBJECT = new DataType("Object", null);
     public final static DataType CLASS = new DataType("Class", null);
 
+    // not used so far i guess
+    public final static DataType NULL = new DataType("Null", null);
+
 
     private static DataType[] values = {
         BOOLEAN, CHARACTER, STRING, UUID, BYTE, SHORT, INTEGER, LONG, FLOAT, DOUBLE,
