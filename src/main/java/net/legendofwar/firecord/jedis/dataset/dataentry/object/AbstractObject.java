@@ -164,9 +164,25 @@ public abstract class AbstractObject extends AbstractData<Object> {
                     }
                 }
             }
-            boolean hadNoEntries = references.isEmpty();
+            //boolean hadNoEntries = references.isEmpty();
             loadObject(this.getClass(), this, references);
-            if (hadNoEntries) {
+            DataType dt = null;
+            try (Jedis j = ClassicJedisPool.getJedis()){
+                byte[] typeData = j.get(ByteFunctions.join(key, DataKeySuffix.CLASS));
+                String type = null;
+                if (typeData != null) {
+                    type = new String(typeData);
+                }
+                if (type != null) {
+                    try {
+                        dt = DataType.valueOf(type);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            // if (hadNoEntries) {
+            if (dt == null || !dt.equals(DataType.OBJECT)){
                 _setType(DataType.OBJECT);
                 try (Jedis j = ClassicJedisPool.getJedis()) {
                     j.set(ByteFunctions.join(key, DataKeySuffix.CLASS), ClassNameLookup.getId(this.getClass().getName()).getData());
