@@ -115,6 +115,9 @@ public class FirecordCommand {
             if (testmap3 == null) {
                 testmap3 = new RMap<AbstractData<?>>(new Bytes("testmap3"));
             }
+            sender.sendMessage("§btestmap1: §e"+testmap1.getKey().toRedisString());
+            sender.sendMessage("§btestmap2: §e"+testmap2.getKey().toRedisString());
+            sender.sendMessage("§btestmap3: §e"+testmap3.getKey().toRedisString());
             if (test1 == null) {
                 test1 = (RInteger) AbstractData.create(new Bytes("testint1"));
                 if (test1 == null) {
