@@ -37,167 +37,191 @@ public abstract class AbstractData<T> {
     public static HashMap<Bytes, AbstractData<?>> loaded = new HashMap<Bytes, AbstractData<?>>();
     protected final static Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> globalListeners = new HashMap<>();
     protected final static Map<Class<? extends AbstractData<?>>, List<Consumer<AbstractData<?>>>> objectCreationListener = new HashMap<>();
-
-    static {
-
-        Firecord.subscribe(JedisCommunicationChannel.DEL_KEY, new MessageReceiver() {
-
-            @Override
-            public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
-                AbstractData<?> ad = null;
-                synchronized (loaded) {
-                    if (loaded.containsKey(message)) {
-                        ad = loaded.get(message);
-                    }
-                }
-                DataGenerator.delete(ad, false);
-            }
-
-        });
-
-    }
-
-    public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c) {
-
-        try {
-            Constructor<?> constr = c.getDeclaredConstructor(Bytes.class);
-            constr.setAccessible(true);
-            return (AbstractData<?>) constr.newInstance(key);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c, Object defaultValue, Class<?> defaultValueClass) {
-
-        try {
-            Constructor<?> constr = c.getDeclaredConstructor(Bytes.class, defaultValueClass);
-            constr.setAccessible(true);
-            return (AbstractData<?>) constr.newInstance(key, defaultValue);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Creates the corresponding data structure for a key - if it exists that is.
-     * If we already have loaded the corresponding datastructure return that
-     * instead.
-     * If you need a second instance for the same object for whatever terrible
-     * reason do call the constructor.
-     * 
-     * @param key
-     * @return
-     */
-    public static AbstractData<?> create(@NotNull Bytes key) {
-
-        // since reflection is used the @NotNull annotation does not guarantee null
-        // safety
-        if (key == null) {
-            return null;
-        }
-
-        // for null references
-        if (key.length == 0){
-            return null;
-        }
-
-        // we don't need to recreate
-        synchronized (loaded) {
-            if (loaded.containsKey(key)) {
-                return loaded.get(key);
-            }
-        }
-        String type = null;
-        try (Jedis j = ClassicJedisPool.getJedis()) {
-            byte[] t = j.get(ByteFunctions.join(key, DataKeySuffix.TYPE));
-            if (t != null) {
-                type = new String(t);
-            }
-        }
-        if (type != null) {
-            DataType dt = null;
-            try {
-                dt = DataType.valueOf(type);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            if (dt != null) {
-                System.out.flush();
-                if (dt != DataType.OBJECT) {
-                    if (dt.canBeLoaded()) {
-                        AbstractData<?> object = callConstructor(key, dt.getC());
-                        noteObjectCreation(object);
-                        return object;
-                    } else {
-                        return new Invalid(key);
-                    }
-                } else {
-                    String className = null;
-                    byte[] cN;
-                    try (Jedis j = ClassicJedisPool.getJedis()) {
-                        cN = j.get(ByteFunctions.join(key, DataKeySuffix.CLASS));
-                    }
-                    if (cN != null) {
-                        className = ClassNameLookup.getClassName(new Bytes(cN));
-                    }
-                    Class<?> c = null;
-                    if (className != null) {
-                        try {
-                            c = Class.forName(className);
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
-                            Firecord.partialResource.registerUnavailableLoad(className, key);
+    private final static HashMap<Bytes, Consumer<DataEvent<AbstractData<?>>>> globalActiveListener = new HashMap<>();
+    private final static HashMap<Consumer<DataEvent<AbstractData<?>>>, Bytes> globalActiveListenerReverse = new HashMap<>();
+    private static long globalActiveListenerAnonymousId = 0l;
+    
+        static {
+    
+            Firecord.subscribe(JedisCommunicationChannel.DEL_KEY, new MessageReceiver() {
+    
+                @Override
+                public void receive(Bytes channel, Bytes sender, boolean broadcast, Bytes message) {
+                    AbstractData<?> ad = null;
+                    synchronized (loaded) {
+                        if (loaded.containsKey(message)) {
+                            ad = loaded.get(message);
                         }
                     }
-                    if (c != null && AbstractObject.class.isAssignableFrom(c)
-                            && !Modifier.isAbstract(c.getModifiers())) {
-                        AbstractData<?> ad = callConstructor(key, c);
-                        noteObjectCreation(ad);
-                        Firecord.partialResource.registerLoad(c, ad);
-                        return ad;
+                    DataGenerator.delete(ad, false);
+                }
+    
+            });
+    
+        }
+    
+        public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c) {
+    
+            try {
+                Constructor<?> constr = c.getDeclaredConstructor(Bytes.class);
+                constr.setAccessible(true);
+                return (AbstractData<?>) constr.newInstance(key);
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (SecurityException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    
+        public static AbstractData<?> callConstructor(@NotNull Bytes key, @NotNull Class<?> c, Object defaultValue, Class<?> defaultValueClass) {
+    
+            try {
+                Constructor<?> constr = c.getDeclaredConstructor(Bytes.class, defaultValueClass);
+                constr.setAccessible(true);
+                return (AbstractData<?>) constr.newInstance(key, defaultValue);
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (SecurityException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    
+        /**
+         * Creates the corresponding data structure for a key - if it exists that is.
+         * If we already have loaded the corresponding datastructure return that
+         * instead.
+         * If you need a second instance for the same object for whatever terrible
+         * reason do call the constructor.
+         * 
+         * @param key
+         * @return
+         */
+        public static AbstractData<?> create(@NotNull Bytes key) {
+    
+            // since reflection is used the @NotNull annotation does not guarantee null
+            // safety
+            if (key == null) {
+                return null;
+            }
+    
+            // for null references
+            if (key.length == 0){
+                return null;
+            }
+    
+            // we don't need to recreate
+            synchronized (loaded) {
+                if (loaded.containsKey(key)) {
+                    return loaded.get(key);
+                }
+            }
+            String type = null;
+            try (Jedis j = ClassicJedisPool.getJedis()) {
+                byte[] t = j.get(ByteFunctions.join(key, DataKeySuffix.TYPE));
+                if (t != null) {
+                    type = new String(t);
+                }
+            }
+            if (type != null) {
+                DataType dt = null;
+                try {
+                    dt = DataType.valueOf(type);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (dt != null) {
+                    System.out.flush();
+                    if (dt != DataType.OBJECT) {
+                        if (dt.canBeLoaded()) {
+                            AbstractData<?> object = callConstructor(key, dt.getC());
+                            noteObjectCreation(object);
+                            return object;
+                        } else {
+                            return new Invalid(key);
+                        }
+                    } else {
+                        String className = null;
+                        byte[] cN;
+                        try (Jedis j = ClassicJedisPool.getJedis()) {
+                            cN = j.get(ByteFunctions.join(key, DataKeySuffix.CLASS));
+                        }
+                        if (cN != null) {
+                            className = ClassNameLookup.getClassName(new Bytes(cN));
+                        }
+                        Class<?> c = null;
+                        if (className != null) {
+                            try {
+                                c = Class.forName(className);
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                                Firecord.partialResource.registerUnavailableLoad(className, key);
+                            }
+                        }
+                        if (c != null && AbstractObject.class.isAssignableFrom(c)
+                                && !Modifier.isAbstract(c.getModifiers())) {
+                            AbstractData<?> ad = callConstructor(key, c);
+                            noteObjectCreation(ad);
+                            Firecord.partialResource.registerLoad(c, ad);
+                            return ad;
+                        }
                     }
                 }
             }
+            return null;
+    
         }
-        return null;
 
-    }
-
-    public static void listenGlobal(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
-        synchronized(globalListeners){
-            for (JedisCommunicationChannel channel : channels) {
-                if (!globalListeners.containsKey(channel.getBytes())){
-                    globalListeners.put(channel.getBytes(), new ArrayList<>());
+        public static void listenGlobal(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+            Bytes b = new Bytes(globalActiveListenerAnonymousId++);
+            synchronized (globalActiveListener){
+                while (globalActiveListener.containsKey(b)){
+                    globalActiveListenerAnonymousId++;
+                    b = new Bytes(globalActiveListenerAnonymousId);
                 }
-                globalListeners.get(channel.getBytes()).add(listener);
+            }
+            listenGlobal(b, listener, channels);
+        }
+    
+        public static void listenGlobal(Bytes listernerKey, Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+            boolean added = false;
+            synchronized(globalListeners){
+                for (JedisCommunicationChannel channel : channels) {
+                    if (!globalListeners.containsKey(channel.getBytes())){
+                        globalListeners.put(channel.getBytes(), new ArrayList<>());
+                    }
+                    globalListeners.get(channel.getBytes()).add(listener);
+                    added = true;
+                }
+            }
+            if (added){
+                synchronized (globalActiveListener){
+                    globalActiveListener.put(listernerKey, listener);
+                    globalActiveListenerReverse.put(listener, listernerKey);
+                }
             }
         }
-    }
+    
 
     public static void stopListeningGlobal(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        boolean listenerStillActive = false;
         synchronized(globalListeners){
             for (JedisCommunicationChannel channel : channels) {
                 if (globalListeners.containsKey(channel.getBytes())){
@@ -209,6 +233,30 @@ public abstract class AbstractData<T> {
                         globalListeners.remove(channel.getBytes());
                     }
                 }
+            }
+            for (JedisCommunicationChannel channel : JedisCommunicationChannel.values()){
+                if (globalListeners.containsKey(channel.getBytes())){
+                    if (globalListeners.get(channel.getBytes()).contains(listener)){
+                        listenerStillActive = true;
+                        break;
+                    }
+                }
+            }
+        }
+        synchronized(globalActiveListener){
+            if (!listenerStillActive) {
+                if (globalActiveListenerReverse.containsKey(listener)){
+                    Bytes key = globalActiveListenerReverse.remove(listener);
+                    globalActiveListener.remove(key);
+                }
+            }
+        }
+    }
+
+    public static void stopListeningGlobal(Bytes listenerKey, JedisCommunicationChannel... channels) {
+        synchronized(globalActiveListener){
+            if (globalActiveListener.containsKey(listenerKey)){
+                stopListeningGlobal(globalActiveListener.get(listenerKey), channels);
             }
         }
     }
