@@ -455,6 +455,23 @@ public abstract class AbstractData<T> {
         stopListening(activeListeners.get(listenerKey), JedisCommunicationChannel.values());
     }
 
+    private static List<Consumer<DataEvent<AbstractData<?>>>> getFittingGlobalListeners(JedisCommunicationChannel channel){
+        return getFittingGlobalListeners(channel.getBytes());
+    }
+
+    private static List<Consumer<DataEvent<AbstractData<?>>>> getFittingGlobalListeners(Bytes channel){
+        List<Consumer<DataEvent<AbstractData<?>>>> result = new ArrayList<>();
+        synchronized (globalListeners){
+            if (globalListeners.containsKey(channel)){
+                result.addAll(globalListeners.get(channel));
+            }
+            if (globalListeners.containsKey(JedisCommunicationChannel.ANY.getBytes())){
+                result.addAll(globalListeners.get(JedisCommunicationChannel.ANY.getBytes()));
+            }
+        }
+        return result;
+    }
+
     private List<Consumer<DataEvent<AbstractData<?>>>> getFittingListeners(JedisCommunicationChannel channel){
         return getFittingListeners(channel.getBytes());
     }
@@ -482,6 +499,22 @@ public abstract class AbstractData<T> {
 
     protected boolean hasListeners() {
         return listeners.size() != 0;
+    }
+
+    public static void notifyListeners(AbstractData<?> affected, DataEvent<AbstractData<?>> event){
+        if (affected != null){
+            affected.notifyListeners(event);
+        } else {
+            List<Consumer<DataEvent<AbstractData<?>>>> listeners = getFittingGlobalListeners(event.getChannel());
+            // notify listeners
+            for (Consumer<DataEvent<AbstractData<?>>> consumer : listeners){
+                try {
+                    consumer.accept(event);
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     protected void notifyListeners(DataEvent<AbstractData<?>> event){
