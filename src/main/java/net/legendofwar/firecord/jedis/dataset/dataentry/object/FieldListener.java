@@ -13,6 +13,7 @@ import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.ConstructorSignature;
 import org.aspectj.lang.reflect.FieldSignature;
 
+import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.ByteMessage;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
@@ -21,6 +22,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.SimpleInterface;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ReferenceUpdateEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RWrapper;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.SimpleData;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
@@ -48,6 +50,7 @@ public class FieldListener {
     }
 
     /*
+    @formatter:off
     @Before("staticinitialization(net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject+)")
     public void beforeStaticInitialization(JoinPoint jp) {
         Class<?> clazz = jp.getSignature().getDeclaringType();
@@ -67,7 +70,9 @@ public class FieldListener {
                 }
             }
         }
-    }*/
+    }
+    @formatter:on    
+    */
 
     @After("staticinitialization(net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject+)")
     public void afterStaticInitialization(JoinPoint jp) {
@@ -90,8 +95,8 @@ public class FieldListener {
                 j.set(ByteFunctions.join(key, DataKeySuffix.CLASS), ClassNameLookup.getId(clazz.getName()).getData());
             }
         }
-        for (Method m : clazz.getMethods()){
-            if (m != null && AnnotationChecker.isStaticInitFunction(m) && m.getParameterTypes().length == 0){
+        for (Method m : clazz.getMethods()) {
+            if (m != null && AnnotationChecker.isStaticInitFunction(m) && m.getParameterTypes().length == 0) {
                 try {
                     m.invoke(null, new Object[0]);
                 } catch (Exception e) {
@@ -122,7 +127,7 @@ public class FieldListener {
                 if (newValue == null) {
                     // set reference to null
 
-                    if (instance != null){
+                    if (instance != null) {
                         instance.references.put(fieldName, new Bytes());
                     }
 
@@ -136,6 +141,10 @@ public class FieldListener {
                             ByteMessage.write(isStatic ? new Bytes(declaringClass.getName()) : instance.getKey(),
                                     new Bytes(fieldName), new Bytes().getData(),
                                     new Bytes(Byte.valueOf((byte) (isStatic ? 1 : 0)))));
+                    AbstractData.notifyListeners(isStatic ? null : instance,
+                            new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(),
+                                    JedisCommunicationChannel.REFERENCE_UPDATE, isStatic ? null : instance,
+                                    isStatic ? declaringClass : null, oldValue, newValue, fieldName, isStatic));
 
                 } else if (AbstractData.class.isAssignableFrom(fieldType)) {
                     // implies newValue is instance of AbstractData
@@ -198,8 +207,8 @@ public class FieldListener {
 
                                 // TODO: reload entry above (remove prior loaded occurances) & send message to
                                 // other instances to do the same
-                    
-                                if (instance != null){
+
+                                if (instance != null) {
                                     instance.references.put(fieldName, new Bytes(field.getName()));
                                 }
 
@@ -216,6 +225,11 @@ public class FieldListener {
                                                         : instance.getKey(),
                                                 new Bytes(fieldName), key,
                                                 new Bytes(Byte.valueOf((byte) (isStatic ? 1 : 0)))));
+                                AbstractData.notifyListeners(isStatic ? null : instance,
+                                        new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(),
+                                                JedisCommunicationChannel.REFERENCE_UPDATE, isStatic ? null : instance,
+                                                isStatic ? declaringClass : null, oldValue, newValue, fieldName,
+                                                isStatic));
                             } else {
                                 // Undefined behavior
                                 System.out.println("Undefined behaviour.");
@@ -231,8 +245,7 @@ public class FieldListener {
 
                             // entry has truly changed
 
-
-                            if (instance != null){
+                            if (instance != null) {
                                 instance.references.put(fieldName, new Bytes(((AbstractData<?>) newValue).getKey()));
                             }
 
@@ -248,6 +261,10 @@ public class FieldListener {
                                                     : instance.getKey(),
                                             new Bytes(fieldName), ((AbstractData<?>) newValue).getKey(),
                                             new Bytes(Byte.valueOf((byte) (isStatic ? 1 : 0)))));
+                            AbstractData.notifyListeners(isStatic ? null : instance,
+                                    new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(),
+                                            JedisCommunicationChannel.REFERENCE_UPDATE, isStatic ? null : instance,
+                                            isStatic ? declaringClass : null, oldValue, newValue, fieldName, isStatic));
 
                         }
 

@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.javatuples.Quartet;
 
+import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.ByteMessage;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
@@ -24,6 +25,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.DataType;
 import net.legendofwar.firecord.jedis.dataset.dataentry.Invalid;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ReferenceUpdateEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RByte;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RShort;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
@@ -405,8 +407,10 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                     try {
                                         Field field = clazz.getDeclaredField(fieldName);
                                         field.setAccessible(true);
+                                        Object oldValue = field.get(obj);
                                         field.set(obj, null);
                                         c = Object.class;
+                                        AbstractData.notifyListeners(obj, new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(), JedisCommunicationChannel.REFERENCE_UPDATE, obj, isStatic ?  clazz : null, oldValue, null, fieldName, isStatic));
                                     } catch (NoSuchFieldException e) {
                                         if (c.equals(Object.class) || c.equals(AbstractData.class)){
                                             System.out.println("No such Field: " + fieldName + " [static=" + isStatic + "] in "
@@ -428,12 +432,15 @@ public abstract class AbstractObject extends AbstractData<Object> {
 
                                         // if no change occurs we do not need to update the field
                                         if (referencedObject != field.get(obj)) {
-                                            if (obj != null) {
-                                                obj.references.put(field.getName(), referencedKey);
-                                            }
+                                            Object oldValue = field.get(obj);
                                             if (field.getType().isAssignableFrom(referencedObject.getClass())) {
+                                                if (obj != null) {
+                                                    obj.references.put(field.getName(), referencedKey);
+                                                }
                                                 field.set(obj, referencedObject);
+                                                AbstractData.notifyListeners(obj, new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(),JedisCommunicationChannel.REFERENCE_UPDATE, obj,isStatic ? clazz : null, oldValue, referencedObject, fieldName, isStatic));
                                             }
+                                            
                                         }
                                         c = Object.class;
                                     } catch (NoSuchFieldException e) {
