@@ -37,9 +37,9 @@ public abstract class AbstractData<T> {
     public static HashMap<Bytes, AbstractData<?>> loaded = new HashMap<Bytes, AbstractData<?>>();
     protected final static Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> globalListeners = new HashMap<>();
     protected final static Map<Class<? extends AbstractData<?>>, List<Consumer<AbstractData<?>>>> objectCreationListener = new HashMap<>();
-    private final static HashMap<Bytes, Consumer<DataEvent<AbstractData<?>>>> globalActiveListener = new HashMap<>();
-    private final static HashMap<Consumer<DataEvent<AbstractData<?>>>, Bytes> globalActiveListenerReverse = new HashMap<>();
-    private static long globalActiveListenerAnonymousId = 0l;
+    private final static HashMap<Bytes, Consumer<DataEvent<AbstractData<?>>>> globalActiveListeners = new HashMap<>();
+    private final static HashMap<Consumer<DataEvent<AbstractData<?>>>, Bytes> globalActiveListenersReverse = new HashMap<>();
+    private static long globalActiveListenersAnonymousId = 0l;
     
         static {
     
@@ -190,17 +190,17 @@ public abstract class AbstractData<T> {
         }
 
         public static void listenGlobal(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
-            Bytes b = new Bytes(globalActiveListenerAnonymousId++);
-            synchronized (globalActiveListener){
-                while (globalActiveListener.containsKey(b)){
-                    globalActiveListenerAnonymousId++;
-                    b = new Bytes(globalActiveListenerAnonymousId);
+            Bytes b = new Bytes(globalActiveListenersAnonymousId++);
+            synchronized (globalActiveListeners){
+                while (globalActiveListeners.containsKey(b)){
+                    globalActiveListenersAnonymousId++;
+                    b = new Bytes(globalActiveListenersAnonymousId);
                 }
             }
             listenGlobal(b, listener, channels);
         }
     
-        public static void listenGlobal(Bytes listernerKey, Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        public static void listenGlobal(Bytes listenerKey, Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
             boolean added = false;
             synchronized(globalListeners){
                 for (JedisCommunicationChannel channel : channels) {
@@ -212,9 +212,9 @@ public abstract class AbstractData<T> {
                 }
             }
             if (added){
-                synchronized (globalActiveListener){
-                    globalActiveListener.put(listernerKey, listener);
-                    globalActiveListenerReverse.put(listener, listernerKey);
+                synchronized (globalActiveListeners){
+                    globalActiveListeners.put(listenerKey, listener);
+                    globalActiveListenersReverse.put(listener, listenerKey);
                 }
             }
         }
@@ -243,20 +243,20 @@ public abstract class AbstractData<T> {
                 }
             }
         }
-        synchronized(globalActiveListener){
+        synchronized(globalActiveListeners){
             if (!listenerStillActive) {
-                if (globalActiveListenerReverse.containsKey(listener)){
-                    Bytes key = globalActiveListenerReverse.remove(listener);
-                    globalActiveListener.remove(key);
+                if (globalActiveListenersReverse.containsKey(listener)){
+                    Bytes key = globalActiveListenersReverse.remove(listener);
+                    globalActiveListeners.remove(key);
                 }
             }
         }
     }
 
     public static void stopListeningGlobal(Bytes listenerKey, JedisCommunicationChannel... channels) {
-        synchronized(globalActiveListener){
-            if (globalActiveListener.containsKey(listenerKey)){
-                stopListeningGlobal(globalActiveListener.get(listenerKey), channels);
+        synchronized(globalActiveListeners){
+            if (globalActiveListeners.containsKey(listenerKey)){
+                stopListeningGlobal(globalActiveListeners.get(listenerKey), channels);
             }
         }
     }
@@ -283,7 +283,13 @@ public abstract class AbstractData<T> {
     protected final Bytes key;
     protected final JedisLock lock;
     protected int modifier; // 1: automatically generated
+
     protected final Map<Bytes, List<Consumer<DataEvent<AbstractData<?>>>>> listeners;
+
+    private final HashMap<Bytes, Consumer<DataEvent<AbstractData<?>>>> activeListeners = new HashMap<>();
+    private final HashMap<Consumer<DataEvent<AbstractData<?>>>, Bytes> activeListenersReverse = new HashMap<>();
+    private long activeListenersAnonymousId = 0l;
+
     public ArrayList<AbstractData<?>> owners = new ArrayList<>();
     public long lastTimeOwnerBecameEmpty = 0l;
 
@@ -370,18 +376,38 @@ public abstract class AbstractData<T> {
         this.lock.unlock();
     }
 
-    public void listen(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+    public void listen(Bytes listenerKey, Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        boolean added = false;
         synchronized(this.listeners){
             for (JedisCommunicationChannel channel : channels) {
                 if (!this.listeners.containsKey(channel.getBytes())){
                     this.listeners.put(channel.getBytes(), new ArrayList<>());
                 }
                 this.listeners.get(channel.getBytes()).add(listener);
+                added = true;
+            }
+        }
+        if (added){
+            synchronized (this.activeListeners){
+                this.activeListeners.put(listenerKey, listener);
+                this.activeListenersReverse.put(listener, listenerKey);
             }
         }
     }
 
+    public void listen(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        Bytes b = new Bytes(activeListenersAnonymousId++);
+        synchronized (this.listeners){
+            while (this.listeners.containsKey(b)){
+                activeListenersAnonymousId++;
+                b = new Bytes(activeListenersAnonymousId);
+            }
+        }
+        listen(b, listener, channels);
+    }
+
     public void stopListening(Consumer<DataEvent<AbstractData<?>>> listener, JedisCommunicationChannel... channels){
+        boolean listenerStillActive = false;
         synchronized(this.listeners){
             for (JedisCommunicationChannel channel : channels) {
                 if (this.listeners.containsKey(channel.getBytes())){
@@ -394,11 +420,39 @@ public abstract class AbstractData<T> {
                     }
                 }
             }
+            for (JedisCommunicationChannel channel : JedisCommunicationChannel.values()){
+                if (this.listeners.containsKey(channel.getBytes())){
+                    if (this.listeners.get(channel.getBytes()).contains(listener)){
+                        listenerStillActive = true;
+                        break;
+                    }
+                }
+            }
+        }
+        synchronized(activeListeners){
+            if (!listenerStillActive) {
+                if (activeListenersReverse.containsKey(listener)){
+                    Bytes key = activeListenersReverse.remove(listener);
+                    activeListeners.remove(key);
+                }
+            }
+        }
+    }
+
+    public void stopListening(Bytes listenerKey, JedisCommunicationChannel... channels) {
+        synchronized(activeListeners){
+            if (activeListeners.containsKey(listenerKey)){
+                stopListening(activeListeners.get(listenerKey), channels);
+            }
         }
     }
 
     public void stopListening(Consumer<DataEvent<AbstractData<?>>> listener){
         stopListening(listener, JedisCommunicationChannel.values());
+    }
+
+    public void stopListening(Bytes listenerKey) {
+        stopListening(activeListeners.get(listenerKey), JedisCommunicationChannel.values());
     }
 
     private List<Consumer<DataEvent<AbstractData<?>>>> getFittingListeners(JedisCommunicationChannel channel){
