@@ -276,16 +276,35 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                             }
                                             if (entryKey != null) {
                                                 AbstractData<?> entry = AbstractData.create(entryKey);
+                                                // if entry is null that we couldn't load it from the db
                                                 if (entry == null) {
-                                                    DataType dt = DataType.getByC(field.getType());
-                                                    if (dt != null && dt.canBeLoaded()) {
-                                                        markChild(object, entryKey);
-                                                        entry = AbstractData.callConstructor(entryKey, field.getType());
+                                                    // try to populate it with a default value if it exists for the class
+                                                    // TODO: check this!!!!
+                                                    for (Field f : field.getType().getDeclaredFields()){
+                                                        if (f != null && f.getName().equals("DEFAULT_OBJECT") && Modifier.isStatic(f.getModifiers()) && Modifier.isFinal(f.getModifiers()) && field.getType().isAssignableFrom(f.getType())){
+                                                            f.setAccessible(true);
+                                                            try {
+                                                                entry = (AbstractData<?>) f.get(null);
+                                                                break;
+                                                            } catch (IllegalArgumentException e) { 
+                                                                e.printStackTrace();
+                                                            } catch (IllegalAccessException e) {
+                                                                e.printStackTrace();
+                                                            }
+                                                        }
                                                     }
-                                                    if (dt == null) {
-                                                        markChild(object, entryKey);
-                                                        if (AbstractObject.class.isAssignableFrom(field.getType())) {
+                                                    // this means that there was no suitable DEFAULT_OBJECT, hence we construct a new object
+                                                    if (entry == null) {
+                                                        DataType dt = DataType.getByC(field.getType());
+                                                        if (dt != null && dt.canBeLoaded()) {
+                                                            markChild(object, entryKey);
                                                             entry = AbstractData.callConstructor(entryKey, field.getType());
+                                                        }
+                                                        if (dt == null) {
+                                                            markChild(object, entryKey);
+                                                            if (AbstractObject.class.isAssignableFrom(field.getType())) {
+                                                                entry = AbstractData.callConstructor(entryKey, field.getType());
+                                                            }
                                                         }
                                                     }
                                                 }
