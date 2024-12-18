@@ -497,10 +497,6 @@ public abstract class AbstractData<T> {
         return result;
     }
 
-    protected boolean hasListeners() {
-        return listeners.size() != 0;
-    }
-
     public static void notifyListeners(AbstractData<?> affected, DataEvent<AbstractData<?>> event){
         if (affected != null){
             affected.notifyListeners(event);
@@ -525,14 +521,11 @@ public abstract class AbstractData<T> {
         if (event.getChannel().equals(JedisCommunicationChannel.REFERENCE_UPDATE)){
             System.out.println("Reference Update notify() called, listeners: "+listeners.size());
         }
-        if (hasListeners()){
-            // notify listeners
-            for (Consumer<DataEvent<AbstractData<?>>> consumer : listeners){
-                try {
-                    consumer.accept(event);
-                } catch (Exception e){
-                    e.printStackTrace();
-                }
+        for (Consumer<DataEvent<AbstractData<?>>> consumer : listeners){
+            try {
+                consumer.accept(event);
+            } catch (Exception e){
+                e.printStackTrace();
             }
         }
     }

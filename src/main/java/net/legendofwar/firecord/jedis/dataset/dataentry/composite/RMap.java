@@ -156,11 +156,9 @@ public final class RMap<T extends AbstractData<?>> extends CompositeData<T> impl
                                 entriesRemoved.put(en.getKey(), removed);
                             }
                             map.data.put(en.getKey(), entry);
-                            if (map.hasListeners()){
-                                entriesReceived.put(en.getKey(), entry);
-                                synchronized (entry.owners) {
-                                    entry.owners.add(map);
-                                }
+                            entriesReceived.put(en.getKey(), entry);
+                            synchronized (entry.owners) {
+                                entry.owners.add(map);
                             }
                         }
                         synchronized (map.valuesInstance.data) {
