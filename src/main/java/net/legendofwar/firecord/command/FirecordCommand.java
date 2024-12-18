@@ -73,6 +73,8 @@ public class FirecordCommand {
         public void accept(DataEvent<AbstractData<?>> event) {
             if (event instanceof ReferenceUpdateEvent referenceUpdateEvent){
                 System.out.println("[ReferenceUpdateListener]["+(referenceUpdateEvent.isStatic() ? referenceUpdateEvent.getClass().getSimpleName() : referenceUpdateEvent.getData().getClass().getSimpleName()+":" + referenceUpdateEvent.getData().getKey().toString()) + "][" + referenceUpdateEvent.getFieldName() + "] " + (referenceUpdateEvent.getOldValue() == null ? "null" : referenceUpdateEvent.getOldValue().getKey()) + " --> " + (referenceUpdateEvent.getNewValue() == null ? "null" : referenceUpdateEvent.getNewValue().getKey()) ); 
+            } else {
+                System.out.println("The Event type is unexpected: "+event.getClass().getSimpleName());
             }
         }
         
