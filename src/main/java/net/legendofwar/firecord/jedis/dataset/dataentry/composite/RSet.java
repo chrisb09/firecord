@@ -469,17 +469,15 @@ public class RSet<T extends AbstractData<?>> extends CollectionData<T, Set<T>> i
             synchronized(this.dataKeys){
                 this.dataKeys.retainAll(arg0.stream().filter(element -> element instanceof AbstractData).map(element -> ((AbstractData<?>) (element)).getKey()).toList());
             }
-            if (this.hasListeners()) {
-                if (arg0.size() > 0) {
-                    HashSet<AbstractData<?>> tr = new HashSet<>(arg0.size());
-                    for (AbstractData<?> ad : this.data) {
-                        if (!tr.contains(ad)) {
-                            removed.add(ad);
-                        }
+            if (arg0.size() > 0) {
+                HashSet<AbstractData<?>> tr = new HashSet<>(arg0.size());
+                for (AbstractData<?> ad : this.data) {
+                    if (!tr.contains(ad)) {
+                        removed.add(ad);
                     }
-                } else {
-                    removed.addAll(this.data);
                 }
+            } else {
+                removed.addAll(this.data);
             }
         }
         for (AbstractData<?> obj : removed){
