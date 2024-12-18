@@ -108,7 +108,9 @@ public class FieldListener {
 
     @SuppressWarnings("null")
     @Around("set(!final * net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject+.*) && args(newValue)")
-    public void aroundFieldChange(ProceedingJoinPoint joinPoint, Object newValue) throws Throwable {
+    public void aroundFieldChange(ProceedingJoinPoint joinPoint, Object newObject) throws Throwable {
+        assert(newObject == null || newObject instanceof AbstractData<?>);
+        AbstractData<?> newValue = (AbstractData<?>) newObject;
         AbstractObject instance = (AbstractObject) joinPoint.getTarget();
         Object replacingObject = null;
         if (instance == null || instance.isInitialized()) { // static fields don't have an instance
@@ -121,7 +123,7 @@ public class FieldListener {
 
             if (field != null && AbstractData.class.isAssignableFrom(field.getType())) {
                 field.setAccessible(true);
-                Object oldValue = isStatic ? field.get(null) : field.get(instance);
+                AbstractData<?> oldValue = isStatic ? (AbstractData<?>) field.get(null) : (AbstractData<?>) field.get(instance);
                 Class<?> fieldType = field.getType();
 
                 if (newValue == null) {

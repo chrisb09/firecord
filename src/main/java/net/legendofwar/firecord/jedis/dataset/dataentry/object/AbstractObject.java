@@ -432,7 +432,9 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                     try {
                                         Field field = clazz.getDeclaredField(fieldName);
                                         field.setAccessible(true);
-                                        Object oldValue = field.get(obj);
+                                        Object oldObject = field.get(obj);
+                                        assert(oldObject == null || oldObject instanceof AbstractData<?>);
+                                        AbstractData<?> oldValue = (AbstractData<?>) oldObject;
                                         field.set(obj, null);
                                         if (oldValue != null && oldValue instanceof AbstractData ad){
                                             if (obj != null){
@@ -462,7 +464,9 @@ public abstract class AbstractObject extends AbstractData<Object> {
 
                                         // if no change occurs we do not need to update the field
                                         if (referencedObject != field.get(obj)) {
-                                            Object oldValue = field.get(obj);
+                                            Object oldObject = field.get(obj);
+                                            assert(oldObject == null || oldObject instanceof AbstractData<?>);
+                                            AbstractData<?> oldValue = (AbstractData<?>) oldObject;
                                             if (field.getType().isAssignableFrom(referencedObject.getClass())) {
                                                 if (obj != null) {
                                                     obj.references.put(field.getName(), referencedKey);

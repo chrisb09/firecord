@@ -20,6 +20,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RList;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RSet;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.DataEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.event.ReferenceUpdateEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.REnum;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
@@ -65,6 +66,18 @@ public class FirecordCommand {
 
     };
 
+    static boolean testreferencelistener_active = false;
+    static Consumer<DataEvent<AbstractData<?>>> referenceUpdateListener = new Consumer<DataEvent<AbstractData<?>>>() {
+
+        @Override
+        public void accept(DataEvent<AbstractData<?>> event) {
+            if (event instanceof ReferenceUpdateEvent referenceUpdateEvent){
+                System.out.println("[ReferenceUpdateListener]["+(referenceUpdateEvent.isStatic() ? referenceUpdateEvent.getClass().getSimpleName() : referenceUpdateEvent.getData().getClass().getSimpleName()+":" + referenceUpdateEvent.getData().getKey().toString()) + "][" + referenceUpdateEvent.getFieldName() + "] " + (referenceUpdateEvent.getOldValue() == null ? "null" : referenceUpdateEvent.getOldValue().getKey()) + " --> " + (referenceUpdateEvent.getNewValue() == null ? "null" : referenceUpdateEvent.getNewValue().getKey()) ); 
+            }
+        }
+        
+    };
+
     public static boolean onCommand(Sender sender, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
             sender.sendMessage("§b" + label + " id          §e show id of this node");
@@ -81,6 +94,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testbool    §e runs RBoolean test");
             sender.sendMessage("§b" + label + " testnull    §e test null toggle");
             sender.sendMessage("§b" + label + " testlisten  §e toggle test listener");
+            sender.sendMessage("§b" + label + " testreferencelisten  §e toggle test reference listener");
             sender.sendMessage("§b" + label + " testow      §e test overwrite");
             sender.sendMessage("§b" + label + " testasync   §e test setAsync");
             sender.sendMessage("§b" + label + " tested      §e test encode-decode");
@@ -498,6 +512,14 @@ public class FirecordCommand {
                 AbstractData.listenGlobal(testlistener, JedisCommunicationChannel.ANY);
             } else {
                 AbstractData.stopListeningGlobal(testlistener, JedisCommunicationChannel.ANY);
+            }
+        }  else if (args[0].equalsIgnoreCase("testreferencelisten")) {
+            testreferencelistener_active = !testreferencelistener_active;
+            sender.sendMessage("§bToggle test-reference-listener " + (!testreferencelistener_active ? "§cOFF" : "§aON"));
+            if (testreferencelistener_active) {
+                AbstractData.listenGlobal(referenceUpdateListener, JedisCommunicationChannel.REFERENCE_UPDATE);
+            } else {
+                AbstractData.stopListeningGlobal(referenceUpdateListener, JedisCommunicationChannel.REFERENCE_UPDATE);
             }
         } else if (args[0].equalsIgnoreCase("testow")) {
             sender.sendMessage("§boverwrite_field: §e" + TestObject.overwrite_field + " [§a"
