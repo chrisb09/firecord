@@ -507,6 +507,9 @@ public abstract class AbstractData<T> {
         } else {
             List<Consumer<DataEvent<AbstractData<?>>>> listeners = getFittingGlobalListeners(event.getChannel());
             // notify listeners
+            if (event.getChannel().equals(JedisCommunicationChannel.REFERENCE_UPDATE)){
+                System.out.println("(s) Reference Update notify() called, listeners: "+listeners.size());
+            }
             for (Consumer<DataEvent<AbstractData<?>>> consumer : listeners){
                 try {
                     consumer.accept(event);
@@ -519,6 +522,9 @@ public abstract class AbstractData<T> {
 
     protected void notifyListeners(DataEvent<AbstractData<?>> event){
         List<Consumer<DataEvent<AbstractData<?>>>> listeners = this.getFittingListeners(event.getChannel());
+        if (event.getChannel().equals(JedisCommunicationChannel.REFERENCE_UPDATE)){
+            System.out.println("Reference Update notify() called, listeners: "+listeners.size());
+        }
         if (hasListeners()){
             // notify listeners
             for (Consumer<DataEvent<AbstractData<?>>> consumer : listeners){
