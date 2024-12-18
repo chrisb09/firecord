@@ -137,6 +137,13 @@ public class FieldListener {
                                 new Bytes().getData());
                     }
 
+
+                    if (oldValue != null && oldValue instanceof AbstractData ad){
+                        if (instance != null){
+                            ad.owners.remove(instance);
+                        }
+                    }
+
                     JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,
                             ByteMessage.write(isStatic ? new Bytes(declaringClass.getName()) : instance.getKey(),
                                     new Bytes(fieldName), new Bytes().getData(),
@@ -219,6 +226,15 @@ public class FieldListener {
                                             key.getData());
                                 }
 
+
+                                if (oldValue != null && oldValue instanceof AbstractData ad){
+                                    if (instance != null){
+                                        ad.owners.remove(instance);
+                                    }
+                                }
+
+                                replacingEntry.owners.add(instance);
+
                                 JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,
                                         ByteMessage.write(
                                                 isStatic ? new Bytes(declaringClass.getName()).getData()
@@ -253,6 +269,15 @@ public class FieldListener {
                                 j.hset(isStatic ? new Bytes(declaringClass.getName()).getData()
                                         : instance.getKey().getData(), new Bytes(fieldName).getData(),
                                         ((AbstractData<?>) newValue).getKey().getData());
+                            }
+
+                            if (oldValue != null && oldValue instanceof AbstractData ad){
+                                if (instance != null){
+                                    ad.owners.remove(instance);
+                                }
+                            }
+                            if (newValue instanceof AbstractData<?> ad){
+                                ad.owners.add(instance);
                             }
 
                             JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,

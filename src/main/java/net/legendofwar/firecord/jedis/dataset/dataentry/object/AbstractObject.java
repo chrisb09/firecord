@@ -312,6 +312,9 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                                     if (!(entry instanceof Invalid)) {
                                                         try {
                                                             field.set(object, entry);
+                                                            if (object != null){
+                                                                entry.owners.add(object);
+                                                            }
                                                         } catch (IllegalArgumentException e) {
                                                             e.printStackTrace();
                                                         } catch (IllegalAccessException e) {
@@ -350,6 +353,9 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                                 if (entry == null || field.getType().isAssignableFrom(entry.getClass())) {
                                                     try {
                                                         field.set(object, entry);
+                                                        if (object != null){
+                                                            entry.owners.add(object);
+                                                        }
                                                     } catch (IllegalArgumentException e) {
                                                         e.printStackTrace();
                                                     } catch (IllegalAccessException e) {
@@ -428,6 +434,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                         field.setAccessible(true);
                                         Object oldValue = field.get(obj);
                                         field.set(obj, null);
+                                        if (oldValue != null && oldValue instanceof AbstractData ad){
+                                            if (obj != null){
+                                                ad.owners.remove(obj);
+                                            }
+                                        }
                                         c = Object.class;
                                         AbstractData.notifyListeners(obj, new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(), JedisCommunicationChannel.REFERENCE_UPDATE, obj, isStatic ?  clazz : null, oldValue, null, fieldName, isStatic));
                                     } catch (NoSuchFieldException e) {
@@ -457,6 +468,12 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                                     obj.references.put(field.getName(), referencedKey);
                                                 }
                                                 field.set(obj, referencedObject);
+                                                if (oldValue != null && oldValue instanceof AbstractData ad){
+                                                    if (obj != null){
+                                                        ad.owners.remove(obj);
+                                                        referencedObject.owners.add(obj);
+                                                    }
+                                                }
                                                 AbstractData.notifyListeners(obj, new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(),JedisCommunicationChannel.REFERENCE_UPDATE, obj,isStatic ? clazz : null, oldValue, referencedObject, fieldName, isStatic));
                                             }
                                             

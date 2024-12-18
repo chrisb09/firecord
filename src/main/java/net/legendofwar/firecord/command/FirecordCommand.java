@@ -3,6 +3,7 @@ package net.legendofwar.firecord.command;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
@@ -515,6 +516,7 @@ public class FirecordCommand {
             if (testob == null) {
                 testob = new TestObject(new Bytes("testobject"));
             }
+            sender.sendMessage("§aowners(§etestobject.c§a): §b"+testob.c.owners.stream().map(ad -> ad.getKey().toString()).collect(Collectors.joining("§a, §b")));
             sender.sendMessage("§btestob: §e" + testob);
             sender.sendMessage("§atestob.incrA();");
             testob.incrA();
