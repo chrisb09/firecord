@@ -2,6 +2,7 @@ package net.legendofwar.firecord.command;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.object.TestObject;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RBoolean;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RInteger;
 import net.legendofwar.firecord.jedis.dataset.dataentry.simple.RLong;
+import net.legendofwar.firecord.jedis.dataset.datakeys.ClassNameLookup;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeyPrefix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
 import net.legendofwar.firecord.tool.NodeType;
@@ -104,6 +106,8 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testset     §e set test command");
             sender.sendMessage("§b" + label + " testmap     §e map test command");
             sender.sendMessage("§b" + label + " testanon    §e anonymous type test command");
+            sender.sendMessage("§b" + label + " tobytes     §e convert a string to a byte[]");
+            sender.sendMessage("§b" + label + " listclasses §e list all classes in the lookup table");
             sender.sendMessage("§b" + label + " testmessage §e write&read to a test-byte[]");
             sender.sendMessage("§b" + label + " testobject  §e test object command");
             sender.sendMessage("§b" + label + " testenum    §e construct an enum");
@@ -484,9 +488,13 @@ public class FirecordCommand {
         } else if (args[0].equalsIgnoreCase("testanon")) {
             RLong ad = dg.create(7l);
             sender.sendMessage("§btestanon: §e" + ad.getKey() + "=§a" + ad);
-        } else if (args[0].equalsIgnoreCase("converttobytes")){
+        } else if (args[0].equalsIgnoreCase("tobytes")){
             String text = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
             sender.sendMessage("§bString §e"+text+" §bis §a"+new Bytes(text).toString()+" §b or §a"+new Bytes(text).toRedisString());
+        } else if (args[0].equalsIgnoreCase("listclasses")) {
+            for (Map.Entry<Long, String> entry : ClassNameLookup.getCache().entrySet()) {
+                sender.sendMessage("§b" + entry.getKey() + "§e: " + entry.getValue());
+            }
         } else if (args[0].equalsIgnoreCase("testfield")) {
             if (testob == null) {
                 testob = new TestObject(new Bytes("testobject_new"));
