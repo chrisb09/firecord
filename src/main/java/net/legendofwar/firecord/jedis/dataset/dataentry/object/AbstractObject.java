@@ -48,6 +48,10 @@ import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyLookupTable;
 import redis.clients.jedis.Jedis;
 
+/**
+ * AbstractObject is an abstract class that represents an object in the dataset.
+ * It extends AbstractData and provides methods for managing and loading data entries.
+ */
 public abstract class AbstractObject extends AbstractData<Object> {
 
     public static final HashMap<Bytes, AbstractObject> loaded = new HashMap<Bytes, AbstractObject>();
@@ -55,10 +59,23 @@ public abstract class AbstractObject extends AbstractData<Object> {
     private static final KeyLookupTable fieldKeyLookupTable = new KeyLookupTable(
             DataKeyPrefix.KEY_LOOKUP_TABLE.getBytes().append("fields".getBytes()), 4);
 
+    /**
+     * Returns the key for a specific field of an object.
+     *
+     * @param objectKey the key of the object
+     * @param fieldName the name of the field
+     * @return the key for the field
+     */
     public static Bytes getFieldKey(Bytes objectKey, String fieldName) {
         return objectKey.append(fieldKeyLookupTable.lookUpId(fieldName));
     }
 
+    /**
+     * Returns the key for the static class name.
+     *
+     * @param className the name of the class
+     * @return the key for the static class name
+     */
     public static Bytes getStaticClassNameKey(String className) {
         return DataKeyPrefix.CLASS.getBytes().append(ClassNameLookup.getId(className));
     }
@@ -150,6 +167,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
 
     Map<String, Bytes> references;
 
+    /**
+     * Constructs an AbstractObject with the specified key.
+     *
+     * @param key the key of the object
+     */
     protected AbstractObject(@NotNull Bytes key) {
         super(key);
         if (key != null) {
@@ -193,15 +215,21 @@ public abstract class AbstractObject extends AbstractData<Object> {
         }
     }
 
+    /**
+     * Checks if the object is initialized.
+     *
+     * @return true if the object is initialized, false otherwise
+     */
     public boolean isInitialized() {
         return this.initialized;
     }
 
     /**
-     * Loads all AbstractData entries that are NOT final
-     * 
-     * @param c
-     * @param entries
+     * Loads all AbstractData entries that are not final.
+     *
+     * @param c the class of the object
+     * @param object the object to load
+     * @param references the references map
      */
     @SuppressWarnings("null")
     static void loadObject(Class<?> c, AbstractObject object, Map<String, Bytes> references) {
@@ -380,6 +408,12 @@ public abstract class AbstractObject extends AbstractData<Object> {
         }
     }
 
+    /**
+     * Marks a child object.
+     *
+     * @param object the parent object
+     * @param childKey the key of the child object
+     */
     private static void markChild(AbstractObject object, Bytes childKey){
         if (object != null){
             if (object.modifier % 2 == 1){
@@ -590,6 +624,16 @@ public abstract class AbstractObject extends AbstractData<Object> {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Migrates the class name from oldClassName to newClassName.
+     *
+     * @param newClassName the new class name
+     * @param oldClassName the old class name
+     */
+    public static void migrateClassName(String newClassName, String oldClassName) {
+        ClassNameLookup.migrate(newClassName, oldClassName);
     }
 
 }
