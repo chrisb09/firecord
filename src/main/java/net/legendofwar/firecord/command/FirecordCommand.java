@@ -484,7 +484,9 @@ public class FirecordCommand {
         } else if (args[0].equalsIgnoreCase("testanon")) {
             RLong ad = dg.create(7l);
             sender.sendMessage("§btestanon: §e" + ad.getKey() + "=§a" + ad);
-
+        } else if (args[0].equalsIgnoreCase("converttobytes")){
+            String text = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+            sender.sendMessage("§bString §e"+text+" §bis §a"+new Bytes(text).toString()+" §b or §a"+new Bytes(text).toRedisString());
         } else if (args[0].equalsIgnoreCase("testfield")) {
             if (testob == null) {
                 testob = new TestObject(new Bytes("testobject_new"));
