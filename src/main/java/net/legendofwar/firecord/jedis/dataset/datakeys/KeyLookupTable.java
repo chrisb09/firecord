@@ -37,13 +37,45 @@ public class KeyLookupTable {
     private int idSize;
     private JedisLock lock;
 
-    private HashMap<Bytes, Bytes> cache = new HashMap<>(); // id, name
+    HashMap<Bytes, Bytes> cache = new HashMap<>(); // id, name
     private HashMap<Bytes, Bytes> reverseCache = new HashMap<>(); // name, id
+
+    void migrate(Bytes newName, Bytes oldName){
+        if (reverseCache.containsKey(oldName)){
+            Bytes id = reverseCache.remove(oldName);
+            reverseCache.put(newName, id);
+            cache.put(id, newName);
+            lock.lock();
+            try {
+                try (Jedis j = ClassicJedisPool.getJedis()) {
+                    j.hset(getCacheKey(), id.getData(), newName.getData());
+                    j.hset(getReverseCacheKey(), newName.getData(), id.getData());
+                    j.hdel(getReverseCacheKey(), oldName.getData());
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
 
     public KeyLookupTable(Bytes key, int idSize) {
         this.key = key;
         this.idSize = idSize;
         lock = new JedisLock(key);
+        // load existing values from redis into cache and reverse cache
+        lock.lock();
+        try (Jedis j = ClassicJedisPool.getJedis()) {
+            byte[] cache_key = getCacheKey();
+            byte[] reverseCacheKey = getReverseCacheKey();
+            j.hgetAll(cache_key).forEach((id, name) -> {
+                cache.put(new Bytes(id), new Bytes(name));
+            });
+            j.hgetAll(reverseCacheKey).forEach((name, id) -> {
+                reverseCache.put(new Bytes(name), new Bytes(id));
+            });
+        } finally {
+            lock.unlock();
+        }
     }
 
     public Bytes lookUpName(long id) {
