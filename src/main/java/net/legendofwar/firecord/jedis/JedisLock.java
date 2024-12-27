@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class JedisLock implements Lock, Closeable {
 
-    final static long DEFAULT_TIMEOUT = 20000; // 20s
+    final static long DEFAULT_TIMEOUT = 5000; // 5s
     final static SetParams params;
 
     static {
