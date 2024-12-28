@@ -381,7 +381,7 @@ public abstract class AbstractObject extends AbstractData<Object> {
                                                 if (entry == null || field.getType().isAssignableFrom(entry.getClass())) {
                                                     try {
                                                         field.set(object, entry);
-                                                        if (object != null){
+                                                        if (object != null && entry != null){
                                                             entry.owners.add(object);
                                                         }
                                                     } catch (IllegalArgumentException e) {
