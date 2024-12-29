@@ -62,7 +62,9 @@ public class TimeHelper {
                 }
                 result.append(values[i]).append(" ").append(labels[i]);
                 if (values[i] > 1) {
-                    result.append("s");  // Pluralize
+                    if (i < 7){
+                        result.append("");  // Pluralize
+                    }
                 }
                 nonZeroCount++;
             }
