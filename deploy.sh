@@ -17,10 +17,10 @@ find target/ -type f -regex '.*/[A-Za-z]+-[0-9]+\.[0-9]+\(\.[0-9]+\)?\(\.[0-9]+\
 echo "Copied to staging, now distributing it on the server..."
 ssh legendofwar@legendofwar.net 'find /minecraft/staging/ -type f \
  -exec echo {} \; \
- -exec cp {} /minecraft/server/paper/lobby/custom_plugins/ \; \
- -exec cp {} /minecraft/server/paper/construct/custom_plugins/ \; \
+ -exec cp {} /minecraft/server/paper/lobby/plugins/ \; \
+ -exec cp {} /minecraft/server/paper/construct/plugins/ \; \
  -exec cp {} /minecraft/server/velocity/master/plugins/ \; \
- -exec cp {} /minecraft/server/paper/main/custom_plugins/ \; \
+ -exec cp {} /minecraft/server/paper/main/plugins/ \; \
  -delete'
 
 echo "Done"
@@ -33,10 +33,10 @@ mvn clean install
 echo "Copy files to server folders folder"
 find target/ -type f -regex '.*/[A-Za-z]+-[0-9]+\.[0-9]+\(\.[0-9]+\)?\(\.[0-9]+\)?\.jar' \
  -exec echo {} \; \
- -exec cp {} /minecraft/server/paper/lobby/custom_plugins/ \; \
- -exec cp {} /minecraft/server/paper/construct/custom_plugins/ \; \
+ -exec cp {} /minecraft/server/paper/lobby/plugins/ \; \
+ -exec cp {} /minecraft/server/paper/construct/plugins/ \; \
  -exec cp {} /minecraft/server/velocity/master/plugins/ \; \
- -exec cp {} /minecraft/server/paper/main/custom_plugins/ \;
+ -exec cp {} /minecraft/server/paper/main/plugins/ \;
 
 else
   echo "User $current_user is not know."
