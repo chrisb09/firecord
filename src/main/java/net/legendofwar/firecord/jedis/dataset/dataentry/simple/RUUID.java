@@ -2,7 +2,6 @@ package net.legendofwar.firecord.jedis.dataset.dataentry.simple;
 
 import java.util.UUID;
 
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import net.legendofwar.firecord.jedis.dataset.Bytes;
@@ -16,7 +15,7 @@ public final class RUUID extends SmallData<UUID> {
         return GENERATOR.create();
     }
 
-    final static RUUID create(Vector defaultValue) {
+    final static RUUID create(RUUID defaultValue) {
         return GENERATOR.create(defaultValue);
     }
 
