@@ -411,4 +411,14 @@ public abstract class SimpleData<T> extends AbstractData<T> implements SimpleInt
         return object.value;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SimpleData<?> other){
+            Object otherValue = other.get();
+            T thisValue = this.get();
+            return (otherValue == null && thisValue == null) || (thisValue != null && thisValue.equals(otherValue));
+        }
+        return false;
+    }
+
 }
