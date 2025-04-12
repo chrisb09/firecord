@@ -95,6 +95,11 @@ public class MyData extends AbstractObject {
     public void setName(String name){
         this.name.set(name);
     }
+
+    // The reference update will be detected by aspectj and thus written to redis and synchronized accross instances
+    public void setName(RString name){
+        this.name = name;
+    }
     
     public MySettings getSettings() {
         return settings;
