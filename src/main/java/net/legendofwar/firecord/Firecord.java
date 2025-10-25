@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import net.legendofwar.firecord.communication.CommunicationTests;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.communication.MessageReceiver;
@@ -27,6 +28,7 @@ public class Firecord {
         Firecord.nodeType = nodeType;
         Firecord.partialResource = partialResource;
         JedisCommunication.init(id);
+        CommunicationTests.init(); // allows receiving test messages
         return id != null && id.length != 0;
     }
 

@@ -11,6 +11,7 @@ import org.javatuples.Triplet;
 
 import net.legendofwar.firecord.Firecord;
 import net.legendofwar.firecord.communication.ByteMessage;
+import net.legendofwar.firecord.communication.CommunicationTests;
 import net.legendofwar.firecord.communication.JedisCommunication;
 import net.legendofwar.firecord.communication.JedisCommunicationChannel;
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
@@ -95,6 +96,7 @@ public class FirecordCommand {
             sender.sendMessage("§b" + label + " testfield   §e test a field change of testob");
             sender.sendMessage("§b" + label + " teststatic  §e testfield for static vars");
             sender.sendMessage("§b" + label + " testchar    §e runs RChar related test");
+            sender.sendMessage("§b" + label + " broadcast   §e broadcast a test message to all nodes");
             sender.sendMessage("§b" + label + " testbool    §e runs RBoolean test");
             sender.sendMessage("§b" + label + " testnull    §e test null toggle");
             sender.sendMessage("§b" + label + " testlisten  §e toggle test listener");
@@ -546,6 +548,8 @@ public class FirecordCommand {
             TestObject.testEncodeDecode();
         } else if (args[0].equalsIgnoreCase("testasync")) {
             TestObject.testAsyncSet();
+        } else if (args[0].equalsIgnoreCase("broadcast")) {
+            CommunicationTests.sendMessage("sender", "receiver", "content");
         } else if (args[0].equalsIgnoreCase("testobject")) {
             if (testob == null) {
                 testob = new TestObject(new Bytes("testobject"));

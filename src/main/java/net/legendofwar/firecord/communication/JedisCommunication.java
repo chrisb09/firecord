@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
 import net.legendofwar.firecord.jedis.ClassicJedisPool;
@@ -26,7 +27,7 @@ public class JedisCommunication extends BinaryJedisPubSub {
     private static Thread nodeThread = null;
     private static JedisCommunication handler = null;
     private static CountDownLatch latch = new CountDownLatch(1);
-    private static final HashMap<Bytes, MessageReceiver> receivers = new HashMap<Bytes, MessageReceiver>();
+    private static final HashMap<Bytes, Pair<MessageReceiver, Boolean>> receivers = new HashMap<Bytes, Pair<MessageReceiver, Boolean>>();
     private static final HashSet<Bytes> nodes = new HashSet<Bytes>();
     private static final byte nodeIdSize = 1; // how many bytes are used for name encodings
     public static final KeyLookupTable nodeKeyLookUpTable = new KeyLookupTable(
@@ -90,7 +91,7 @@ public class JedisCommunication extends BinaryJedisPubSub {
                         + broadcast + "): " + message);
             }
 
-        });
+        }, false); // don't allow self messages
 
         // log channel
         subscribe(JedisCommunicationChannel.LOG, new MessageReceiver() {
@@ -174,13 +175,21 @@ public class JedisCommunication extends BinaryJedisPubSub {
     }
 
     public static void subscribe(Bytes channel, MessageReceiver receiver) {
+        subscribe(channel, receiver, false);
+    }
+
+    public static void subscribe(Bytes channel, MessageReceiver receiver, boolean allowSelfMessages) {
         synchronized (receivers) {
-            receivers.put(channel, receiver);
+            receivers.put(channel, Pair.with(receiver, allowSelfMessages));
         }
     }
 
     public static void subscribe(JedisCommunicationChannel channel, MessageReceiver receiver) {
-        subscribe(channel.getBytes(), receiver);
+        subscribe(channel, receiver, false);
+    }
+
+    public static void subscribe(JedisCommunicationChannel channel, MessageReceiver receiver, boolean allowSelfMessages) {
+        subscribe(channel.getBytes(), receiver, allowSelfMessages);
     }
 
     public static void unsubscribe(Bytes channel) {
@@ -230,16 +239,14 @@ public class JedisCommunication extends BinaryJedisPubSub {
         this.channels = channels;
     }
 
+
     private void receive(Bytes message, boolean broadcast) {
         Triplet<Bytes, Bytes, Bytes> m = ByteMessage.readIn(message, Bytes.class, Bytes.class, Bytes.class);
         Bytes channel = m.getValue0();
         Bytes sender_id = m.getValue1();
         Bytes sender_name = nodeKeyLookUpTable.lookUpName(sender_id);
         Bytes content = m.getValue2();
-        if (sender_name.equals(name) && broadcast) {
-            // don't receive messages from this node itself
-            return;
-        }
+        
         synchronized (nodes) {
             if (!nodes.contains(sender_name)) {
                 // in case a new node sends a message immediately we need to be able to answer
@@ -247,9 +254,12 @@ public class JedisCommunication extends BinaryJedisPubSub {
             }
         }
         MessageReceiver recv = null;
+        boolean allowSelfMessages = false;
         synchronized (receivers) {
             if (receivers.containsKey(channel)) {
-                recv = receivers.get(channel);
+                Pair<MessageReceiver, Boolean> pair = receivers.get(channel);
+                recv = pair.getValue0();
+                allowSelfMessages = pair.getValue1();
             } else {
                 /*System.out.println("Received message in channel currently not handled by any listener.");
                 System.out.println("Message channel: '" + channel + "'");
@@ -257,6 +267,11 @@ public class JedisCommunication extends BinaryJedisPubSub {
                         receivers.keySet().stream().map(bytearray -> bytearray.toString()).toList()));
                         */
             }
+        }
+        if (sender_name.equals(name) && broadcast && !allowSelfMessages) {
+            // don't receive broadcast messages from this node itself
+            // if not explicitly allowed
+            return;
         }
         if (recv != null) {
             recv.receive(channel, sender_name, broadcast, content);
