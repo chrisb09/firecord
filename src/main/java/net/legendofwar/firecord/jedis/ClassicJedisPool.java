@@ -5,6 +5,9 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisAccessControlException;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -119,6 +122,25 @@ public class ClassicJedisPool {
 
         String[] properties = null;
         try {
+            // check if file exists
+            if (!Files.exists(Paths.get("data/.secret/redis"))) {
+                // create enclosing folder if not exists
+                Files.createDirectories(Paths.get("data/.secret"));
+                // create sample file
+                Path samplePath = Paths.get("data/.secret/redis.sample");
+                boolean sampleExists = Files.exists(samplePath);
+                if (!sampleExists) {
+                    List<String> sample = new ArrayList<>();
+                    sample.add("host=localhost");
+                    sample.add("port=6379");
+                    sample.add("password=");
+                    Files.write(samplePath, sample);
+                }
+                System.err.println("Could not find redis configuration at data/.secret/redis");
+                System.err.println("----------------------------------------------------------------------------");
+                System.err.println("We could not establish a connection to Redis. Firecord will not work without Redis. " + (sampleExists ?  "We created a sample configuration file at "+samplePath.toAbsolutePath().toString()+". " : "") + "Please copy it to data/.secret/redis and fill in the correct values. Make sure Redis is running.");
+                System.exit(1);
+            }
             properties = ReadProperties.readProperties("data/.secret/redis",
                     new String[] { "host", "port", "password" });
         } catch (IOException e) {
@@ -132,20 +154,29 @@ public class ClassicJedisPool {
             System.out.println("Password: " + properties[2].subSequence(0, 2) + "...");
             GenericObjectPoolConfig<Jedis> config = buildPoolConfig();
             System.out.println("Creating pool...");
-            long userId = createUser(properties[0], properties[1], Firecord.getIdName(), properties[2]);
-            JedisPool pool;
-            if (userId == 0) {
-                pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000, properties[2],
-                        database);
-            } else {
-                pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000,
-                        Firecord.getIdName(),
-                        properties[2], database);
+            try {
+                long userId = createUser(properties[0], properties[1], Firecord.getIdName(), properties[2]);
+                JedisPool pool;
+                if (userId == 0) {
+                    pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000, properties[2],
+                            database);
+                } else {
+                    pool = new JedisPool(config, properties[0], Integer.parseInt(properties[1]), 3000,
+                            Firecord.getIdName(),
+                            properties[2], database);
+                }
+                while (pools.size() <= database) {
+                    pools.add(null);
+                }
+                pools.set(database, pool);
+            } catch (Exception e) {
+                System.err.println("Could not connect to Redis at " + properties[0] + ":" + properties[1]);
+                System.err.println("----------------------------------------------------------------------------");
+                e.printStackTrace();
+                System.err.println("----------------------------------------------------------------------------");
+                System.err.println("We could not establish a connection to Redis. Firecord will not work without Redis. Check your configuration and make sure Redis is running.");
+                System.exit(1);
             }
-            while (pools.size() <= database) {
-                pools.add(null);
-            }
-            pools.set(database, pool);
         }
 
     }

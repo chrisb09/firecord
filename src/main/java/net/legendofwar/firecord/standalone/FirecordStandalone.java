@@ -11,7 +11,10 @@ public class FirecordStandalone {
 
         Firecord.init(NodeType.STANDALONE);
 
-        //TODO: run main loop: http server
+        //TODO: run main loop: http server (based on args)
+
+        // for now, always run the cli
+        Cli.run();
 
         Firecord.disable();
 

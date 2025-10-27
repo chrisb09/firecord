@@ -2,6 +2,7 @@ package net.legendofwar.firecord;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -205,6 +206,29 @@ public class Firecord {
     // hidden methods
 
     private static String loadId(File file) {
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // we populate with computer_name
+            String hostname = "unknown";
+            try {
+                hostname = InetAddress.getLocalHost().getHostName();
+            } catch (Exception e) {
+                hostname = "unknown-host";
+            }
+            // we attach :<pwd to avoid id conflicts
+            String currentDir = System.getProperty("user.dir");
+            String newId = hostname + ":" + currentDir;
+            try {
+                FileIO.writeInFile(file, hostname);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return newId;
+        }
         String newId = null;
         try {
             newId = FileIO.readFile(file);
