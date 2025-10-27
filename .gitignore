@@ -113,3 +113,8 @@ buildNumber.properties
 
 # Common working directory
 run/
+
+
+
+id
+data/
