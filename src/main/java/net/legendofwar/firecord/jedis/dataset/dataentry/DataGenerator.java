@@ -18,6 +18,7 @@ import net.legendofwar.firecord.jedis.dataset.dataentry.composite.CollectionData
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.CompositeData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.composite.RMap;
 import net.legendofwar.firecord.jedis.dataset.dataentry.object.AbstractObject;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.AnnotationChecker;
 import net.legendofwar.firecord.jedis.dataset.datakeys.ByteFunctions;
 import net.legendofwar.firecord.jedis.dataset.datakeys.DataKeySuffix;
 import net.legendofwar.firecord.jedis.dataset.datakeys.KeyGenerator;
@@ -59,7 +60,9 @@ public class DataGenerator<T extends AbstractData<?>> {
         if (deleteInDB) {
             del(ad.getKey());
             // send firecord message to other nodes
-            Firecord.broadcast(JedisCommunicationChannel.DEL_KEY, ad.getKey());
+            if (AnnotationChecker.isSynchronizationEnabled(ad.getClass())) {
+                Firecord.broadcast(JedisCommunicationChannel.DEL_KEY, ad.getKey());
+            }
         }
 
         // Delete

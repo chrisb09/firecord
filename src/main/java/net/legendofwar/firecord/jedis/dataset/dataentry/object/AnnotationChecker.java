@@ -20,15 +20,30 @@ public class AnnotationChecker {
     }
 
     public static boolean isFieldRestricted(Field field){
+        // Check if the field itself has the RestrictedTo annotation
         RestrictedTo r = field.getAnnotation(RestrictedTo.class);
         if (r != null && !r.type().includes(Firecord.getNodeType())){
             return true;
         }
+        // Check if the type of the field has the RestrictedTo annotation
         r = field.getType().getAnnotation(RestrictedTo.class);
         if (r != null && !r.type().includes(Firecord.getNodeType())){
             return true;
         }
+
+        ClassAnnotation classAnnotation = get(field.getType());
+        if (classAnnotation != null && !classAnnotation.restrictedTo().includes(Firecord.getNodeType())){
+            return true;
+        }
         return false;
+    }
+
+    public static boolean isSynchronizationEnabled(Class<?> clazz) {
+        if (clazz == null) {
+            return true; // by default, don't prohibit synchronzation
+        }
+        ClassAnnotation annotation = get(clazz);
+        return annotation == null || annotation.synchronize(); // Default to true if annotation is absent
     }
 
     public static boolean isStaticInitFunction(Method method){

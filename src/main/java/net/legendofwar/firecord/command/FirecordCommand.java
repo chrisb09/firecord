@@ -565,6 +565,7 @@ public class FirecordCommand {
             sender.sendMessage("§atestob.selectRandomDatatype();");
             testob.selectRandomDatatype();
             sender.sendMessage("§btestob: §e" + testob);
+            TestObject.testNotSynchronizedObject();
         } else if (args[0].equalsIgnoreCase("testenum")) {
             if (testenum == null) {
                 testenum = new REnum<DataKeyPrefix>(new Bytes("testenum"), DataKeyPrefix.PLAYER);

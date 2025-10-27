@@ -426,6 +426,9 @@ public abstract class AbstractObject extends AbstractData<Object> {
 
     static {
 
+        /*
+            * This section is used to receive messages about reference updates
+        */
         LinkedBlockingQueue<Quartet<Bytes, String, Bytes, Boolean>> receiveQueue = new LinkedBlockingQueue<>();
 
         Thread thread = new Thread(new Runnable() {
@@ -447,8 +450,11 @@ public abstract class AbstractObject extends AbstractData<Object> {
                             try {
                                 clazz = Class.forName(objectKey.asString());
                             } catch (ClassNotFoundException e) {
-                                System.out.println("Could not find class " + objectKey);
+                                // It is quite possible that some classes aren't available on some systems
+                                // Throwing an error because eof that is not helpful
+                                /*System.out.println("Could not find class " + objectKey);
                                 e.printStackTrace();
+                                */
                             }
                         } else {
                             if (AbstractObject.loaded.containsKey(objectKey)) {

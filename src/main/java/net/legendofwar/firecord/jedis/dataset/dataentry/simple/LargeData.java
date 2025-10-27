@@ -12,6 +12,7 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 import net.legendofwar.firecord.jedis.dataset.dataentry.AbstractData;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.LargeDataSetEvent;
 import net.legendofwar.firecord.jedis.dataset.dataentry.event.SimpleDataDeleteEvent;
+import net.legendofwar.firecord.jedis.dataset.dataentry.object.AnnotationChecker;
 
 public abstract class LargeData<T> extends SimpleData<T> {
 
@@ -79,12 +80,17 @@ public abstract class LargeData<T> extends SimpleData<T> {
         this.valid = true;
         recentlyModified.add(this);
         if (broadcast) {
+            boolean synchronize = AnnotationChecker.isSynchronizationEnabled(this.getClass()) && AnnotationChecker.isSynchronizationEnabled(this.value != null ? this.value.getClass() : null);
             if (this.value != null) {
-                JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_LARGE_KEY, this.key);
+                if (synchronize) {
+                    JedisCommunication.broadcast(JedisCommunicationChannel.UPDATE_LARGE_KEY, this.key);
+                }
                 this.notifyListeners(
                         new LargeDataSetEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
             } else {
-                JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
+                if (synchronize) {
+                    JedisCommunication.broadcast(JedisCommunicationChannel.DEL_KEY_VALUE, this.key);
+                }
                 this.notifyListeners(new SimpleDataDeleteEvent<AbstractData<?>>(Firecord.getId(), this, oldValue));
             }
         }

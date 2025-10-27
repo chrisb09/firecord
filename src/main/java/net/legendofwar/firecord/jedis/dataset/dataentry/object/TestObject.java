@@ -23,6 +23,10 @@ import net.legendofwar.firecord.jedis.dataset.Bytes;
 
 public final class TestObject extends AbstractObject {
 
+    static TestNotSynchronizedObject notSynchronizedObject;
+    static TestNotSynchronizedObject notSynchronizedObjectA;
+    static TestNotSynchronizedObject notSynchronizedObjectB;
+
     static DataGenerator<RDouble> dg = new DataGenerator<>(new Bytes("doublepool"), RDouble.class);
 
     private RInteger testint = new RInteger(new Bytes("testint"));
@@ -211,6 +215,16 @@ public final class TestObject extends AbstractObject {
 
     public double getSortScore(){
         return this.g.get();
+    }
+
+    public static void testNotSynchronizedObject(){
+        System.out.println("notSynchronizedObject: "+ ((notSynchronizedObject == notSynchronizedObjectA) ? "A" : ((notSynchronizedObject == notSynchronizedObjectB) ? "B" : "null")));
+        if (notSynchronizedObject == notSynchronizedObjectA){
+            notSynchronizedObject = notSynchronizedObjectB;
+        } else {
+            notSynchronizedObject = notSynchronizedObjectA;
+        }
+        System.out.println("set to: "+ ((notSynchronizedObject == notSynchronizedObjectA) ? "A" : ((notSynchronizedObject == notSynchronizedObjectB) ? "B" : "null")));
     }
 
 }

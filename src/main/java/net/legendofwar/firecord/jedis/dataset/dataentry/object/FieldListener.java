@@ -125,6 +125,9 @@ public class FieldListener {
                 field.setAccessible(true);
                 AbstractData<?> oldValue = isStatic ? (AbstractData<?>) field.get(null) : (AbstractData<?>) field.get(instance);
                 Class<?> fieldType = field.getType();
+                // if either the surrounding class or the field's class are marked for no synchronization, don't synchronize
+                // further down, we also check for the class of the object that will fill the field, but since it can at this point also be null, this check has to deferred for now
+                boolean synchronize = AnnotationChecker.isSynchronizationEnabled(declaringClass) && AnnotationChecker.isSynchronizationEnabled(fieldType); 
 
                 if (newAbstractDataValue == null) {
                     // set reference to null
@@ -146,10 +149,12 @@ public class FieldListener {
                         }
                     }
 
-                    JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,
+                    if (synchronize) {
+                        JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,
                             ByteMessage.write(isStatic ? new Bytes(declaringClass.getName()) : instance.getKey(),
                                     new Bytes(fieldName), new Bytes().getData(),
                                     new Bytes(Byte.valueOf((byte) (isStatic ? 1 : 0)))));
+                    }
                     AbstractData.notifyListeners(isStatic ? null : instance,
                             new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(),
                                     JedisCommunicationChannel.REFERENCE_UPDATE, isStatic ? null : instance,
@@ -157,6 +162,10 @@ public class FieldListener {
 
                 } else if (AbstractData.class.isAssignableFrom(fieldType)) {
                     // implies newValue is instance of AbstractData
+
+                    // here we also check if the class of the new value allows synchronization
+                    // since it could have been null, we do this check here and not prior
+                    synchronize = synchronize && AnnotationChecker.isSynchronizationEnabled(newAbstractDataValue.getClass());
 
                     AbstractData<?> adNewValue = (AbstractData<?>) newAbstractDataValue;
 
@@ -182,7 +191,9 @@ public class FieldListener {
 
                             // informs the other instances to call .removeFromLoaded too
                             // in order to prepare for overwrite
-                            JedisCommunication.broadcast(JedisCommunicationChannel.OBJECT_OVERWRITE, key);
+                            if (synchronize) {
+                                JedisCommunication.broadcast(JedisCommunicationChannel.OBJECT_OVERWRITE, key);
+                            }
 
                             Object defaultValue = null;
                             if (SimpleData.class.isAssignableFrom(newAbstractDataValue.getClass())) {
@@ -237,12 +248,14 @@ public class FieldListener {
 
                                 replacingEntry.owners.add(instance);
 
-                                JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,
-                                        ByteMessage.write(
-                                                isStatic ? new Bytes(declaringClass.getName()).getData()
-                                                        : instance.getKey(),
-                                                new Bytes(fieldName), key,
-                                                new Bytes(Byte.valueOf((byte) (isStatic ? 1 : 0)))));
+                                if (synchronize) {
+                                    JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,
+                                            ByteMessage.write(
+                                                    isStatic ? new Bytes(declaringClass.getName()).getData()
+                                                            : instance.getKey(),
+                                                    new Bytes(fieldName), key,
+                                                    new Bytes(Byte.valueOf((byte) (isStatic ? 1 : 0)))));
+                                }
                                 AbstractData.notifyListeners(isStatic ? null : instance,
                                         new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(),
                                                 JedisCommunicationChannel.REFERENCE_UPDATE, isStatic ? null : instance,
@@ -282,12 +295,14 @@ public class FieldListener {
                                 ad.owners.add(instance);
                             }
 
-                            JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,
-                                    ByteMessage.write(
-                                            isStatic ? new Bytes(declaringClass.getName()).getData()
-                                                    : instance.getKey(),
-                                            new Bytes(fieldName), ((AbstractData<?>) newAbstractDataValue).getKey(),
-                                            new Bytes(Byte.valueOf((byte) (isStatic ? 1 : 0)))));
+                            if (synchronize) {
+                                JedisCommunication.broadcast(JedisCommunicationChannel.REFERENCE_UPDATE,
+                                        ByteMessage.write(
+                                                isStatic ? new Bytes(declaringClass.getName()).getData()
+                                                        : instance.getKey(),
+                                                new Bytes(fieldName), ((AbstractData<?>) newAbstractDataValue).getKey(),
+                                                new Bytes(Byte.valueOf((byte) (isStatic ? 1 : 0)))));
+                            }
                             AbstractData.notifyListeners(isStatic ? null : instance,
                                     new ReferenceUpdateEvent<AbstractData<?>>(Firecord.getId(),
                                             JedisCommunicationChannel.REFERENCE_UPDATE, isStatic ? null : instance,

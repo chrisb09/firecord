@@ -14,4 +14,5 @@ import net.legendofwar.firecord.tool.NodeType;
 public @interface ClassAnnotation {
     NodeType restrictedTo() default NodeType.ANY;
     String overwriteName() default ""; //represents null in this case
+    boolean synchronize() default true; // if false, we dont send updates of this class and objects of this class to other nodes
 }
