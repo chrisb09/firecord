@@ -1,6 +1,6 @@
 # Firecord
 
-Firecord is a distributed shared memory (DSM) system that provides (mostly) transparent object synchronization across multiple independent processes and machines. It implements a virtual shared address space using Redis as the backing store, combined with message-passing for cache coherence, allowing distributed applications to interact with shared objects as if they were local references.
+Firecord is a virtual distributed object memory system that provides (somewhat) transparent object synchronization across multiple independent processes and machines. It implements a virtual shared object space using Redis as the backing store, combined with message-passing for cache coherence, allowing distributed applications to interact with shared objects as if they were local references.
 
 ## Comparison to Redisson
 
@@ -38,7 +38,7 @@ This README is mostly AI generated because I really do not believe a prototype s
 
 ## Features
 
-- **Distributed Shared Memory**: Provides transparent shared memory semantics over a distributed system using Redis as the virtual address space
+- **Distributed Object Memory**: Provides (somewhat) transparent shared object semantics over a distributed system using Redis as the virtual object store
 - **Cache Coherence Protocol**: Uses Redis Pub/Sub channels for invalidation-based cache coherence across nodes
 - **Fine-Grained Synchronization**: Updates individual fields rather than entire objects, detected through AspectJ bytecode weaving
 - **Reference vs. Value Change Detection**: Distinguishes between field value modifications and reference reassignments
@@ -46,15 +46,15 @@ This README is mostly AI generated because I really do not believe a prototype s
 - **Multi-Platform Support**: Works across different machines or multiple processes on the same machine
 - **Platform Integration**: Native support for Minecraft servers (Spigot/Paper/Velocity) plus standalone mode
 - **Lazy Loading**: Objects and their reference graphs are loaded on-demand from Redis
-- **Experimental Prototype**: Research-focused implementation exploring DSM concepts in Java
+- **Experimental Prototype**: Research-focused implementation exploring virtual distributed object memory concepts in Java
 
 ## How It Works
 
-Firecord implements a **Distributed Shared Memory (DSM)** architecture that simulates shared memory across multiple nodes:
+Firecord implements a **Virtual distributed object memory** architecture that simulates shared object space across multiple nodes:
 
 ### Architecture Overview
 
-1. **Virtual Shared Address Space**: Redis serves as the coherent shared storage that all nodes can access, acting as the "memory" in a distributed system
+1. **Virtual Shared Object Space**: Redis serves as the coherent shared storage that all nodes can access, acting as the "object store" in a distributed system
 2. **Message Passing for Coherence**: Redis Pub/Sub channels maintain cache coherence through invalidation-based protocols
 3. **Transparent Access**: Applications interact with `AbstractData` objects as if they were local, while the system handles distributed synchronization
 4. **AspectJ Interception**: Bytecode weaving intercepts field assignments to detect and broadcast changes
@@ -95,7 +95,7 @@ Firecord.init(NodeType.SPIGOT);   // For Spigot/Paper servers
 Firecord.init(NodeType.VELOCITY); // For Velocity proxy servers
 ```
 
-While firecord has excplicit support for Minecraft server environments, it can also be used in any Java application as a standalone DSM system. It also features an incomplete CLI for testing purposes.
+While firecord has excplicit support for Minecraft server environments, it can also be used in any Java application as a standalone virtual distributed object memory system. It also features an incomplete CLI for testing purposes.
 
 ### Synchronizing Objects
 
@@ -286,9 +286,9 @@ There are various nuances and details not covered in this README, that would pro
 
 ## Experimental Notice
 
-Firecord is a research prototype exploring distributed shared memory concepts in Java. While functional, it's designed primarily for experimentation and learning rather than production use. The current implementation demonstrates:
+Firecord is a research prototype exploring virtual distributed object memory concepts in Java. While functional, it's designed primarily for experimentation and learning rather than production use. The current implementation demonstrates:
 
-- How DSM can be implemented using Redis as a virtual address space
+- How virtual distributed object memory can be implemented using Redis as a virtual object store
 - AspectJ-based change detection for fine-grained synchronization
 - Cache coherence through message-passing protocols
 - Transparent distributed object access
